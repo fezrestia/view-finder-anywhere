@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+    <!-- Window size. -->
+    <dimen name="storage_selector_top_padding">20dp</dimen>
+
+    <dimen name="storage_selector_item_height">32dp</dimen>
+    <dimen name="storage_selector_item_text_size">16dp</dimen>
+
+    <dimen name="storage_selector_item_text_left_padding">6dp</dimen>
+
+</resources>

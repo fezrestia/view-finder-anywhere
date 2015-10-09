@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <string name="application_label">View Finder Anywhere</string>
+
+    <string name="overlay_view_finder_ongoing_notification">Overlay ViewFinder On-Going</string>
+
+    <string name="preference_app_label">ViewFinderAnywhere Preferences</string>
+
+    <string name="title_trigger_preference">Overlay Trigger</string>
+
+
+
+    <string name="title_is_overlay_view_finder_enabled_from_focus_key_double_click">Focus Key Double-Click (Rooted-Custom ROM required)</string>
+    <string name="summary_is_overlay_view_finder_enabled_from_focus_key_double_click">Camera will be triggered by focus key double click.</string>
+
+    <string name="title_is_overlay_view_finder_enabled_from_notification">Notification Click</string>
+    <string name="summary_is_overlay_view_finder_enabled_from_notification">Camera will be triggered by notification click.</string>
+
+    <string name="title_is_overlay_view_finder_enabled_from_screen_edge">Screen Edge</string>
+    <string name="summary_is_overlay_view_finder_enabled_from_screen_edge">Camera will be triggered by screen edge swipe.</string>
+
+
+
+    <string name="title_view_finder_preference">View Finder</string>
+
+    <string name="title_overlay_view_finder_size">Size</string>
+    <string name="title_overlay_view_finder_aspect">Aspect Ratio</string>
+
+
+
+    <string name="title_ui_plugin_preference">UI Plug-IN</string>
+
+    <string name="title_select_ui_plugin">Select Plug-IN</string>
+
+
+
+    <string name="title_view_finder_grip_preference">View Finder Grip</string>
+    <string name="title_view_finder_grip_size">Size</string>
+    <string name="title_view_finder_grip_position">Position</string>
+
+
+
+    <string name="notification_overlay_trigger">Trigger overlay view finder</string>
+
+
+
+    <string name="viewfinder_grip_label">VIEW FINDER ANYWHERE</string>
+
+</resources>

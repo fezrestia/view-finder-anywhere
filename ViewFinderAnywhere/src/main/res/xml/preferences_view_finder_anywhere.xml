@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android"
+>
+    <PreferenceCategory
+            android:title="@string/title_trigger_preference"
+    >
+        <CheckBoxPreference
+            android:key="is_overlay_view_finder_enabled_from_focus_key_double_click"
+            android:title="@string/title_is_overlay_view_finder_enabled_from_focus_key_double_click"
+            android:summary="@string/summary_is_overlay_view_finder_enabled_from_focus_key_double_click"
+        />
+        <CheckBoxPreference
+            android:key="is_overlay_view_finder_enabled_from_notification"
+            android:title="@string/title_is_overlay_view_finder_enabled_from_notification"
+            android:summary="@string/summary_is_overlay_view_finder_enabled_from_notification"
+        />
+        <CheckBoxPreference
+            android:key="is_overlay_view_finder_enabled_from_screen_edge"
+            android:title="@string/title_is_overlay_view_finder_enabled_from_screen_edge"
+            android:summary="@string/summary_is_overlay_view_finder_enabled_from_screen_edge"
+        />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+            android:title="@string/title_ui_plugin_preference"
+    >
+        <ListPreference
+            android:key="overlay_view_finder_ui_plugin_package"
+            android:title="@string/title_select_ui_plugin"
+            android:summary="dummy"
+        />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+            android:title="@string/title_view_finder_preference"
+    >
+        <ListPreference
+            android:key="overlay_view_finder_size"
+            android:title="@string/title_overlay_view_finder_size"
+            android:summary="dummy"
+            android:entries="@array/overlay_view_finder_size_entry_labels"
+            android:entryValues="@array/overlay_view_finder_size_entry_values"
+        />
+        <ListPreference
+            android:key="overlay_view_finder_aspect"
+            android:title="@string/title_overlay_view_finder_aspect"
+            android:summary="dummy"
+            android:entries="@array/overlay_view_finder_aspect_entry_labels"
+            android:entryValues="@array/overlay_view_finder_aspect_entry_values"
+        />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+            android:title="@string/title_view_finder_grip_preference"
+    >
+        <ListPreference
+            android:key="view_finder_grip_size"
+            android:title="@string/title_view_finder_grip_size"
+            android:summary="dummy"
+            android:entries="@array/view_finder_grip_size_entry_labels"
+            android:entryValues="@array/view_finder_grip_size_entry_values"
+        />
+        <ListPreference
+            android:key="view_finder_grip_position"
+            android:title="@string/title_view_finder_grip_position"
+            android:summary="dummy"
+            android:entries="@array/view_finder_grip_position_entry_labels"
+            android:entryValues="@array/view_finder_grip_position_entry_values"
+        />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+            android:title="@string/title_storage_selector_preference"
+    >
+        <CheckBoxPreference
+            android:key="is_storage_selector_enabled"
+            android:title="@string/title_is_storage_selector_enabled"
+            android:summary="@string/summary_is_storage_selector_enabled"
+        />
+        <EditTextPreference
+            android:persistent="false"
+            android:key="storage_selector_create_new_directory"
+            android:title="@string/title_storage_selector_create_new_directory"
+            android:summary="@string/summary_storage_selector_create_new_directory"
+        />
+        <MultiSelectListPreference
+            android:persistent="false"
+            android:key="storage_selector_selectable_directory"
+            android:title="@string/title_storage_selector_target_directory"
+            android:summary="@string/summary_storage_selector_target_directory"
+        />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

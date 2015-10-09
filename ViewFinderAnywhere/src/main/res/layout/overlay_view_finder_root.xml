@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+>
+    <ImageView
+            android:id="@+id/total_background"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitXY"
+    />
+
+    <LinearLayout
+            android:id="@+id/overlay_slider"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+    >
+        <!-- View finder grip. -->
+        <FrameLayout
+                android:id="@+id/viewfinder_grip_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+        >
+            <ImageView
+                    android:id="@+id/viewfinder_grip"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitXY"
+            />
+
+            <ImageView
+                    android:id="@+id/viewfinder_grip_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+            />
+        </FrameLayout>
+
+        <!-- View finder area. -->
+        <FrameLayout
+                android:id="@+id/viewfinder_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+        >
+            <!-- Background. Immediate feedback. -->
+            <ImageView
+                android:id="@+id/viewfinder_background"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+            />
+
+            <!-- Overlay view finder. -->
+            <TextureView
+                android:id="@+id/viewfinder"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+            />
+
+            <!-- Scan done indicator -->
+            <FrameLayout
+                android:id="@+id/scan_indicator_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="@dimen/viewfinder_scan_indicator_edge_padding"
+            >
+                <!-- Left -->
+                <ImageView
+                    android:layout_width="@dimen/viewfinder_scan_indicator_width"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="left"
+                />
+                <!-- Top -->
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/viewfinder_scan_indicator_width"
+                    android:layout_gravity="top"
+                />
+                <!-- Right -->
+                <ImageView
+                    android:layout_width="@dimen/viewfinder_scan_indicator_width"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="right"
+                />
+                <!-- Bottom -->
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/viewfinder_scan_indicator_width"
+                    android:layout_gravity="bottom"
+                />
+            </FrameLayout>
+
+            <!-- Viewfinder frame -->
+            <ImageView
+                android:id="@+id/viewfinder_frame"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY"
+            />
+        </FrameLayout>
+
+    </LinearLayout>
+
+    <ImageView
+            android:id="@+id/total_foreground"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitXY"
+    />
+
+</com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<com.fezrestia.android.viewfinderanywhere.view.StorageSelectorRootView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/root"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+>
+    <RelativeLayout
+            android:id="@+id/total_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+    >
+
+        <ScrollView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+        >
+            <LinearLayout
+                    android:id="@+id/item_list"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+            >
+
+            </LinearLayout>
+
+
+        </ScrollView>
+
+    </RelativeLayout>
+
+</com.fezrestia.android.viewfinderanywhere.view.StorageSelectorRootView>

@@ -5,19 +5,62 @@
         package="com.fezrestia.android.viewfinderanywhere"
 >
 
+    <!-- Permissions. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Features. -->
+    <uses-feature android:name="android.hardware.camera" />
+    <uses-feature android:name="android.hardware.camera.autofocus" />
+
+    <!-- Application. -->
     <application
-        android:icon="@drawable/application_icon"
-        android:label="@string/application_label"
+            android:name=".ViewFinderAnywhereApplication"
+            android:icon="@drawable/application_icon"
+            android:label="@string/application_label"
+            android:hardwareAccelerated="true"
     >
 
+        <!-- Activities. -->
         <activity
-            android:name=".MainActivity"
+                android:name=".activity.ViewFinderAnywhereSettingActivity"
+                android:label="@string/preference_app_label"
+                android:launchMode="singleTask"
         >
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+
         </activity>
+
+
+
+        <!-- Receivers. -->
+        <receiver
+                 android:name=".receiver.OverlayViewFinderTriggerReceiver"
+        >
+            <intent-filter>
+                <action android:name="com.fezrestia.android.viewfinderanywhere.intent.ACTION_FOCUS_KEY_DOUBLE_CLICK" />
+                <action android:name="com.fezrestia.android.viewfinderanywhere.intent.ACTION_TRIGGER_OVERLAY_VIEW_FINDER" />
+            </intent-filter>
+        </receiver>
+
+
+
+        <!-- Services. -->
+        <service
+                android:name=".service.OverlayViewFinderService"
+                android:exported="false"
+        />
+        <service
+                android:name=".service.StorageSelectorService"
+                android:exported="false"
+        />
 
     </application>
 

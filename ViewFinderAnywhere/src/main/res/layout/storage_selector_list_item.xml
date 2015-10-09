@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/storage_selector_list_item"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/storage_selector_item_height"
+>
+
+    <TextView
+            android:id="@+id/storage_selector_list_item_label"
+            android:textSize="@dimen/storage_selector_item_text_size"
+            android:textColor="@color/storage_selector_item_text_color"
+            android:lines="1"
+            android:scrollHorizontally="true"
+            android:ellipsize="end"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignParentLeft="true"
+            android:paddingLeft="@dimen/storage_selector_item_text_left_padding"
+    />
+
+</RelativeLayout>
