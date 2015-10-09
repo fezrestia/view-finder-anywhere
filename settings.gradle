@@ -1,1 +1,4 @@
 include ':ViewFinderAnywhere'
+include ':ViewFinderAnywhere_UiPlugIn_Ingress'
+include ':ViewFinderAnywhere_UiPlugIn_RedFrame'
+include ':ViewFinderAnywhere_UiPlugIn_TotalClear'

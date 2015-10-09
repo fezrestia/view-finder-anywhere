@@ -1,0 +1,22 @@
+<manifest
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        package="com.fezrestia.android.viewfinderanywhere.uiplugin.ingress"
+>
+
+    <application
+            android:label="@string/app_name"
+            android:icon="@drawable/application_icon"
+    >
+
+        <activity
+            android:name=".MainActivity"
+            android:description="@string/plug_in_title"
+        >
+            <intent-filter>
+                <action android:name="com.fezrestia.android.viewfinderanywhere.intent.ACTION_REGISTER_UI_PLUG_IN" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>

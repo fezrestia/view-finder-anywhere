@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+    <!-- Grip. -->
+    <color name="viewfinder_grip_label_color">#FF0000</color>
+
+    <!-- Frame. -->
+    <color name="viewfinder_background_color">#00000000</color>
+
+    <!-- Scan indicator. -->
+    <color name="viewfinder_scan_indicator_ongoing">#AAFF0000</color>
+    <color name="viewfinder_scan_indicator_success">#FFFF0000</color>
+    <color name="viewfinder_scan_indicator_failure">#00000000</color>
+
+</resources>

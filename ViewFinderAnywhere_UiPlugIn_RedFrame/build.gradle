@@ -5,7 +5,7 @@ android {
     buildToolsVersion '23.0.1'
 
     defaultConfig {
-        applicationId "com.fezrestia.android.viewfinderanywhere"
+        applicationId "com.fezrestia.android.viewfinderanywhere.uiplugin.redframe"
         minSdkVersion 19
         targetSdkVersion 20
         versionCode 100
@@ -29,7 +29,7 @@ android {
             if (output.outputFile != null && output.outputFile.name.endsWith('.apk')) {
                 // Rename APK.
                 output.outputFile = new File(
-                        "$project.buildDir/outputs/apk/${variant.name}/ViewFinderAnywhere.apk")
+                        "$project.buildDir/outputs/apk/${variant.name}/ViewFinderAnywhereUiPlugInRedFrame.apk")
             } else {
                 // Replace.
                 output.outputFile = new File(
