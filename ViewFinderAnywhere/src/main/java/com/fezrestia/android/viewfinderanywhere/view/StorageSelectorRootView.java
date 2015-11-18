@@ -20,12 +20,12 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 import com.fezrestia.android.viewfinderanywhere.control.StorageSelectorController;
 import com.fezrestia.android.viewfinderanywhere.storage.StorageController;
-import com.fezrestia.android.viewfinderanywhere.util.Log;
 
 import java.io.File;
 import java.util.ArrayList;

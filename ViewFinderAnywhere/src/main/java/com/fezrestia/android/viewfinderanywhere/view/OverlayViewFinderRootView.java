@@ -28,13 +28,13 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
 import com.fezrestia.android.lib.interaction.InteractionEngine;
+import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants.ViewFinderGripPosition;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants.ViewFinderGripSize;
 import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
-import com.fezrestia.android.viewfinderanywhere.util.Log;
 
 
 public class OverlayViewFinderRootView extends RelativeLayout {

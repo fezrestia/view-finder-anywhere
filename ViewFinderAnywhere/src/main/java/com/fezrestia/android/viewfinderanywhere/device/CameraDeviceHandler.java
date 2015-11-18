@@ -12,10 +12,10 @@ import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.WindowManager;
 
+import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
 import com.fezrestia.android.viewfinderanywhere.storage.StorageController;
-import com.fezrestia.android.viewfinderanywhere.util.Log;
 
 import java.io.IOException;
 import java.util.HashSet;

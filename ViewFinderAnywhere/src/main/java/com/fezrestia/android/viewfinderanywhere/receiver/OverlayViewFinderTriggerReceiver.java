@@ -5,10 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
+import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
-import com.fezrestia.android.viewfinderanywhere.util.Log;
 
 public class OverlayViewFinderTriggerReceiver extends BroadcastReceiver {
     // Log tag.

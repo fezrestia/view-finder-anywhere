@@ -14,10 +14,10 @@ import android.view.WindowManager;
 import android.widget.RelativeLayout;
 
 import com.fezrestia.android.lib.interaction.InteractionEngine;
+import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
-import com.fezrestia.android.viewfinderanywhere.util.Log;
 
 public class UserInteractionInterceptor extends RelativeLayout {
     // Log tag.

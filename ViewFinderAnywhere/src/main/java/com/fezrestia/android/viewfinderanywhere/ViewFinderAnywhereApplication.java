@@ -9,7 +9,8 @@ import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 
-import com.fezrestia.android.viewfinderanywhere.util.Log;
+import com.fezrestia.android.util.log.Log;
+import com.fezrestia.android.viewfinderanywhere.R;
 
 public class ViewFinderAnywhereApplication extends Application {
     // Log tag.

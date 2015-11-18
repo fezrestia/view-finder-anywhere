@@ -8,9 +8,9 @@ import android.content.IntentFilter;
 import android.os.Handler;
 import android.view.LayoutInflater;
 
+import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.service.StorageSelectorService;
-import com.fezrestia.android.viewfinderanywhere.util.Log;
 import com.fezrestia.android.viewfinderanywhere.view.StorageSelectorRootView;
 
 public class StorageSelectorController {

@@ -9,12 +9,12 @@ import android.net.Uri;
 import android.os.Handler;
 import android.view.LayoutInflater;
 
+import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.device.CameraDeviceHandler;
 import com.fezrestia.android.viewfinderanywhere.service.OverlayViewFinderService;
-import com.fezrestia.android.viewfinderanywhere.util.Log;
 import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView;
 
 public class OverlayViewFinderController {

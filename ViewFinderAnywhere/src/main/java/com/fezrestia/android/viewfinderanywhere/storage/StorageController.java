@@ -6,10 +6,10 @@ import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 
+import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
-import com.fezrestia.android.viewfinderanywhere.util.Log;
 
 import java.io.File;
 import java.io.FileNotFoundException;

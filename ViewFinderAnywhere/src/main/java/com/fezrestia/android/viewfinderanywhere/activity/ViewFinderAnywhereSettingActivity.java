@@ -17,12 +17,12 @@ import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 
+import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
 import com.fezrestia.android.viewfinderanywhere.storage.StorageController;
-import com.fezrestia.android.viewfinderanywhere.util.Log;
 
 import java.io.File;
 import java.util.ArrayList;

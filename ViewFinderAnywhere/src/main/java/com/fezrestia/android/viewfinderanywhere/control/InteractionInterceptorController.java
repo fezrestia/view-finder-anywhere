@@ -3,8 +3,8 @@ package com.fezrestia.android.viewfinderanywhere.control;
 import android.content.Context;
 import android.view.LayoutInflater;
 
+import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.R;
-import com.fezrestia.android.viewfinderanywhere.util.Log;
 import com.fezrestia.android.viewfinderanywhere.view.UserInteractionInterceptor;
 
 public class InteractionInterceptorController {

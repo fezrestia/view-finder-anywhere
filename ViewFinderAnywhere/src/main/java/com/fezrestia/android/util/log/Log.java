@@ -1,4 +1,4 @@
-package com.fezrestia.android.viewfinderanywhere.util;
+package com.fezrestia.android.util.log;
 
 public class Log {
     // All area total log trigger.

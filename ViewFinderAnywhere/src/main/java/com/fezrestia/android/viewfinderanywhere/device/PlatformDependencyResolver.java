@@ -1,6 +1,6 @@
 package com.fezrestia.android.viewfinderanywhere.device;
 
-import com.fezrestia.android.viewfinderanywhere.util.Log;
+import com.fezrestia.android.util.log.Log;
 
 import java.util.HashSet;
 import java.util.Set;
