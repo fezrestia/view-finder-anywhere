@@ -71,7 +71,7 @@ public class OverlayViewFinderService extends Service {
         OverlayViewFinderController.getInstance().resume();
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onStartCommand() : X");
-        return START_STICKY;
+        return START_NOT_STICKY;
     }
 
     @Override
