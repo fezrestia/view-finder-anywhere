@@ -5,7 +5,6 @@ import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.SensorManager;
 import android.media.MediaActionSound;
-import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.PowerManager;
 import android.view.OrientationEventListener;
@@ -13,7 +12,6 @@ import android.view.Surface;
 import android.view.WindowManager;
 
 import com.fezrestia.android.util.log.Log;
-import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
 import com.fezrestia.android.viewfinderanywhere.storage.StorageController;
 
@@ -26,9 +24,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-public class CameraDeviceHandler {
+/**
+ * Camera functions based on Camera API 1.0.
+ */
+public class Camera1Device implements CameraPlatformInterface {
     // Log tag.
-    private static final String TAG = CameraDeviceHandler.class.getSimpleName();
+    private static final String TAG = "Camera1Device";
 
     // Master context.
     private Context mContext = null;
@@ -90,19 +91,11 @@ public class CameraDeviceHandler {
      * @param uiWorker
      * @param cameraId
      */
-    public CameraDeviceHandler(Context context, Handler uiWorker, int cameraId) {
+    public Camera1Device(Context context, Handler uiWorker, int cameraId) {
         mContext = context;
         mUiWorker = uiWorker;
         mCameraId = cameraId;
 
-        generateBackWorker();
-    }
-
-    /**
-     * Wait for finish of all of the tasks.
-     */
-    public void flush() {
-        shutdownBackWorker();
         generateBackWorker();
     }
 
@@ -122,10 +115,8 @@ public class CameraDeviceHandler {
         }
     }
 
-    /**
-     * Destruct this instance. Do not use this instance again after this function is called.
-     */
-    public void destructor() {
+    @Override
+    public void release() {
         shutdownBackWorker();
 
         mContext = null;
@@ -134,23 +125,44 @@ public class CameraDeviceHandler {
     }
 
     /**
-     * Open camera in synchronized.
+     * Open camera.
+     *
+     * @param evfAspectWH
      */
-    public void openAsync(float aspectWH) {
-        Runnable task = new OpenTask(aspectWH);
+    public void openAsync(float evfAspectWH) {
+        openAsync(evfAspectWH, new OpenCallbackImpl());
+    }
+
+    private class OpenCallbackImpl implements OpenCallback {
+        @Override
+        public void onOpened(boolean isSuccess) {
+            if (isSuccess) {
+                OverlayViewFinderController.getInstance().getCurrentState().onCameraReady();
+            } else {
+                OverlayViewFinderController.getInstance().getCurrentState().onCameraBusy();
+            }
+        }
+    }
+
+    @Override
+    public void openAsync(float evfAspectWH, OpenCallback openCallback) {
+        Runnable task = new OpenTask(evfAspectWH, openCallback);
         mBackWorker.execute(task);
     }
 
     private class OpenTask implements Runnable {
         private final float mViewFinderAspectRatioWH;
+        private final OpenCallback mOpenCallback;
 
         /**
          * CONSTRUCTOR.
          *
          * @param aspectRatioWH
+         * @param openCallback
          */
-        public OpenTask(float aspectRatioWH) {
+        public OpenTask(float aspectRatioWH, OpenCallback openCallback) {
             mViewFinderAspectRatioWH = aspectRatioWH;
+            mOpenCallback = openCallback;
         }
 
         @Override
@@ -173,7 +185,7 @@ public class CameraDeviceHandler {
                     // TODO:Re-Try ?
 
                     // Notify.
-                    OverlayViewFinderController.getInstance().getCurrentState().onCameraBusy();
+                    mOpenCallback.onOpened(false);
                 } else {
                     // Parameters.
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "Camera.getParameters() : E");
@@ -263,11 +275,11 @@ public class CameraDeviceHandler {
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "Acquire WakeLock : X");
 
                     // Notify.
-                    OverlayViewFinderController.getInstance().getCurrentState().onCameraReady();
+                    mOpenCallback.onOpened(true);
                 }
             } else {
                 // Notify. Already opened.
-                OverlayViewFinderController.getInstance().getCurrentState().onCameraReady();
+                mOpenCallback.onOpened(true);
             }
             if (Log.IS_DEBUG) Log.logDebug(TAG, "OpenTask.run() : X");
         }
@@ -291,19 +303,42 @@ public class CameraDeviceHandler {
     }
 
     /**
-     * Release camera in synchronized.
+     * Close camera.
      */
-    public void releaseAsync() {
-//        Runnable removeSurfaceTask = new SetSurfaceTask(null);
-//        mBackWorker.execute(removeSurfaceTask);
-        Runnable releaseTask = new ReleaseTask();
-        mBackWorker.execute(releaseTask);
+    public void closeAsync() {
+        closeAsync(new CloseCallbackImpl());
     }
 
-    private class ReleaseTask implements Runnable {
+    private class CloseCallbackImpl implements CloseCallback {
+        @Override
+        public void onClosed(boolean isSuccess) {
+            // NOP.
+        }
+    }
+
+    @Override
+    public void closeAsync(CloseCallback closeCallback) {
+//        Runnable removeSurfaceTask = new SetSurfaceTask(null);
+//        mBackWorker.execute(removeSurfaceTask);
+        Runnable closeTask = new CloseTask(closeCallback);
+        mBackWorker.execute(closeTask);
+    }
+
+    private class CloseTask implements Runnable {
+        private final CloseCallback mCloseCallback;
+
+        /**
+         * CONSTRUCTOR.
+         *
+         * @param closeCallback
+         */
+        public CloseTask(CloseCallback closeCallback) {
+            mCloseCallback = closeCallback;
+        }
+
         @Override
         public void run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "ReleaseTask.run() : E");
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "CloseTask.run() : E");
 
             // Camera.
             if (mCamera != null) {
@@ -336,30 +371,50 @@ public class CameraDeviceHandler {
                 mWakeLock = null;
             }
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "ReleaseTask.run() : X");
+            // Notify.
+            mCloseCallback.onClosed(true);
+
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "CloseTask.run() : X");
         }
     }
 
     /**
-     * Set SurfaceTexture for preview stream.
+     * Bind surface as preview stream.
      *
      * @param surface
      */
-    public void setSurfaceTextureAsync(SurfaceTexture surface) {
-        Runnable task = new SetSurfaceTask(surface);
+    public void bindPreviewSurfaceAsync(SurfaceTexture surface) {
+        bindPreviewSurfaceAsync(surface, new BindSurfaceCallbackImpl());
+    }
+
+    private class BindSurfaceCallbackImpl implements BindSurfaceCallback {
+        @Override
+        public void onSurfaceBound(boolean isSuccess) {
+            // NOP.
+        }
+    }
+
+    @Override
+    public void bindPreviewSurfaceAsync(
+            SurfaceTexture surface,
+            BindSurfaceCallback bindSurfaceCallback) {
+        Runnable task = new BindSurfaceTask(surface, bindSurfaceCallback);
         mBackWorker.execute(task);
     }
 
-    private class SetSurfaceTask implements Runnable {
+    private class BindSurfaceTask implements Runnable {
         private final SurfaceTexture mSurface;
+        private final BindSurfaceCallback mBindSurfaceCallback;
 
         /**
          * CONSTRUCTOR.
          *
          * @param surface
+         * @param bindSurfaceCallback
          */
-        SetSurfaceTask(SurfaceTexture surface) {
+        BindSurfaceTask(SurfaceTexture surface, BindSurfaceCallback bindSurfaceCallback) {
             mSurface = surface;
+            mBindSurfaceCallback = bindSurfaceCallback;
         }
 
         @Override
@@ -418,9 +473,14 @@ public class CameraDeviceHandler {
                     mCamera.setPreviewTexture(mSurface);
                 } catch (IOException e) {
                     e.printStackTrace();
+
+                    mBindSurfaceCallback.onSurfaceBound(false);
                 }
+
+                mBindSurfaceCallback.onSurfaceBound(true);
             } else {
                 if (Log.IS_DEBUG) Log.logError(TAG, "Error. Camera is already released.");
+                mBindSurfaceCallback.onSurfaceBound(false);
             }
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "SetSurfaceTask.run() : X");
@@ -428,16 +488,38 @@ public class CameraDeviceHandler {
     }
 
     /**
-     * Request scan.
+     * Start scan.
      */
     public void requestScanAsync() {
+        requestScanAsync(null);
+    }
+
+    @Override
+    public void requestScanAsync(ScanCallback scanCallback) {
         mBackWorker.execute(mScanTask);
     }
 
-    private final ScanTask mScanTask = new ScanTask();
+    private class ScanCallbackImpl implements ScanCallback {
+        @Override
+        public void onScanDone(boolean isSuccess) {
+            OverlayViewFinderController.getInstance().getCurrentState().onScanDone(isSuccess);
+        }
+    }
+
+    private final ScanTask mScanTask = new ScanTask(new ScanCallbackImpl());
     private class ScanTask implements Runnable {
         private CountDownLatch mLatch = null;
         private boolean isCanceled = false;
+        private ScanCallback mScanCallback;
+
+        /**
+         * CONSTRUCTOR.
+         *
+         * @param scanCallback
+         */
+        public ScanTask(ScanCallback scanCallback) {
+            mScanCallback = scanCallback;
+        }
 
         public void cancel() {
             isCanceled = true;
@@ -481,9 +563,7 @@ public class CameraDeviceHandler {
                     }
                     mCamera.setParameters(params);
 
-                    // Notify to controller.
-                    OverlayViewFinderController.getInstance().getCurrentState()
-                            .onScanDone(focusCallbackImpl.isSuccess());
+                    mScanCallback.onScanDone(focusCallbackImpl.isSuccess());
                 }
             } else {
                 if (Log.IS_DEBUG) Log.logError(TAG, "Error. Camera is already released.");
@@ -520,17 +600,40 @@ public class CameraDeviceHandler {
     }
 
     /**
-     * Request cancel scan.
+     * Cancel scan.
      */
     public void requestCancelScanAsync() {
+        requestCancelScanAsync(null);
+    }
+
+    @Override
+    public void requestCancelScanAsync(CancelScanCallback cancelScanCallback) {
         // Cancel scan task.
         mScanTask.cancel();
 
         mBackWorker.execute(mCancelScanTask);
     }
 
-    private final CancelScanTask mCancelScanTask = new CancelScanTask();
+    private class CancelScanCallbackImpl implements CancelScanCallback {
+        @Override
+        public void onCancelScanDone() {
+            // NOP.
+        }
+    }
+
+    private final CancelScanTask mCancelScanTask = new CancelScanTask(new CancelScanCallbackImpl());
     private class CancelScanTask implements Runnable {
+        private CancelScanCallback mCancelScanCallback;
+
+        /**
+         * CONSTRUCTOR.
+         *
+         * @param cancelScanCallback
+         */
+        public CancelScanTask(CancelScanCallback cancelScanCallback) {
+            mCancelScanCallback = cancelScanCallback;
+        }
+
         @Override
         public void run() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "CancelScanTask.run() : E");
@@ -549,6 +652,8 @@ public class CameraDeviceHandler {
                 mCamera.setParameters(params);
             }
 
+            mCancelScanCallback.onCancelScanDone();
+
             if (Log.IS_DEBUG) Log.logDebug(TAG, "CancelScanTask.run() : X");
         }
     }
@@ -557,11 +662,41 @@ public class CameraDeviceHandler {
      * Request still capture.
      */
     public void requestStillCaptureAsync() {
-        Runnable stillCaptureTask = new StillCaptureTask();
+        requestStillCaptureAsync(new StillCaptureCallbackImpl());
+    }
+
+    private class StillCaptureCallbackImpl implements StillCaptureCallback {
+        @Override
+        public void onShutterDone(int requestId) {
+            OverlayViewFinderController.getInstance().getCurrentState().onShutterDone();
+        }
+
+        @Override
+        public void onCaptureDone(int requestId, byte[] data) {
+            OverlayViewFinderController.getInstance().getCurrentState().onStillCaptureDone(data);
+        }
+    }
+
+    @Override
+    public int requestStillCaptureAsync(StillCaptureCallback stillCaptureCallback) {
+        Runnable stillCaptureTask = new StillCaptureTask(stillCaptureCallback);
         mBackWorker.execute(stillCaptureTask);
+
+        return 0;
     }
 
     private class StillCaptureTask implements Runnable {
+        private StillCaptureCallback mStillCaptureCallback;
+
+        /**
+         * CONSTRUCTOR.
+         *
+         * @param stillCaptureCallback
+         */
+        public StillCaptureTask(StillCaptureCallback stillCaptureCallback) {
+            mStillCaptureCallback = stillCaptureCallback;
+        }
+
         @Override
         public void run() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StillCaptureTask.run() : E");
@@ -610,8 +745,7 @@ public class CameraDeviceHandler {
                 mCancelScanTask.run();
 
                 // Notify to controller.
-                OverlayViewFinderController.getInstance().getCurrentState()
-                        .onStillCaptureDone(pictureCallbackImpl.getJpegBuffer());
+                mStillCaptureCallback.onCaptureDone(0, pictureCallbackImpl.getJpegBuffer());
 
                 // Request store.
                 mStorageController.storePicture(pictureCallbackImpl.getJpegBuffer());
@@ -621,42 +755,42 @@ public class CameraDeviceHandler {
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StillCaptureTask.run() : X");
         }
-    }
 
-    private class ShutterCallbackImpl implements Camera.ShutterCallback {
-        @Override
-        public void onShutter() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onShutter()");
+        private class ShutterCallbackImpl implements Camera.ShutterCallback {
+            @Override
+            public void onShutter() {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "onShutter()");
 
-            // Notify to controller.
-            OverlayViewFinderController.getInstance().getCurrentState().onShutterDone();
-        }
-    }
-
-    private class PictureCallbackImpl implements Camera.PictureCallback {
-        private final CountDownLatch mLatch;
-        private byte[] mJpegBuffer = null;
-
-        /**
-         * CONSTRUCTOR.
-         *
-          * @param latch
-         */
-        public PictureCallbackImpl(CountDownLatch latch) {
-            mLatch = latch;
+                // Notify to controller.
+                mStillCaptureCallback.onShutterDone(0);
+            }
         }
 
-        @Override
-        public void onPictureTaken(byte[] jpegBuffer, Camera camera) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPictureTaken()");
+        private class PictureCallbackImpl implements Camera.PictureCallback {
+            private final CountDownLatch mLatch;
+            private byte[] mJpegBuffer = null;
 
-            mJpegBuffer = jpegBuffer;
+            /**
+             * CONSTRUCTOR.
+             *
+              * @param latch
+             */
+            public PictureCallbackImpl(CountDownLatch latch) {
+                mLatch = latch;
+            }
 
-            mLatch.countDown();
-        }
+            @Override
+            public void onPictureTaken(byte[] jpegBuffer, Camera camera) {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "onPictureTaken()");
 
-        public byte[] getJpegBuffer() {
-            return mJpegBuffer;
+                mJpegBuffer = jpegBuffer;
+
+                mLatch.countDown();
+            }
+
+            public byte[] getJpegBuffer() {
+                return mJpegBuffer;
+            }
         }
     }
 }
