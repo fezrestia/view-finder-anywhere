@@ -20,12 +20,14 @@
     <string-array
             name="overlay_view_finder_aspect_entry_labels"
     >
+        <item>1:1</item>
         <item>4:3</item>
         <item>16:9</item>
     </string-array>
     <string-array
             name="overlay_view_finder_aspect_entry_values"
     >
+        <item>1-1</item>
         <item>4-3</item>
         <item>16-9</item>
     </string-array>

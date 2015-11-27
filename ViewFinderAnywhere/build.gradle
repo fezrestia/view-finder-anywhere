@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 20
+    compileSdkVersion 23
     buildToolsVersion '23.0.1'
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere"
-        minSdkVersion 19
-        targetSdkVersion 20
+        minSdkVersion 20
+        targetSdkVersion 23
         versionCode 100
         versionName '1.00'
     }

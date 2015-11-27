@@ -1,11 +1,13 @@
 package com.fezrestia.android.viewfinderanywhere.device;
 
 import android.graphics.SurfaceTexture;
+import android.view.Surface;
+import android.view.TextureView;
 
 /**
  * Abstracted interface for all of the camera function enabler.
  */
-interface CameraPlatformInterface {
+public interface CameraPlatformInterface {
     /**
      * Release all of the binders, references, and resources.
      * This may block calling thread much time.
@@ -18,6 +20,7 @@ interface CameraPlatformInterface {
      * @param evfAspectWH
      * @param openCallback
      */
+    //TODO: consider set aspect timing.
     void openAsync(float evfAspectWH, OpenCallback openCallback);
 
     /**
@@ -52,12 +55,12 @@ interface CameraPlatformInterface {
     }
 
     /**
-     * Bind SurfaceTexture as preview stream.
+     * Bind TextureView as preview stream.
      *
-     * @param surface
+     * @param textureView
      * @param bindSurfaceCallback
      */
-    void bindPreviewSurfaceAsync(SurfaceTexture surface, BindSurfaceCallback bindSurfaceCallback);
+    void bindPreviewSurfaceAsync(TextureView textureView, BindSurfaceCallback bindSurfaceCallback);
 
     /**
      * Callback for camera and surface binding.

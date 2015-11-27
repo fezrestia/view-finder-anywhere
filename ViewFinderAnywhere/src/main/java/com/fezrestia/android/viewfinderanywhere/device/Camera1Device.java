@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.os.PowerManager;
 import android.view.OrientationEventListener;
 import android.view.Surface;
+import android.view.TextureView;
 import android.view.WindowManager;
 
 import com.fezrestia.android.util.log.Log;
@@ -381,10 +382,10 @@ public class Camera1Device implements CameraPlatformInterface {
     /**
      * Bind surface as preview stream.
      *
-     * @param surface
+     * @param textureView
      */
-    public void bindPreviewSurfaceAsync(SurfaceTexture surface) {
-        bindPreviewSurfaceAsync(surface, new BindSurfaceCallbackImpl());
+    public void bindPreviewSurfaceAsync(TextureView textureView) {
+        bindPreviewSurfaceAsync(textureView, new BindSurfaceCallbackImpl());
     }
 
     private class BindSurfaceCallbackImpl implements BindSurfaceCallback {
@@ -396,9 +397,9 @@ public class Camera1Device implements CameraPlatformInterface {
 
     @Override
     public void bindPreviewSurfaceAsync(
-            SurfaceTexture surface,
+            TextureView textureView,
             BindSurfaceCallback bindSurfaceCallback) {
-        Runnable task = new BindSurfaceTask(surface, bindSurfaceCallback);
+        Runnable task = new BindSurfaceTask(textureView.getSurfaceTexture(), bindSurfaceCallback);
         mBackWorker.execute(task);
     }
 

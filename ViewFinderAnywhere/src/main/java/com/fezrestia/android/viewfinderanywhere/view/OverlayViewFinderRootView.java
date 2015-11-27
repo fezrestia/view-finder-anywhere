@@ -182,7 +182,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
     private boolean mIsResumed = true;
 
     // View finder aspect.
-    private float mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_16_9;
+    private float mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_1_1;
 
     // Viewfinder grip size.
     private int mViewFinderGripSize = 0;
@@ -937,8 +937,8 @@ public class OverlayViewFinderRootView extends RelativeLayout {
      *
      * @return
      */
-    public SurfaceTexture getViewFinderSurface() {
-        return mViewFinder.getSurfaceTexture();
+    public TextureView getViewFinderSurface() {
+        return mViewFinder;
     }
 
     private final OnTouchListenerImpl mOnTouchListenerImpl = new OnTouchListenerImpl();
@@ -1278,8 +1278,8 @@ public class OverlayViewFinderRootView extends RelativeLayout {
         // Update UI.
         updateTotalUserInterface();
 
-        // Notify to device.
-        OverlayViewFinderController.getInstance().getCurrentState().onSurfaceReady();
+        // Force stop.
+        forceStop();
     }
 
     @Override

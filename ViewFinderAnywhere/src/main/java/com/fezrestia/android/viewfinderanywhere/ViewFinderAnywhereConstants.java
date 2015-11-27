@@ -3,11 +3,13 @@ package com.fezrestia.android.viewfinderanywhere;
 import android.view.Gravity;
 
 public class ViewFinderAnywhereConstants {
-    // Intent constants.
+    /** Intent constants. */
     public static final String INTENT_ACTION_FOCUS_KEY_DOUBLE_CLICK
             = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_FOCUS_KEY_DOUBLE_CLICK";
+    /** Intent constants. */
     public static final String INTENT_ACTION_TRIGGER_OVERLAY_VIEW_FINDER
             = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_TRIGGER_OVERLAY_VIEW_FINDER";
+    /** Intent constants. */
     public static final String INTENT_ACTION_REGISTER_UI_PLUG_IN
             = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_REGISTER_UI_PLUG_IN";
 
@@ -17,9 +19,11 @@ public class ViewFinderAnywhereConstants {
     public static final float VIEW_FINDER_SCALE_SMALL = 1.0f / 4.0f;
 
     /** Aspect ratio. */
-    public static final float ASPECT_RATIO_16_9 = 16.0f / 9.0f;
+    public static final float ASPECT_RATIO_1_1 = 1.0f / 1.0f;
     /** Aspect ratio. */
     public static final float ASPECT_RATIO_4_3 = 4.0f / 3.0f;
+    /** Aspect ratio. */
+    public static final float ASPECT_RATIO_16_9 = 16.0f / 9.0f;
 
     // SharedPreferences constants.
     /** View finder trigger key. */
@@ -41,6 +45,8 @@ public class ViewFinderAnywhereConstants {
 
     /** View finder aspect key. */
     public static final String KEY_VIEW_FINDER_ASPECT = "overlay_view_finder_aspect";
+    /** View finder aspect value.*/
+    public static final String VAL_VIEW_FINDER_ASPECT_1_1 = "1-1";
     /** View finder aspect value.*/
     public static final String VAL_VIEW_FINDER_ASPECT_4_3 = "4-3";
     /** View finder aspect value.*/

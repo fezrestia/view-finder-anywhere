@@ -14,6 +14,8 @@ import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.device.Camera1Device;
+import com.fezrestia.android.viewfinderanywhere.device.Camera2Device;
+import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface;
 import com.fezrestia.android.viewfinderanywhere.service.OverlayViewFinderService;
 import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView;
 
@@ -34,15 +36,18 @@ public class OverlayViewFinderController {
     private OverlayViewFinderRootView mRootView = null;
 
     // Camera handler.
-    private Camera1Device mCamera1Device = null;
+//    private Camera1Device mCamera1Device = null;
     // Target camera ID.
-    private static final int TARGET_CAMERA_ID = 0;
+//    private static final int TARGET_CAMERA_ID = 0;
+
+    // Camera2 handler.
+    private Camera2Device mCamera2Device = null;
 
     // Current state.
     private State mCurrentState = new State();
 
     // View finder aspect.
-    private float mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_16_9;
+    private float mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_1_1;
 
     // Receiver.
     private ScreenOffReceiver mScreenOffReceiver = null;
@@ -155,8 +160,12 @@ public class OverlayViewFinderController {
         mRootView.addToOverlayWindow();
 
         // Camera.
-        mCamera1Device = new Camera1Device(mContext, mUiWorker, TARGET_CAMERA_ID);
-        mCamera1Device.openAsync(mViewFinderAspectWH);
+//        mCamera1Device = new Camera1Device(mContext, mUiWorker, TARGET_CAMERA_ID);
+//        mCamera1Device.openAsync(mViewFinderAspectWH);
+
+        // Camera.
+        mCamera2Device = new Camera2Device(mContext, mUiWorker);
+//        mCamera2Device.openAsync(mViewFinderAspectWH, new OpenCallbackImpl());
 
         // Storage selector.
         mStartStorageSelectorTask = new StartStorageSelectorTask(mContext);
@@ -174,11 +183,13 @@ public class OverlayViewFinderController {
                 .getString(ViewFinderAnywhereConstants.KEY_VIEW_FINDER_ASPECT, null);
         if (aspect == null) {
             // Unexpected or not initialized yet. Use default.
-            mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_16_9;
+            mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_1_1;
         } else if (ViewFinderAnywhereConstants.VAL_VIEW_FINDER_ASPECT_16_9.equals(aspect)) {
             mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_16_9;
         } else if (ViewFinderAnywhereConstants.VAL_VIEW_FINDER_ASPECT_4_3.equals(aspect)) {
             mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_4_3;
+        } else if (ViewFinderAnywhereConstants.VAL_VIEW_FINDER_ASPECT_1_1.equals(aspect)) {
+            mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_1_1;
         } else {
             // NOP. Unexpected.
             throw new IllegalArgumentException("Unexpected Aspect.");
@@ -195,7 +206,8 @@ public class OverlayViewFinderController {
         changeStateTo(new StateInitialized());
 
         // Camera.
-        mCamera1Device.openAsync(mViewFinderAspectWH);
+//        mCamera1Device.openAsync(mViewFinderAspectWH);
+        mCamera2Device.openAsync(mViewFinderAspectWH, new OpenCallbackImpl());
 
         // Receiver.
         mScreenOffReceiver.enable(mContext);
@@ -250,7 +262,8 @@ public class OverlayViewFinderController {
         changeStateTo(new State());
 
         // Camera.
-        mCamera1Device.closeAsync();
+//        mCamera1Device.closeAsync();
+        mCamera2Device.closeAsync(new CloseCallbackImpl());
 
         // Receiver.
         mScreenOffReceiver.disable(mContext);
@@ -297,10 +310,15 @@ public class OverlayViewFinderController {
         changeStateTo(new State());
 
         // Release camera.
-        if (mCamera1Device != null) {
-            mCamera1Device.closeAsync();
-            mCamera1Device.release();
-            mCamera1Device = null;
+//        if (mCamera1Device != null) {
+//            mCamera1Device.closeAsync();
+//            mCamera1Device.release();
+//            mCamera1Device = null;
+//        }
+        if (mCamera2Device != null) {
+            mCamera2Device.closeAsync(new CloseCallbackImpl());
+            mCamera2Device.release();
+            mCamera2Device = null;
         }
 
         // Release receiver.
@@ -391,14 +409,16 @@ public class OverlayViewFinderController {
         public void onPreOpenRequested() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenRequested()");
 
-            mCamera1Device.openAsync(mViewFinderAspectWH);
+//            mCamera1Device.openAsync(mViewFinderAspectWH);
+            mCamera2Device.openAsync(mViewFinderAspectWH, new OpenCallbackImpl());
         }
 
         @Override
         public void onPreOpenCanceled() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenCanceled()");
 
-            mCamera1Device.closeAsync();
+//            mCamera1Device.closeAsync();
+            mCamera2Device.closeAsync(new CloseCallbackImpl());
         }
 
         @Override
@@ -504,6 +524,11 @@ public class OverlayViewFinderController {
         }
 
         @Override
+        public void onPreOpenCanceled() {
+            super.onPreOpenCanceled();
+        }
+
+        @Override
         public void onSurfaceReady() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady()");
 
@@ -518,7 +543,11 @@ public class OverlayViewFinderController {
             if (mIsCameraAlreadyReady && mIsSurfaceAlreadyReady) {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "Camera and surface are ready.");
 
-                mCamera1Device.bindPreviewSurfaceAsync(mRootView.getViewFinderSurface());
+//                mCamera1Device.bindPreviewSurfaceAsync(mRootView.getViewFinderSurface());
+                mCamera2Device.bindPreviewSurfaceAsync(
+                        mRootView.getViewFinderSurface(),
+                        new BindSurfaceCallbackImpl());
+
                 changeStateTo(new StateIdle());
             } else {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "Not camera and surface are ready yet.");
@@ -541,14 +570,17 @@ public class OverlayViewFinderController {
         public void onSurfaceReady() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady()");
 
-            mCamera1Device.bindPreviewSurfaceAsync(mRootView.getViewFinderSurface());
+//            mCamera1Device.bindPreviewSurfaceAsync(mRootView.getViewFinderSurface());
+            mCamera2Device.bindPreviewSurfaceAsync(
+                    mRootView.getViewFinderSurface(),
+                    new BindSurfaceCallbackImpl());
         }
 
         @Override
         public void requestScan() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "requestScan()");
 
-            mCamera1Device.requestScanAsync();
+//            mCamera1Device.requestScanAsync();
 
             changeStateTo(new StateScanning());
         }
@@ -571,14 +603,17 @@ public class OverlayViewFinderController {
         public void onSurfaceReady() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady()");
 
-            mCamera1Device.bindPreviewSurfaceAsync(mRootView.getViewFinderSurface());
+//            mCamera1Device.bindPreviewSurfaceAsync(mRootView.getViewFinderSurface());
+            mCamera2Device.bindPreviewSurfaceAsync(
+                    mRootView.getViewFinderSurface(),
+                    new BindSurfaceCallbackImpl());
         }
 
         @Override
         public void requestCancelScan() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "requestCancelScan()");
 
-            mCamera1Device.requestCancelScanAsync();
+//            mCamera1Device.requestCancelScanAsync();
             changeStateTo(new StateIdle());
         }
 
@@ -589,7 +624,7 @@ public class OverlayViewFinderController {
             if (mIsStillCaptureAlreadyRequested) {
                 changeStateTo(new StateScanDone(isSuccess));
                 changeStateTo(new StateStillCapturing());
-                mCamera1Device.requestStillCaptureAsync();
+//                mCamera1Device.requestStillCaptureAsync();
             } else {
                 changeStateTo(new StateScanDone(isSuccess));
             }
@@ -630,14 +665,17 @@ public class OverlayViewFinderController {
         public void onSurfaceReady() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady()");
 
-            mCamera1Device.bindPreviewSurfaceAsync(mRootView.getViewFinderSurface());
+//            mCamera1Device.bindPreviewSurfaceAsync(mRootView.getViewFinderSurface());
+            mCamera2Device.bindPreviewSurfaceAsync(
+                    mRootView.getViewFinderSurface(),
+                    new BindSurfaceCallbackImpl());
         }
 
         @Override
         public void requestCancelScan() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "requestCancelScan()");
 
-            mCamera1Device.requestCancelScanAsync();
+//            mCamera1Device.requestCancelScanAsync();
             changeStateTo(new StateIdle());
         }
 
@@ -645,7 +683,7 @@ public class OverlayViewFinderController {
         public void requestStillCapture() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStillCapture()");
 
-            mCamera1Device.requestStillCaptureAsync();
+//            mCamera1Device.requestStillCaptureAsync();
 
             changeStateTo(new StateStillCapturing());
         }
@@ -661,7 +699,10 @@ public class OverlayViewFinderController {
         public void onSurfaceReady() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady()");
 
-            mCamera1Device.bindPreviewSurfaceAsync(mRootView.getViewFinderSurface());
+//            mCamera1Device.bindPreviewSurfaceAsync(mRootView.getViewFinderSurface());
+            mCamera2Device.bindPreviewSurfaceAsync(
+                    mRootView.getViewFinderSurface(),
+                    new BindSurfaceCallbackImpl());
         }
 
         @Override
@@ -773,4 +814,43 @@ public class OverlayViewFinderController {
             OverlayViewFinderController.getInstance().getCurrentState().requestForceStop();
         }
     }
+
+
+
+    //// CAMERA PLATFORM INTERFACE CALLBACK ///////////////////////////////////////////////////////
+
+    private class OpenCallbackImpl implements CameraPlatformInterface.OpenCallback {
+        @Override
+        public void onOpened(boolean isSuccess) {
+            if (isSuccess) {
+                OverlayViewFinderController.getInstance().getCurrentState().onCameraReady();
+            } else {
+                OverlayViewFinderController.getInstance().getCurrentState().onCameraBusy();
+            }
+        }
+    }
+
+    private class CloseCallbackImpl implements CameraPlatformInterface.CloseCallback {
+        @Override
+        public void onClosed(boolean isSuccess) {
+
+
+
+        }
+    }
+
+    private class BindSurfaceCallbackImpl implements CameraPlatformInterface.BindSurfaceCallback {
+        @Override
+        public void onSurfaceBound(boolean isSuccess) {
+
+
+
+        }
+    }
+
+
+
+
+
+
 }
