@@ -1,6 +1,7 @@
 package com.fezrestia.android.viewfinderanywhere.device;
 
 import com.fezrestia.android.util.log.Log;
+import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -11,7 +12,6 @@ public class PlatformDependencyResolver {
 
     // Platform specifications.
     private static final Size PREFERRED_PREVIEW_SIZE_FOR_STILL = new Size(1280, 720);
-    private static final int PREFERRED_PICTURE_SIZE_WIDTH = 3840;
 
     // Aspect ratio clearance.
     private static final float ASPECT_RATIO_CLEARANCE = 0.01f;
@@ -68,11 +68,26 @@ public class PlatformDependencyResolver {
             throw new IllegalArgumentException("Supported size set is empty.");
         }
 
+        // Estimate aspect.
+        final float estimatedAspectWH;
+        final float diffTo43 = Math.abs(
+                ViewFinderAnywhereConstants.ASPECT_RATIO_4_3 - requiredAspectRatioWH);
+        final float diffTo169 = Math.abs(
+                ViewFinderAnywhereConstants.ASPECT_RATIO_16_9 - requiredAspectRatioWH);
+        if (diffTo43 < diffTo169) {
+            // Near to 4:3.
+            estimatedAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_4_3;
+        } else {
+            // Near to 16:9.
+            estimatedAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_16_9;
+        }
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "###### Estimated aspect = " + estimatedAspectWH);
+
         // Check aspect ratio.
         Set<Size> aspectAcceptable = new HashSet<Size>();
         for (Size eachSize : supportedPreviewSizeSet) {
             final float aspect = ((float) eachSize.getWidth()) / ((float) eachSize.getHeight());
-            if (Math.abs(requiredAspectRatioWH - aspect) < ASPECT_RATIO_CLEARANCE) {
+            if (Math.abs(estimatedAspectWH - aspect) < ASPECT_RATIO_CLEARANCE) {
                 // Valid.
                 aspectAcceptable.add(eachSize);
 
@@ -113,7 +128,6 @@ public class PlatformDependencyResolver {
         return ret;
     }
 
-
     /**
      * Get optimal picture size.
      *
@@ -132,11 +146,26 @@ public class PlatformDependencyResolver {
             throw new IllegalArgumentException("Supported size set is empty.");
         }
 
+        // Estimate aspect.
+        final float estimatedAspectWH;
+        final float diffTo43 = Math.abs(
+                ViewFinderAnywhereConstants.ASPECT_RATIO_4_3 - requiredAspectRatioWH);
+        final float diffTo169 = Math.abs(
+                ViewFinderAnywhereConstants.ASPECT_RATIO_16_9 - requiredAspectRatioWH);
+        if (diffTo43 < diffTo169) {
+            // Near to 4:3.
+            estimatedAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_4_3;
+        } else {
+            // Near to 16:9.
+            estimatedAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_16_9;
+        }
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "###### Estimated aspect = " + estimatedAspectWH);
+
         // Check aspect ratio.
         Set<Size> aspectAcceptable = new HashSet<Size>();
         for (Size eachSize : supportedPictureSizeSet) {
             final float aspect = ((float) eachSize.getWidth()) / ((float) eachSize.getHeight());
-            if (Math.abs(requiredAspectRatioWH - aspect) < ASPECT_RATIO_CLEARANCE) {
+            if (Math.abs(estimatedAspectWH - aspect) < ASPECT_RATIO_CLEARANCE) {
                 // Valid.
                 aspectAcceptable.add(eachSize);
 
@@ -144,35 +173,21 @@ public class PlatformDependencyResolver {
             }
         }
 
-        // Preferred size.
-        //TODO:Resolve platform dependency.
-        final int preferredWidth = PREFERRED_PICTURE_SIZE_WIDTH;
-
-        // Check size.
-        Size acceptableSize = null;
+        // Get MAX size.
+        Size maxSize = new Size(0, 0);
         for (Size eachSize : aspectAcceptable) {
-            if (preferredWidth < eachSize.getWidth()) {
-                // Too large.
-                continue;
+            if (maxSize.getWidth() < eachSize.getWidth()) {
+                maxSize = eachSize;
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "Size acceptable : " + maxSize.toString());
             }
-
-            if (acceptableSize == null) {
-                acceptableSize = eachSize;
-            } else {
-                if (acceptableSize.getWidth() < eachSize.getWidth()) {
-                    acceptableSize = eachSize;
-                }
-            }
-
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Size acceptable : " + eachSize.toString());
         }
 
         // Check result.
         Size ret;
-        if (acceptableSize != null) {
-            ret = acceptableSize;
-        } else {
+        if (maxSize.getWidth() == 0) {
             ret = (Size) supportedPictureSizeSet.toArray()[0];
+        } else {
+            ret = maxSize;
         }
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "Result : " + ret.toString());

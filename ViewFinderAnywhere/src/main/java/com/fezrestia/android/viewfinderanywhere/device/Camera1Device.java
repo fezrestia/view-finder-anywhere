@@ -1,10 +1,10 @@
 package com.fezrestia.android.viewfinderanywhere.device;
 
 import android.content.Context;
+import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.SensorManager;
-import android.media.MediaActionSound;
 import android.os.Handler;
 import android.os.PowerManager;
 import android.view.OrientationEventListener;
@@ -13,8 +13,7 @@ import android.view.TextureView;
 import android.view.WindowManager;
 
 import com.fezrestia.android.util.log.Log;
-import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
-import com.fezrestia.android.viewfinderanywhere.storage.StorageController;
+import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -39,16 +38,17 @@ public class Camera1Device implements CameraPlatformInterface {
     private Handler mUiWorker = null;
 
     // Target device ID.
-    private final int mCameraId;
+    private final int mCameraId = Camera.CameraInfo.CAMERA_FACING_BACK;
 
-    // Camera API 1.0 instance.
+    // Camera API 1.0 related.
     private Camera mCamera = null;
+    private float mEvfAspectWH = 1.0f;
+    private ScanTask mScanTask = null;
+    private PlatformDependencyResolver.Size mPreviewSize = null;
+    private static final int JPEG_QUALITY = 95;
 
-    // Storage.
-    private StorageController mStorageController = null;
-
-    // Sounds.
-    private MediaActionSound mScanSuccessSound = null;
+    // Snapshot request ID.
+    private int mRequestId = 0;
 
     // Wake lock.
     private PowerManager.WakeLock mWakeLock = null;
@@ -89,13 +89,10 @@ public class Camera1Device implements CameraPlatformInterface {
      * CONSTRUCTOR.
      *
      * @param context
-     * @param uiWorker
-     * @param cameraId
      */
-    public Camera1Device(Context context, Handler uiWorker, int cameraId) {
+    public Camera1Device(Context context) {
         mContext = context;
-        mUiWorker = uiWorker;
-        mCameraId = cameraId;
+        mUiWorker = ViewFinderAnywhereApplication.getUiThreadHandler();
 
         generateBackWorker();
     }
@@ -121,48 +118,25 @@ public class Camera1Device implements CameraPlatformInterface {
         shutdownBackWorker();
 
         mContext = null;
-        mUiWorker = null;
         mBackWorker = null;
-    }
-
-    /**
-     * Open camera.
-     *
-     * @param evfAspectWH
-     */
-    public void openAsync(float evfAspectWH) {
-        openAsync(evfAspectWH, new OpenCallbackImpl());
-    }
-
-    private class OpenCallbackImpl implements OpenCallback {
-        @Override
-        public void onOpened(boolean isSuccess) {
-            if (isSuccess) {
-                OverlayViewFinderController.getInstance().getCurrentState().onCameraReady();
-            } else {
-                OverlayViewFinderController.getInstance().getCurrentState().onCameraBusy();
-            }
-        }
     }
 
     @Override
     public void openAsync(float evfAspectWH, OpenCallback openCallback) {
-        Runnable task = new OpenTask(evfAspectWH, openCallback);
+        mEvfAspectWH = evfAspectWH;
+        Runnable task = new OpenTask(openCallback);
         mBackWorker.execute(task);
     }
 
     private class OpenTask implements Runnable {
-        private final float mViewFinderAspectRatioWH;
         private final OpenCallback mOpenCallback;
 
         /**
          * CONSTRUCTOR.
          *
-         * @param aspectRatioWH
          * @param openCallback
          */
-        public OpenTask(float aspectRatioWH, OpenCallback openCallback) {
-            mViewFinderAspectRatioWH = aspectRatioWH;
+        public OpenTask(OpenCallback openCallback) {
             mOpenCallback = openCallback;
         }
 
@@ -205,10 +179,9 @@ public class Camera1Device implements CameraPlatformInterface {
                                         eachSize.height);
                         supportedSizes.add(supported);
                     }
-                    PlatformDependencyResolver.Size previewSize
-                            = PlatformDependencyResolver.getOptimalPreviewSizeForStill(
-                                    mViewFinderAspectRatioWH,
-                                    supportedSizes);
+                    mPreviewSize = PlatformDependencyResolver.getOptimalPreviewSizeForStill(
+                            mEvfAspectWH,
+                            supportedSizes);
 
                     // Picture size.
                     supportedSizes.clear();
@@ -221,11 +194,11 @@ public class Camera1Device implements CameraPlatformInterface {
                     }
                     PlatformDependencyResolver.Size pictureSize
                             = PlatformDependencyResolver.getOptimalPictureSize(
-                                    mViewFinderAspectRatioWH,
+                                    mEvfAspectWH,
                                     supportedSizes);
 
                     // Parameters.
-                    params.setPreviewSize(previewSize.getWidth(), previewSize.getHeight());
+                    params.setPreviewSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
                     params.setPictureSize(pictureSize.getWidth(), pictureSize.getHeight());
                     for (String eachFocusMode : params.getSupportedFocusModes()) {
                         if (Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE
@@ -245,6 +218,9 @@ public class Camera1Device implements CameraPlatformInterface {
                     mCamera.startPreview();
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "Camera.startPreview() : X");
 
+                    // Request ID.
+                    mRequestId = 0;
+
                     // Orientation.
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "Create OrientationListenerImpl : E");
                     mOrientationEventListenerImpl = new OrientationEventListenerImpl(
@@ -252,19 +228,6 @@ public class Camera1Device implements CameraPlatformInterface {
                             SensorManager.SENSOR_DELAY_NORMAL);
                     mOrientationEventListenerImpl.enable();
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "Create OrientationListenerImpl : X");
-
-                    // Sound.
-                    if (mScanSuccessSound == null) {
-                        if (Log.IS_DEBUG) Log.logDebug(TAG, "Create MediaActionSound : E");
-                        mScanSuccessSound = new MediaActionSound();
-                        if (Log.IS_DEBUG) Log.logDebug(TAG, "Create MediaActionSound : X");
-                        if (Log.IS_DEBUG) Log.logDebug(TAG, "MediaActionSound.load() : E");
-                        mScanSuccessSound.load(MediaActionSound.FOCUS_COMPLETE);
-                        if (Log.IS_DEBUG) Log.logDebug(TAG, "MediaActionSound.load() : X");
-                    }
-
-                    // Storage.
-                    mStorageController = new StorageController(mContext, mUiWorker);
 
                     // Wake lock.
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "Acquire WakeLock : E");
@@ -300,20 +263,6 @@ public class Camera1Device implements CameraPlatformInterface {
             camera.setParameters(params);
         } catch (RuntimeException e) {
             e.printStackTrace();
-        }
-    }
-
-    /**
-     * Close camera.
-     */
-    public void closeAsync() {
-        closeAsync(new CloseCallbackImpl());
-    }
-
-    private class CloseCallbackImpl implements CloseCallback {
-        @Override
-        public void onClosed(boolean isSuccess) {
-            // NOP.
         }
     }
 
@@ -354,18 +303,6 @@ public class Camera1Device implements CameraPlatformInterface {
                 mOrientationEventListenerImpl = null;
             }
 
-            // Sounds.
-            if (mScanSuccessSound != null) {
-                mScanSuccessSound.release();
-                mScanSuccessSound = null;
-            }
-
-            // Storage.
-            if (mStorageController != null) {
-                mStorageController.release();
-                mStorageController = null;
-            }
-
             // Wake lock/
             if (mWakeLock != null) {
                 mWakeLock.release();
@@ -379,28 +316,55 @@ public class Camera1Device implements CameraPlatformInterface {
         }
     }
 
-    /**
-     * Bind surface as preview stream.
-     *
-     * @param textureView
-     */
-    public void bindPreviewSurfaceAsync(TextureView textureView) {
-        bindPreviewSurfaceAsync(textureView, new BindSurfaceCallbackImpl());
-    }
-
-    private class BindSurfaceCallbackImpl implements BindSurfaceCallback {
-        @Override
-        public void onSurfaceBound(boolean isSuccess) {
-            // NOP.
-        }
-    }
-
     @Override
     public void bindPreviewSurfaceAsync(
             TextureView textureView,
             BindSurfaceCallback bindSurfaceCallback) {
+
+        int previewWidth = mPreviewSize.getWidth();
+        int previewHeight = mPreviewSize.getHeight();
+        int finderWidth = textureView.getWidth();
+        int finderHeight = textureView.getHeight();
+
+        if (Log.IS_DEBUG) {
+            Log.logDebug(TAG, "  Preview Frame Size = " + previewWidth + "x" + previewHeight);
+            Log.logDebug(TAG, "  Finder Size = " + finderWidth + "x" + finderHeight);
+        }
+
+        // Transform matrix.
+        Matrix matrix = PDR2.getTextureViewTransformMatrix(
+                mContext,
+                previewWidth,
+                previewHeight,
+                finderWidth,
+                finderHeight);
+
+        Runnable uiTask = new SetTextureViewTransformTask(textureView, matrix);
+        mUiWorker.post(uiTask);
+
         Runnable task = new BindSurfaceTask(textureView.getSurfaceTexture(), bindSurfaceCallback);
         mBackWorker.execute(task);
+    }
+
+    private class SetTextureViewTransformTask implements Runnable {
+        private TextureView mTexView;
+        private Matrix mMatrix;
+
+        /**
+         * CONSTRUCTOR.
+         *
+         * @param texView
+         * @param matrix
+         */
+        public SetTextureViewTransformTask(TextureView texView, Matrix matrix) {
+            mTexView = texView;
+            mMatrix = matrix;
+        }
+
+        @Override
+        public void run() {
+            mTexView.setTransform(mMatrix);
+        }
     }
 
     private class BindSurfaceTask implements Runnable {
@@ -488,26 +452,12 @@ public class Camera1Device implements CameraPlatformInterface {
         }
     }
 
-    /**
-     * Start scan.
-     */
-    public void requestScanAsync() {
-        requestScanAsync(null);
-    }
-
     @Override
     public void requestScanAsync(ScanCallback scanCallback) {
+        mScanTask = new ScanTask(scanCallback);
         mBackWorker.execute(mScanTask);
     }
 
-    private class ScanCallbackImpl implements ScanCallback {
-        @Override
-        public void onScanDone(boolean isSuccess) {
-            OverlayViewFinderController.getInstance().getCurrentState().onScanDone(isSuccess);
-        }
-    }
-
-    private final ScanTask mScanTask = new ScanTask(new ScanCallbackImpl());
     private class ScanTask implements Runnable {
         private CountDownLatch mLatch = null;
         private boolean isCanceled = false;
@@ -549,11 +499,6 @@ public class Camera1Device implements CameraPlatformInterface {
                 }
 
                 if (!isCanceled) {
-                    // Sound.
-                    if (focusCallbackImpl.isSuccess()) {
-                        mScanSuccessSound.play(MediaActionSound.FOCUS_COMPLETE);
-                    }
-
                     // Lock AE and AWB.
                     Camera.Parameters params = mCamera.getParameters();
                     if (params.isAutoExposureLockSupported()) {
@@ -600,29 +545,14 @@ public class Camera1Device implements CameraPlatformInterface {
         }
     }
 
-    /**
-     * Cancel scan.
-     */
-    public void requestCancelScanAsync() {
-        requestCancelScanAsync(null);
-    }
-
     @Override
     public void requestCancelScanAsync(CancelScanCallback cancelScanCallback) {
         // Cancel scan task.
         mScanTask.cancel();
 
-        mBackWorker.execute(mCancelScanTask);
+        mBackWorker.execute(new CancelScanTask(cancelScanCallback));
     }
 
-    private class CancelScanCallbackImpl implements CancelScanCallback {
-        @Override
-        public void onCancelScanDone() {
-            // NOP.
-        }
-    }
-
-    private final CancelScanTask mCancelScanTask = new CancelScanTask(new CancelScanCallbackImpl());
     private class CancelScanTask implements Runnable {
         private CancelScanCallback mCancelScanCallback;
 
@@ -640,17 +570,7 @@ public class Camera1Device implements CameraPlatformInterface {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "CancelScanTask.run() : E");
 
             if (mCamera != null) {
-                mCamera.cancelAutoFocus();
-
-                // Unlock AE and AWB.
-                Camera.Parameters params = mCamera.getParameters();
-                if (params.isAutoExposureLockSupported()) {
-                    params.setAutoExposureLock(false);
-                }
-                if (params.isAutoWhiteBalanceLockSupported()) {
-                    params.setAutoWhiteBalanceLock(false);
-                }
-                mCamera.setParameters(params);
+                doCancelScan();
             }
 
             mCancelScanCallback.onCancelScanDone();
@@ -659,42 +579,40 @@ public class Camera1Device implements CameraPlatformInterface {
         }
     }
 
-    /**
-     * Request still capture.
-     */
-    public void requestStillCaptureAsync() {
-        requestStillCaptureAsync(new StillCaptureCallbackImpl());
-    }
+    private void doCancelScan() {
+        mCamera.cancelAutoFocus();
 
-    private class StillCaptureCallbackImpl implements StillCaptureCallback {
-        @Override
-        public void onShutterDone(int requestId) {
-            OverlayViewFinderController.getInstance().getCurrentState().onShutterDone();
+        // Unlock AE and AWB.
+        Camera.Parameters params = mCamera.getParameters();
+        if (params.isAutoExposureLockSupported()) {
+            params.setAutoExposureLock(false);
         }
-
-        @Override
-        public void onCaptureDone(int requestId, byte[] data) {
-            OverlayViewFinderController.getInstance().getCurrentState().onStillCaptureDone(data);
+        if (params.isAutoWhiteBalanceLockSupported()) {
+            params.setAutoWhiteBalanceLock(false);
         }
+        mCamera.setParameters(params);
     }
 
     @Override
     public int requestStillCaptureAsync(StillCaptureCallback stillCaptureCallback) {
-        Runnable stillCaptureTask = new StillCaptureTask(stillCaptureCallback);
+        ++mRequestId;
+        Runnable stillCaptureTask = new StillCaptureTask(mRequestId, stillCaptureCallback);
         mBackWorker.execute(stillCaptureTask);
-
-        return 0;
+        return mRequestId;
     }
 
     private class StillCaptureTask implements Runnable {
+        private final int mRequestId;
         private StillCaptureCallback mStillCaptureCallback;
 
         /**
          * CONSTRUCTOR.
          *
+         * @param requestId
          * @param stillCaptureCallback
          */
-        public StillCaptureTask(StillCaptureCallback stillCaptureCallback) {
+        public StillCaptureTask(int requestId, StillCaptureCallback stillCaptureCallback) {
+            mRequestId = requestId;
             mStillCaptureCallback = stillCaptureCallback;
         }
 
@@ -703,9 +621,6 @@ public class Camera1Device implements CameraPlatformInterface {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StillCaptureTask.run() : E");
 
             if (mCamera != null) {
-                final CountDownLatch latch = new CountDownLatch(1);
-                PictureCallbackImpl pictureCallbackImpl = new PictureCallbackImpl(latch);
-
                 // Parameters.
                 Camera.Parameters params = mCamera.getParameters();
                 // Orientation.
@@ -730,7 +645,12 @@ public class Camera1Device implements CameraPlatformInterface {
                 mCamera.setParameters(params);
 
                 // Do capture.
-                mCamera.takePicture(new ShutterCallbackImpl(), null, pictureCallbackImpl);
+                final CountDownLatch latch = new CountDownLatch(1);
+                PictureCallbackImpl pictCallback = new PictureCallbackImpl(latch);
+                mCamera.takePicture(
+                        new ShutterCallbackImpl(),
+                        null,
+                        pictCallback);
 
                 try {
                     latch.await();
@@ -743,13 +663,15 @@ public class Camera1Device implements CameraPlatformInterface {
                 mCamera.startPreview();
 
                 // Reset lock state.
-                mCancelScanTask.run();
+                doCancelScan();
 
-                // Notify to controller.
-                mStillCaptureCallback.onCaptureDone(0, pictureCallbackImpl.getJpegBuffer());
-
-                // Request store.
-                mStorageController.storePicture(pictureCallbackImpl.getJpegBuffer());
+                // Process JPEG and notify.
+                HandleJpegTask task = new HandleJpegTask(
+                        pictCallback.getJpegBuffer(),
+                        rotation,
+                        mEvfAspectWH,
+                        JPEG_QUALITY);
+                mBackWorker.execute(task);
             } else {
                 if (Log.IS_DEBUG) Log.logError(TAG, "Error. Camera is already released.");
             }
@@ -763,7 +685,7 @@ public class Camera1Device implements CameraPlatformInterface {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "onShutter()");
 
                 // Notify to controller.
-                mStillCaptureCallback.onShutterDone(0);
+                mStillCaptureCallback.onShutterDone(mRequestId);
             }
         }
 
@@ -791,6 +713,56 @@ public class Camera1Device implements CameraPlatformInterface {
 
             public byte[] getJpegBuffer() {
                 return mJpegBuffer;
+            }
+        }
+
+        private class HandleJpegTask implements Runnable {
+            private final byte[] mSrcJpeg;
+            private final int mRotation;
+            private final float mCropAspectWH;
+            private final int mJpegQuality;
+            private byte[] mResultJpeg = null;
+
+            /**
+             * CONSTRUCTOR.
+             *
+             * @param srcJpeg
+             * @param rotation
+             * @param cropAspectWH
+             * @param jpegQuality
+             */
+            public HandleJpegTask(
+                    byte[] srcJpeg,
+                    int rotation,
+                    float cropAspectWH,
+                    int jpegQuality) {
+                mSrcJpeg = srcJpeg;
+                mRotation = rotation;
+                mCropAspectWH = cropAspectWH;
+                mJpegQuality = jpegQuality;
+            }
+
+            @Override
+            public void run() {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "HandleJpegTask.run() : E");
+
+                mResultJpeg = PDR2.doCropRotJpeg(
+                        mSrcJpeg,
+                        mRotation,
+                        mCropAspectWH,
+                        mJpegQuality);
+
+                mUiWorker.post(new NotifyResultJpegTask());
+
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "HandleJpegTask.run() : X");
+            }
+
+            private class NotifyResultJpegTask implements Runnable {
+                @Override
+                public void run (){
+                    // Notify to controller.
+                    mStillCaptureCallback.onCaptureDone(mRequestId, mResultJpeg);
+                }
             }
         }
     }

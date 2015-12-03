@@ -17,6 +17,7 @@ import com.fezrestia.android.viewfinderanywhere.device.Camera1Device;
 import com.fezrestia.android.viewfinderanywhere.device.Camera2Device;
 import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface;
 import com.fezrestia.android.viewfinderanywhere.service.OverlayViewFinderService;
+import com.fezrestia.android.viewfinderanywhere.storage.StorageController;
 import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView;
 
 public class OverlayViewFinderController {
@@ -24,10 +25,10 @@ public class OverlayViewFinderController {
     private static final String TAG = OverlayViewFinderController.class.getSimpleName();
 
     // Master context.
-    private  Context mContext;
+    private  Context mContext = null;
 
-    // UI thread worker.
-    private Handler mUiWorker = new Handler();
+    // UI thread handler.
+    private Handler mUiWorker = null;
 
     // Singleton instance
     private static final OverlayViewFinderController INSTANCE = new OverlayViewFinderController();
@@ -35,13 +36,8 @@ public class OverlayViewFinderController {
     // Overlay view.
     private OverlayViewFinderRootView mRootView = null;
 
-    // Camera handler.
-//    private Camera1Device mCamera1Device = null;
-    // Target camera ID.
-//    private static final int TARGET_CAMERA_ID = 0;
-
-    // Camera2 handler.
-    private Camera2Device mCamera2Device = null;
+    // Camera platform interface.
+    private CameraPlatformInterface mCamera = null;
 
     // Current state.
     private State mCurrentState = new State();
@@ -55,9 +51,23 @@ public class OverlayViewFinderController {
     // Trigger failed delay.
     private static final int TRIGGER_FAILED_FEEDBACK_DELAY_MILLIS = 1000;
 
+    // Storage.
+    private StorageController mStorageController = null;
+
     // Storage selector.
     private StartStorageSelectorTask mStartStorageSelectorTask = null;
     private StopStorageSelectorTask mStopStorageSelectorTask = null;
+
+    // API level.
+    private CameraApiLevel mCamApiLv = CameraApiLevel.CAMERA_API_1;
+
+    /**
+     * Used camera API level.
+     */
+    public enum CameraApiLevel {
+        CAMERA_API_1,
+        CAMERA_API_2,
+    }
 
     /**
      * Life cycle trigger interface.
@@ -115,7 +125,7 @@ public class OverlayViewFinderController {
      * CONSTRUCTOR.
      */
     private OverlayViewFinderController() {
-        // NOP.
+        mUiWorker = ViewFinderAnywhereApplication.getUiThreadHandler();
     }
 
     /**
@@ -160,12 +170,18 @@ public class OverlayViewFinderController {
         mRootView.addToOverlayWindow();
 
         // Camera.
-//        mCamera1Device = new Camera1Device(mContext, mUiWorker, TARGET_CAMERA_ID);
-//        mCamera1Device.openAsync(mViewFinderAspectWH);
+        switch (mCamApiLv) {
+            case CAMERA_API_1:
+                mCamera = new Camera1Device(mContext);
+                break;
 
-        // Camera.
-        mCamera2Device = new Camera2Device(mContext, mUiWorker);
-//        mCamera2Device.openAsync(mViewFinderAspectWH, new OpenCallbackImpl());
+            case CAMERA_API_2:
+                mCamera = new Camera2Device(mContext, mUiWorker);
+                break;
+
+            default:
+                throw new IllegalArgumentException("Unknown API level.");
+        }
 
         // Storage selector.
         mStartStorageSelectorTask = new StartStorageSelectorTask(mContext);
@@ -174,10 +190,17 @@ public class OverlayViewFinderController {
         // Receiver.
         mScreenOffReceiver = new ScreenOffReceiver();
 
+        // Storage.
+        mStorageController = new StorageController(mContext, mUiWorker);
+
         if (Log.IS_DEBUG) Log.logDebug(TAG, "start() : X");
     }
 
     private void loadPreferences() {
+        // Level.
+        //TODO: Read from preferences.
+        mCamApiLv = CameraApiLevel.CAMERA_API_2;
+
         // Aspect.
         String aspect = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
                 .getString(ViewFinderAnywhereConstants.KEY_VIEW_FINDER_ASPECT, null);
@@ -206,19 +229,20 @@ public class OverlayViewFinderController {
         changeStateTo(new StateInitialized());
 
         // Camera.
-//        mCamera1Device.openAsync(mViewFinderAspectWH);
-        mCamera2Device.openAsync(mViewFinderAspectWH, new OpenCallbackImpl());
+        mCamera.openAsync(mViewFinderAspectWH, new OpenCallbackImpl());
 
         // Receiver.
         mScreenOffReceiver.enable(mContext);
 
         // Storage selector.
         if (ViewFinderAnywhereApplication.isStorageSelectorEnabled()) {
+            int delayedMillis;
             if (mRootView.isAttachedToWindow()) {
-                mUiWorker.postDelayed(mStartStorageSelectorTask, 200);//TODO:Timing
+                delayedMillis = 200;
             } else {
-                mUiWorker.postDelayed(mStartStorageSelectorTask, 1000);//TODO:Timing
+                delayedMillis = 1000;
             }
+            mUiWorker.postDelayed(mStartStorageSelectorTask, delayedMillis);
         }
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "resume() : X");
@@ -262,8 +286,7 @@ public class OverlayViewFinderController {
         changeStateTo(new State());
 
         // Camera.
-//        mCamera1Device.closeAsync();
-        mCamera2Device.closeAsync(new CloseCallbackImpl());
+        mCamera.closeAsync(new CloseCallbackImpl());
 
         // Receiver.
         mScreenOffReceiver.disable(mContext);
@@ -310,21 +333,22 @@ public class OverlayViewFinderController {
         changeStateTo(new State());
 
         // Release camera.
-//        if (mCamera1Device != null) {
-//            mCamera1Device.closeAsync();
-//            mCamera1Device.release();
-//            mCamera1Device = null;
-//        }
-        if (mCamera2Device != null) {
-            mCamera2Device.closeAsync(new CloseCallbackImpl());
-            mCamera2Device.release();
-            mCamera2Device = null;
+        if (mCamera != null) {
+            mCamera.closeAsync(new CloseCallbackImpl());
+            mCamera.release();
+            mCamera = null;
         }
 
         // Release receiver.
         if (mScreenOffReceiver != null) {
             mScreenOffReceiver.disable(mContext);
             mScreenOffReceiver = null;
+        }
+
+        // Storage.
+        if (mStorageController != null) {
+            mStorageController.release();
+            mStorageController = null;
         }
 
         // Storage selector.
@@ -366,6 +390,7 @@ public class OverlayViewFinderController {
         void onCameraReady();
         void onCameraBusy();
         void onScanDone(boolean isSuccess);
+        void onCancelScanDone();
         void onShutterDone();
         void onStillCaptureDone(byte[] jpegBuffer);
     }
@@ -409,16 +434,14 @@ public class OverlayViewFinderController {
         public void onPreOpenRequested() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenRequested()");
 
-//            mCamera1Device.openAsync(mViewFinderAspectWH);
-            mCamera2Device.openAsync(mViewFinderAspectWH, new OpenCallbackImpl());
+            mCamera.openAsync(mViewFinderAspectWH, new OpenCallbackImpl());
         }
 
         @Override
         public void onPreOpenCanceled() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenCanceled()");
 
-//            mCamera1Device.closeAsync();
-            mCamera2Device.closeAsync(new CloseCallbackImpl());
+            mCamera.closeAsync(new CloseCallbackImpl());
         }
 
         @Override
@@ -462,6 +485,11 @@ public class OverlayViewFinderController {
         @Override
         public void onScanDone(boolean isSuccess) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onScanDone() : NOP");
+        }
+
+        @Override
+        public void onCancelScanDone() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCancelScanDone() : NOP");
         }
 
         @Override
@@ -543,8 +571,7 @@ public class OverlayViewFinderController {
             if (mIsCameraAlreadyReady && mIsSurfaceAlreadyReady) {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "Camera and surface are ready.");
 
-//                mCamera1Device.bindPreviewSurfaceAsync(mRootView.getViewFinderSurface());
-                mCamera2Device.bindPreviewSurfaceAsync(
+                mCamera.bindPreviewSurfaceAsync(
                         mRootView.getViewFinderSurface(),
                         new BindSurfaceCallbackImpl());
 
@@ -570,8 +597,7 @@ public class OverlayViewFinderController {
         public void onSurfaceReady() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady()");
 
-//            mCamera1Device.bindPreviewSurfaceAsync(mRootView.getViewFinderSurface());
-            mCamera2Device.bindPreviewSurfaceAsync(
+            mCamera.bindPreviewSurfaceAsync(
                     mRootView.getViewFinderSurface(),
                     new BindSurfaceCallbackImpl());
         }
@@ -580,7 +606,7 @@ public class OverlayViewFinderController {
         public void requestScan() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "requestScan()");
 
-//            mCamera1Device.requestScanAsync();
+            mCamera.requestScanAsync(new ScanCallbackImpl());
 
             changeStateTo(new StateScanning());
         }
@@ -603,8 +629,7 @@ public class OverlayViewFinderController {
         public void onSurfaceReady() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady()");
 
-//            mCamera1Device.bindPreviewSurfaceAsync(mRootView.getViewFinderSurface());
-            mCamera2Device.bindPreviewSurfaceAsync(
+            mCamera.bindPreviewSurfaceAsync(
                     mRootView.getViewFinderSurface(),
                     new BindSurfaceCallbackImpl());
         }
@@ -613,21 +638,26 @@ public class OverlayViewFinderController {
         public void requestCancelScan() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "requestCancelScan()");
 
-//            mCamera1Device.requestCancelScanAsync();
-            changeStateTo(new StateIdle());
+            mCamera.requestCancelScanAsync(new CancelScanCallbackImpl());
         }
 
-        @Override
         public void onScanDone(boolean isSuccess) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onScanDone()");
 
             if (mIsStillCaptureAlreadyRequested) {
                 changeStateTo(new StateScanDone(isSuccess));
                 changeStateTo(new StateStillCapturing());
-//                mCamera1Device.requestStillCaptureAsync();
+                mCamera.requestStillCaptureAsync(new StillCaptureCallbackImpl());
             } else {
                 changeStateTo(new StateScanDone(isSuccess));
             }
+        }
+
+        @Override
+        public void onCancelScanDone() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCancelScanDone()");
+
+            changeStateTo(new StateIdle());
         }
 
         @Override
@@ -665,8 +695,7 @@ public class OverlayViewFinderController {
         public void onSurfaceReady() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady()");
 
-//            mCamera1Device.bindPreviewSurfaceAsync(mRootView.getViewFinderSurface());
-            mCamera2Device.bindPreviewSurfaceAsync(
+            mCamera.bindPreviewSurfaceAsync(
                     mRootView.getViewFinderSurface(),
                     new BindSurfaceCallbackImpl());
         }
@@ -675,17 +704,23 @@ public class OverlayViewFinderController {
         public void requestCancelScan() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "requestCancelScan()");
 
-//            mCamera1Device.requestCancelScanAsync();
-            changeStateTo(new StateIdle());
+            mCamera.requestCancelScanAsync(new CancelScanCallbackImpl());
         }
 
         @Override
         public void requestStillCapture() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStillCapture()");
 
-//            mCamera1Device.requestStillCaptureAsync();
+            mCamera.requestStillCaptureAsync(new StillCaptureCallbackImpl());
 
             changeStateTo(new StateStillCapturing());
+        }
+
+        @Override
+        public void onCancelScanDone() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCancelScanDone()");
+
+            changeStateTo(new StateIdle());
         }
     }
 
@@ -699,8 +734,7 @@ public class OverlayViewFinderController {
         public void onSurfaceReady() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady()");
 
-//            mCamera1Device.bindPreviewSurfaceAsync(mRootView.getViewFinderSurface());
-            mCamera2Device.bindPreviewSurfaceAsync(
+            mCamera.bindPreviewSurfaceAsync(
                     mRootView.getViewFinderSurface(),
                     new BindSurfaceCallbackImpl());
         }
@@ -708,7 +742,10 @@ public class OverlayViewFinderController {
         @Override
         public void onShutterDone() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onShutterDone()");
-            // NOP.
+
+            // Clear UI.
+            mRootView.getHandler().post(mClear);
+            mRootView.getHandler().post(mOnShutterDone);
         }
 
         @Override
@@ -761,6 +798,15 @@ public class OverlayViewFinderController {
         @Override
         public void run() {
             mRootView.getVisualFeedbackTrigger().onScanDone(mIsSuccess);
+        }
+    }
+
+    private final VisualFeedbackOnShutterDoneTask mOnShutterDone
+            = new VisualFeedbackOnShutterDoneTask();
+    private class VisualFeedbackOnShutterDoneTask implements Runnable {
+        @Override
+        public void run() {
+            mRootView.getVisualFeedbackTrigger().onShutterDone();
         }
     }
 
@@ -833,24 +879,44 @@ public class OverlayViewFinderController {
     private class CloseCallbackImpl implements CameraPlatformInterface.CloseCallback {
         @Override
         public void onClosed(boolean isSuccess) {
-
-
-
+            // NOP.
         }
     }
 
     private class BindSurfaceCallbackImpl implements CameraPlatformInterface.BindSurfaceCallback {
         @Override
         public void onSurfaceBound(boolean isSuccess) {
-
-
-
+            // NOP.
         }
     }
 
+    private class ScanCallbackImpl implements CameraPlatformInterface.ScanCallback {
+        @Override
+        public void onScanDone(boolean isSuccess) {
+            OverlayViewFinderController.getInstance().getCurrentState().onScanDone(isSuccess);
+        }
+    }
 
+    private class CancelScanCallbackImpl implements CameraPlatformInterface.CancelScanCallback {
+        @Override
+        public void onCancelScanDone() {
+            OverlayViewFinderController.getInstance().getCurrentState().onCancelScanDone();
+        }
+    }
 
+    private class StillCaptureCallbackImpl
+            implements CameraPlatformInterface.StillCaptureCallback {
+        @Override
+        public void onShutterDone(int requestId) {
+            OverlayViewFinderController.getInstance().getCurrentState().onShutterDone();
+        }
 
+        @Override
+        public void onCaptureDone(int requestId, byte[] data) {
+            OverlayViewFinderController.getInstance().getCurrentState().onStillCaptureDone(data);
 
-
+            // Request store.
+            mStorageController.storePicture(data);
+        }
+    }
 }

@@ -59,6 +59,14 @@
                 android:layout_height="match_parent"
             />
 
+            <!-- Shutter feedback view. -->
+            <ImageView
+                android:id="@+id/shutter_feedback"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="#000000"
+            />
+
             <!-- Scan done indicator -->
             <FrameLayout
                 android:id="@+id/scan_indicator_container"

@@ -1,5 +1,7 @@
 package com.fezrestia.android.util.log;
 
+import android.os.SystemClock;
+
 public class Log {
     // All area total log trigger.
     public static final boolean IS_DEBUG = true;
@@ -26,7 +28,7 @@ public class Log {
 
     private static void log(String globalTag, String localTag, String event) {
         StringBuilder builder = new StringBuilder().append("[").append(globalTag).append("] ")
-                .append("[TIME = ").append(System.currentTimeMillis()).append("] ")
+                .append("[TIME = ").append(SystemClock.uptimeMillis()).append("] ")
                 .append("[").append(localTag).append("]")
                 .append("[").append(Thread.currentThread().getName()).append("] ")
                 .append(": ").append(event);

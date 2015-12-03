@@ -1,5 +1,7 @@
 package com.fezrestia.android.viewfinderanywhere.activity;
 
+import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -9,6 +11,8 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
@@ -16,6 +20,7 @@ import android.preference.MultiSelectListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 
 import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
@@ -72,6 +77,16 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
     public void onResume() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume()");
         super.onResume();
+
+        // Mandatory permission check.
+        if (isFinishing()) {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "App is in finishing sequence.");
+            return;
+        }
+        if (checkMandatoryPermissions()) {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "Return immediately for permission.");
+            return;
+        }
 
         // Reset.
         mUiPlugInPackageList.clear();
@@ -425,16 +440,22 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
         // Scan files.
         if (Log.IS_DEBUG) Log.logDebug(TAG, "listFiles() DONE");
         if (Log.IS_DEBUG) {
-            for (File eachFile : fileList) {
-                Log.logDebug(TAG, "path = " + eachFile.getPath());
+            if (fileList != null) {
+                for (File eachFile : fileList) {
+                    Log.logDebug(TAG, "path = " + eachFile.getPath());
+                }
+            } else {
+                Log.logDebug(TAG, "File List is NULL");
             }
         }
         // Scan directories.
         List<File> dirList = new ArrayList<>();
-        for (File eachFile : fileList) {
-            if (!eachFile.isFile()) {
-                // Directory.
-                dirList.add(eachFile);
+        if (fileList != null) {
+            for (File eachFile : fileList) {
+                if (!eachFile.isFile()) {
+                    // Directory.
+                    dirList.add(eachFile);
+                }
             }
         }
         if (Log.IS_DEBUG) Log.logDebug(TAG, "!isFile() DONE");
@@ -481,4 +502,122 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
         findPreference(ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY)
                 .setEnabled(isEnabled);
     }
+
+    //// RUNTIME PERMISSION ///////////////////////////////////////////////////////////////////////
+
+    private static final int REQUEST_CODE_MANAGE_OVERLAY_PERMISSION = 100;
+    private static final int REQUEST_CODE_MANAGE_PERMISSIONS = 200;
+
+    private boolean isRuntimePermissionRequired() {
+        return Build.VERSION_CODES.M <= Build.VERSION.SDK_INT;
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    private boolean isSystemAlertWindowPermissionGranted() {
+        return Settings.canDrawOverlays(this);
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    private boolean isCameraPermissionGranted() {
+        return checkSelfPermission(Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    private boolean isWriteStoragePermissionGranted() {
+        return checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    private boolean isReadStoragePermissionGranted() {
+        return checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /**
+     * Check permission.
+     *
+     * @return immediateReturnRequired
+     */
+    @TargetApi(Build.VERSION_CODES.M)
+    private boolean checkMandatoryPermissions() {
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "checkMandatoryPermissions()");
+
+        if (isRuntimePermissionRequired()) {
+            if (!isSystemAlertWindowPermissionGranted()) {
+                // Start permission setting.
+                Intent intent = new Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:" + getPackageName()));
+                startActivityForResult(intent, REQUEST_CODE_MANAGE_OVERLAY_PERMISSION);
+
+                return true;
+            }
+
+            List<String> permissions = new ArrayList<String>();
+
+            if (!isCameraPermissionGranted()) {
+                permissions.add(Manifest.permission.CAMERA);
+            }
+            if (!isWriteStoragePermissionGranted()) {
+                permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            }
+            if (!isReadStoragePermissionGranted()) {
+                permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+            }
+
+            if (!permissions.isEmpty()) {
+                requestPermissions(
+                        permissions.toArray(new String[]{}),
+                        REQUEST_CODE_MANAGE_PERMISSIONS);
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "onActivityResult()");
+
+        if (requestCode == REQUEST_CODE_MANAGE_OVERLAY_PERMISSION) {
+            if (!isSystemAlertWindowPermissionGranted()) {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "  Overlay permission is not granted yet.");
+                finish();
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(
+            int  requestCode,
+            String[] permissions,
+            int[] grantResults) {
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "onRequestPermissionsResult()");
+
+        if (requestCode == REQUEST_CODE_MANAGE_PERMISSIONS) {
+            if (!isCameraPermissionGranted()) {
+                if (Log.IS_DEBUG) Log.logDebug(TAG,
+                        "  Camera permission is not granted yet.");
+                finish();
+            }
+            if (!isWriteStoragePermissionGranted()) {
+                if (Log.IS_DEBUG) Log.logDebug(TAG,
+                        "  Write storage permission is not granted yet.");
+                finish();
+            }
+            if (!isReadStoragePermissionGranted()) {
+                if (Log.IS_DEBUG) Log.logDebug(TAG,
+                        "  Read storage permission is not granted yet.");
+                finish();
+            }
+        }
+    }
+
+
+
 }

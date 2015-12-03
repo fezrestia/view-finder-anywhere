@@ -2,6 +2,8 @@ package com.fezrestia.android.viewfinderanywhere.device;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Rect;
@@ -10,6 +12,8 @@ import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
 import android.util.Size;
@@ -19,11 +23,14 @@ import android.view.WindowManager;
 import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 /**
  * Platform Dependency Resolver based on Camera API 2.0.
  */
+@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class PDR2 {
     // Log tag.
     public static final String TAG = "PDR2";
@@ -35,7 +42,6 @@ public class PDR2 {
      * @return
      * @throws CameraAccessException
      */
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public static String getBackCameraId(CameraManager camMng) throws CameraAccessException {
         String[] ids = camMng.getCameraIdList();
 
@@ -65,13 +71,11 @@ public class PDR2 {
         return null;
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public static void logOutputImageFormat(StreamConfigurationMap streamConfigMap) {
         android.util.Log.e("TraceLog", "###### SUPPORTED OUTPUT FORMATS");
         logImageFormats(streamConfigMap, streamConfigMap.getOutputFormats());
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private static void logImageFormats(StreamConfigurationMap streamConfigMap, int[] formats) {
         for (int eachFormat : formats) {
             switch (eachFormat) {
@@ -141,7 +145,6 @@ public class PDR2 {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public static void logSurfaceTextureOutputSizes(StreamConfigurationMap configMap) {
         Size[] supportedSizes = configMap.getOutputSizes(SurfaceTexture.class);
 
@@ -152,6 +155,125 @@ public class PDR2 {
         }
     }
 
+    public static void logAfTrigger(Integer afTrigger) {
+        if (afTrigger == null) {
+            android.util.Log.e("TraceLog", "### AF Trigger == NULL");
+            return;
+        }
+
+        int trigger = afTrigger.intValue();
+
+        switch (trigger) {
+            case CaptureResult.CONTROL_AF_TRIGGER_CANCEL:
+                android.util.Log.e("TraceLog", "### AF Trigger == CANCEL");
+                break;
+            case CaptureResult.CONTROL_AF_TRIGGER_IDLE:
+                android.util.Log.e("TraceLog", "### AF Trigger == IDLE");
+                break;
+            case CaptureResult.CONTROL_AF_TRIGGER_START:
+                android.util.Log.e("TraceLog", "### AF Trigger == START");
+                break;
+            default:
+                android.util.Log.e("TraceLog", "### AF Trigger == default");
+                break;
+        }
+    }
+
+    public static void logAfState(Integer afState) {
+        if (afState == null) {
+            android.util.Log.e("TraceLog", "### AF State == NULL");
+            return;
+        }
+
+        int state = afState.intValue();
+
+        switch (state) {
+            case CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN:
+                android.util.Log.e("TraceLog", "### AF State == ACTIVE_SCAN");
+                break;
+            case CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED:
+                android.util.Log.e("TraceLog", "### AF State == FOCUSED_LOCKED");
+                break;
+            case CaptureResult.CONTROL_AF_STATE_INACTIVE:
+                android.util.Log.e("TraceLog", "### AF State == INACTIVE");
+                break;
+            case CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED:
+                android.util.Log.e("TraceLog", "### AF State == NOT_FOCUSED_LOCKED");
+                break;
+            case CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED:
+                android.util.Log.e("TraceLog", "### AF State == PASSIVE_FOCUSED");
+                break;
+            case CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN:
+                android.util.Log.e("TraceLog", "### AF State == PASSIVE_SCAN");
+                break;
+            case CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED:
+                android.util.Log.e("TraceLog", "### AF State == PASSIVE_UNFOCUSED");
+                break;
+            default:
+                android.util.Log.e("TraceLog", "### AF State == default");
+                break;
+        }
+    }
+
+    public static void logAeTrigger(Integer aeTrigger) {
+        if (aeTrigger == null) {
+            android.util.Log.e("TraceLog", "### AE Trigger == NULL");
+            return;
+        }
+
+        int trigger = aeTrigger.intValue();
+
+        switch (trigger) {
+            case CaptureResult.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL:
+                android.util.Log.e("TraceLog", "### AE Trigger == CANCEL");
+                break;
+            case CaptureResult.CONTROL_AE_PRECAPTURE_TRIGGER_IDLE:
+                android.util.Log.e("TraceLog", "### AE Trigger == IDLE");
+                break;
+            case CaptureResult.CONTROL_AE_PRECAPTURE_TRIGGER_START:
+                android.util.Log.e("TraceLog", "### AE Trigger == START");
+                break;
+            default:
+                android.util.Log.e("TraceLog", "### AE Trigger == default");
+                break;
+        }
+    }
+
+    public static void logAeState(Integer aeState) {
+        if (aeState == null) {
+            android.util.Log.e("TraceLog", "### AE State == NULL");
+            return;
+        }
+
+        int state = aeState.intValue();
+
+        switch (state) {
+            case CaptureResult.CONTROL_AE_STATE_CONVERGED:
+                android.util.Log.e("TraceLog", "### AE State == CONVERGED");
+                break;
+            case CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED:
+                android.util.Log.e("TraceLog", "### AE State == FLASH_REQUIRED");
+                break;
+            case CaptureResult.CONTROL_AE_STATE_INACTIVE:
+                android.util.Log.e("TraceLog", "### AE State == INACTIVE");
+                break;
+            case CaptureResult.CONTROL_AE_STATE_LOCKED:
+                android.util.Log.e("TraceLog", "### AE State == LOCKED");
+                break;
+            case CaptureResult.CONTROL_AE_STATE_PRECAPTURE:
+                android.util.Log.e("TraceLog", "### AE State == PRECAPTURE");
+                break;
+            case CaptureResult.CONTROL_AE_STATE_SEARCHING:
+                android.util.Log.e("TraceLog", "### AE State == SEARCHING");
+                break;
+            default:
+                android.util.Log.e("TraceLog", "### AE State == default");
+                break;
+        }
+    }
+
+
+
     /**
      * Get frame orientation.
      *
@@ -159,7 +281,6 @@ public class PDR2 {
      * @param deviceOrientation
      * @return
      */
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public static int getFrameOrientation(
             CameraCharacteristics camCharacteristics,
             int deviceOrientation) {
@@ -338,7 +459,6 @@ public class PDR2 {
      * @param c
      * @return
      */
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     // TODO: Consider display size ?
     public static Size getPreviewStreamFrameSize(CameraCharacteristics c) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "###### PreviewFrameSize");
@@ -396,13 +516,35 @@ public class PDR2 {
     }
 
     /**
+     * Get maximum JPEG frame size.
+     *
+     * @param map
+     * @return
+     */
+    public static Size getMaxJpegFrameSize(StreamConfigurationMap map) {
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "###### getMaxJpegFrameSize");
+
+        Size[] jpegSizes = map.getOutputSizes(ImageFormat.JPEG);
+
+        Size maxSize = new Size(0, 0);
+        for (Size eachSize : jpegSizes) {
+            if (maxSize.getWidth() <= eachSize.getWidth()
+                    && maxSize.getHeight() <= eachSize.getHeight()) {
+                maxSize = eachSize;
+            }
+        }
+
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "######   JPEG MAX = " + maxSize.toString());
+        return maxSize;
+    }
+
+    /**
      * Get crop size based on active array size.
      *
      * @param c
      * @param aspectWH
      * @return
      */
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public static Rect getAspectConsideredScalerCropRegion(
             CameraCharacteristics c,
             float aspectWH) {
@@ -448,6 +590,192 @@ public class PDR2 {
         return cropRect;
     }
 
+    /**
+     * AF function is available or not.
+     *
+     * @param result
+     * @return
+     */
+    public static boolean isAfAvailable (CaptureResult result) {
+        Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
+        if (afState == null) {
+            return false;
+        }
+        return true;
+    }
 
+    /**
+     * AF is locked or not.
+     *
+     * @param result
+     * @return
+     */
+    public static boolean isAfLocked(CaptureResult result) {
+        int afState = result.get(CaptureResult.CONTROL_AF_STATE).intValue();
 
+        if (afState == CaptureRequest.CONTROL_AF_STATE_FOCUSED_LOCKED
+                || afState == CaptureRequest.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * AF is successfully focused or not.
+     *
+     * @param result
+     * @return
+     */
+    public static boolean isAfSucceeded(CaptureResult result) {
+        int afState = result.get(CaptureResult.CONTROL_AF_STATE).intValue();
+        return (afState == CaptureRequest.CONTROL_AF_STATE_FOCUSED_LOCKED);
+    }
+
+    /**
+     * AE function is available or not.
+     *
+     * @param result
+     * @return
+     */
+    public static boolean isAeAvailable (CaptureResult result) {
+        Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+        if (aeState == null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * AE is locked or not.
+     *
+     * @param result
+     * @return
+     */
+    public static boolean isAeLocked(CaptureResult result) {
+        int aeState = result.get(CaptureResult.CONTROL_AE_STATE).intValue();
+        if (aeState == CaptureRequest.CONTROL_AE_STATE_LOCKED) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Crop and rotate JPEG frame.
+     *
+     * @param srcJpeg
+     * @param rotation Get from getFrameOrientation()
+     * @param cropAspectWH Must be greater than 1.0f.
+     * @param jpegQuality ResultJPEG quality
+     * @return
+     */
+    public static byte[] doCropRotJpeg(
+            byte[] srcJpeg,
+            int rotation,
+            float cropAspectWH,
+            int jpegQuality) {
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "doCropRotJpeg() : E");
+
+        // Create source bitmap.
+        Bitmap srcBmp = BitmapFactory.decodeByteArray(srcJpeg, 0, srcJpeg.length);
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "    Decode Src Bitmap : DONE");
+
+        // Create rotated source bitmap.
+        Matrix rotator = new Matrix();
+        rotator.postRotate(rotation);
+        Bitmap rotSrcBmp = Bitmap.createBitmap(
+                srcBmp,
+                0,
+                0,
+                srcBmp.getWidth(),
+                srcBmp.getHeight(),
+                rotator,
+                true);
+        if (srcBmp.hashCode() != rotSrcBmp.hashCode()) {
+            srcBmp.recycle();
+        }
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "    Create Rot Src Bitmap : DONE");
+
+        // Create aspect considered bitmap.
+        float w = (float) rotSrcBmp.getWidth();
+        float h = (float) rotSrcBmp.getHeight();
+        float srcAspectWH = w / h;
+        float dstAspectWH;
+        if (1.0f < srcAspectWH) {
+            // Horizontal.
+            dstAspectWH = cropAspectWH;
+        } else {
+            // Vertical.
+            dstAspectWH = 1.0f / cropAspectWH;
+        }
+
+        Rect dstRect;
+        if (((int) (srcAspectWH * 100)) == ((int) (dstAspectWH * 100))) {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "    Src/Dst aspect is same.");
+            // Already same aspect.
+
+            dstRect = new Rect(0, 0, (int) w, (int) h);
+        } else {
+            if (srcAspectWH < dstAspectWH) {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "    Cut off top and bottom.");
+                // Cut off top and bottom.
+
+                float dstH = w / dstAspectWH;
+                dstRect = new Rect(
+                        0,
+                        (int) ((h - dstH) / 2.0f),
+                        (int) w,
+                        (int) ((h - dstH) / 2.0f + dstH));
+            } else {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "    Cut off left and right.");
+                // Cut off left and right.
+
+                float dstW = h * dstAspectWH;
+                dstRect = new Rect(
+                        (int) ((w - dstW) / 2.0f),
+                        0,
+                        (int) (((w - dstW) / 2.0f) + dstW),
+                        (int) h);
+            }
+        }
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "    Calculate DstRect : DONE");
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "    DstRect = " + dstRect.toShortString());
+
+        // Create destination bitmap.
+        Bitmap dstBmp = Bitmap.createBitmap(
+                rotSrcBmp,
+                dstRect.left,
+                dstRect.top,
+                dstRect.width(),
+                dstRect.height());
+        if (rotSrcBmp.hashCode() != dstBmp.hashCode()) {
+            rotSrcBmp.recycle();
+        }
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "    Create Dst Bitmap : DONE");
+
+        // JPEG Encode.
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        dstBmp.compress(Bitmap.CompressFormat.JPEG, jpegQuality, os);
+        byte[] resultJpeg = os.toByteArray();
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "    JPEG Encode : DONE");
+
+        // Release.
+        try {
+            os.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (!srcBmp.isRecycled()) {
+            srcBmp.recycle();
+        }
+        if (!rotSrcBmp.isRecycled()) {
+            rotSrcBmp.recycle();
+        }
+        if (!dstBmp.isRecycled()) {
+            dstBmp.recycle();
+        }
+
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "doCropRotJpeg() : X");
+        return resultJpeg;
+    }
 }

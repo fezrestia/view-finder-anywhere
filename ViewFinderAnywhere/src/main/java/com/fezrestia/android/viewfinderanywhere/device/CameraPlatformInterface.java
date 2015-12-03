@@ -17,7 +17,7 @@ public interface CameraPlatformInterface {
     /**
      * Open camera in asynchronized.
      *
-     * @param evfAspectWH
+     * @param evfAspectWH must be always larger than or equals to 1.0.
      * @param openCallback
      */
     //TODO: consider set aspect timing.

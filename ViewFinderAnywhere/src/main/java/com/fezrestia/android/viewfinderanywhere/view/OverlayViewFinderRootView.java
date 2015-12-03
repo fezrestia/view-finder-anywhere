@@ -70,6 +70,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
     private FrameLayout mViewFinderContainer = null;
     private ImageView mViewFinderBackground = null;
     private TextureView mViewFinder = null;
+    private View mShutterFeedback = null;
 
     // Scan indicator.
     private ViewGroup mScanIndicatorContainer = null;
@@ -260,6 +261,9 @@ public class OverlayViewFinderRootView extends RelativeLayout {
         // Scan indicator.
         mScanIndicatorContainer = (ViewGroup) findViewById(R.id.scan_indicator_container);
         mScanIndicatorContainer.setVisibility(INVISIBLE);
+        // Shutter feedback.
+        mShutterFeedback = findViewById(R.id.shutter_feedback);
+        mShutterFeedback.setVisibility(View.INVISIBLE);
 
         // UI-Plug-IN.
         // Viewfinder grip.
@@ -387,6 +391,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
         }
         mViewFinderBackground = null;
         mViewFinderContainer = null;
+        mShutterFeedback = null;
 
         mScanIndicatorContainer = null;
 
@@ -1307,6 +1312,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
     public interface VisualFeedbackTrigger {
         void onScanStarted();
         void onScanDone(boolean isSuccess);
+        void onShutterDone();
         void clear();
     }
 
@@ -1322,6 +1328,8 @@ public class OverlayViewFinderRootView extends RelativeLayout {
     private final VisualFeedbackTriggerImpl mVisualFeedbackTriggerImpl
             = new VisualFeedbackTriggerImpl();
     private class VisualFeedbackTriggerImpl implements VisualFeedbackTrigger {
+        private final int SHUTTER_FEEDBACK_DURATION_MILLIS = 100;
+
         @Override
         public void onScanStarted() {
             if (mScanIndicatorContainer != null) {
@@ -1341,6 +1349,25 @@ public class OverlayViewFinderRootView extends RelativeLayout {
                 }
                 updateIndicatorColor(color);
                 mScanIndicatorContainer.setVisibility(View.VISIBLE);
+            }
+        }
+
+        @Override
+        public void onShutterDone() {
+            mShutterFeedback.setVisibility(View.VISIBLE);
+            OverlayViewFinderRootView.this.getHandler().postDelayed(
+                    mRecoverShutterFeedbackTask,
+                    SHUTTER_FEEDBACK_DURATION_MILLIS);
+        }
+
+        private final RecoverShutterFeedbackTask mRecoverShutterFeedbackTask
+                = new RecoverShutterFeedbackTask();
+        private class RecoverShutterFeedbackTask implements Runnable {
+            @Override
+            public void run() {
+                if (mShutterFeedback != null) {
+                    mShutterFeedback.setVisibility(View.INVISIBLE);
+                }
             }
         }
 
