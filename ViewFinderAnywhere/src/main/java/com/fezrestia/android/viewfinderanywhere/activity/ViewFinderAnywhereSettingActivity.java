@@ -213,6 +213,8 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
                 ViewFinderAnywhereConstants.ViewFinderGripSize.KEY));
         bindPreferenceSummaryToValue(findPreference(
                 ViewFinderAnywhereConstants.ViewFinderGripPosition.KEY));
+        bindPreferenceSummaryToValue(findPreference(
+                ViewFinderAnywhereConstants.KEY_CAMERA_FUNCTION_API_LEVEL));
 
         findPreference(ViewFinderAnywhereConstants.KEY_IS_STORAGE_SELECTOR_ENABLED)
                 .setOnPreferenceChangeListener(mOnStorageSelectorPreferenceChangedListener);

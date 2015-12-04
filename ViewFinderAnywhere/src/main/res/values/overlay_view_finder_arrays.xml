@@ -62,4 +62,17 @@
         <item>BOTTOM_RIGHT</item>
     </string-array>
 
+    <string-array
+            name="camera_function_api_level_labels"
+    >
+        <item>API-1</item>
+        <item>API-2</item>
+    </string-array>
+    <string-array
+            name="camera_function_api_level_values"
+    >
+        <item>CAMERA_API_1</item>
+        <item>CAMERA_API_2</item>
+    </string-array>
+
 </resources>

@@ -24,6 +24,18 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+            android:title="@string/title_camera_function_preference"
+    >
+        <ListPreference
+            android:key="sp-key-camera-function-api-level"
+            android:title="@string/title_camera_function_api_level"
+            android:summary="Target camera API level."
+            android:entries="@array/camera_function_api_level_labels"
+            android:entryValues="@array/camera_function_api_level_values"
+        />
+    </PreferenceCategory>
+
+    <PreferenceCategory
             android:title="@string/title_ui_plugin_preference"
     >
         <ListPreference

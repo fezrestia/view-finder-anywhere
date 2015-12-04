@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
+import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants.CameraApiLevel;
 import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.device.Camera1Device;
 import com.fezrestia.android.viewfinderanywhere.device.Camera2Device;
@@ -60,14 +61,6 @@ public class OverlayViewFinderController {
 
     // API level.
     private CameraApiLevel mCamApiLv = CameraApiLevel.CAMERA_API_1;
-
-    /**
-     * Used camera API level.
-     */
-    public enum CameraApiLevel {
-        CAMERA_API_1,
-        CAMERA_API_2,
-    }
 
     /**
      * Life cycle trigger interface.
@@ -198,8 +191,19 @@ public class OverlayViewFinderController {
 
     private void loadPreferences() {
         // Level.
-        //TODO: Read from preferences.
-        mCamApiLv = CameraApiLevel.CAMERA_API_2;
+        String apiLevel = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
+                .getString(ViewFinderAnywhereConstants.KEY_CAMERA_FUNCTION_API_LEVEL, null);
+        if (apiLevel == null) {
+            // Use default.
+            mCamApiLv = CameraApiLevel.CAMERA_API_1;
+        } else if (CameraApiLevel.CAMERA_API_1.name().equals(apiLevel)) {
+            mCamApiLv = CameraApiLevel.CAMERA_API_1;
+        } else if (CameraApiLevel.CAMERA_API_2.name().equals(apiLevel)) {
+            mCamApiLv = CameraApiLevel.CAMERA_API_2;
+        } else {
+            // NOP. Unexpected.
+            throw new IllegalArgumentException("Unexpected API level.");
+        }
 
         // Aspect.
         String aspect = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
@@ -372,6 +376,11 @@ public class OverlayViewFinderController {
         boolean isActive();
     }
 
+    private interface LifeCycleInterface {
+        void onResume();
+        void onPause();
+    }
+
     private interface FromExternalEnvironment {
         void requestForceStop();
     }
@@ -402,6 +411,7 @@ public class OverlayViewFinderController {
     public class State
             implements
                     StateInternalInterface,
+                    LifeCycleInterface,
                     FromExternalEnvironment,
                     FromViewInterface,
                     FromDeviceInterface,
@@ -420,6 +430,16 @@ public class OverlayViewFinderController {
         public boolean isActive() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "isActive() : NOP");
             return false;
+        }
+
+        @Override
+        public void onResume() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume() : NOP");
+        }
+
+        @Override
+        public void onPause() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause() : NOP");
         }
 
         @Override

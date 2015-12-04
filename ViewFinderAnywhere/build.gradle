@@ -6,10 +6,10 @@ android {
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere"
-        minSdkVersion 20
+        minSdkVersion 19
         targetSdkVersion 23
-        versionCode 100
-        versionName '1.00'
+        versionCode 200
+        versionName '2.00'
     }
 
     compileOptions {

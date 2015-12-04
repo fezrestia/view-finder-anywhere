@@ -2,8 +2,6 @@ package com.fezrestia.android.viewfinderanywhere.device;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Rect;
@@ -33,8 +31,6 @@ import android.view.TextureView;
 
 import com.fezrestia.android.util.log.Log;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -338,8 +334,10 @@ public class Camera2Device implements CameraPlatformInterface {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "get Camera stream config map : DONE");
 
                 // Log.
-                PDR2.logOutputImageFormat(mStreamConfigMap);
-                PDR2.logSurfaceTextureOutputSizes(mStreamConfigMap);
+                if (Log.IS_DEBUG) {
+                    PDR2.logOutputImageFormat(mStreamConfigMap);
+                    PDR2.logSurfaceTextureOutputSizes(mStreamConfigMap);
+                }
 
             } catch (CameraAccessException e) {
                 if (Log.IS_DEBUG) Log.logError(TAG, "Failed to get back facing camera ID.");

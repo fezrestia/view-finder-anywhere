@@ -186,4 +186,17 @@ public class ViewFinderAnywhereConstants {
     /** Storage selector store target. */
     public static final String KEY_STORAGE_SELECTOR_STORE_TARGET_DIRECTORY
             = "storage_selector_store_target_directory";
+
+
+    /**
+     * Used camera API level.
+     */
+    public enum CameraApiLevel {
+        CAMERA_API_1,
+        CAMERA_API_2,
+    }
+
+    public static final String KEY_CAMERA_FUNCTION_API_LEVEL
+            = "sp-key-camera-function-api-level";
+
 }

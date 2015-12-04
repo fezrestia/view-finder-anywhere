@@ -45,6 +45,11 @@
 
 
 
+    <string name="title_camera_function_preference">Camera Functionality</string>
+    <string name="title_camera_function_api_level">Target API Level</string>
+
+
+
     <string name="viewfinder_grip_label">VIEW FINDER ANYWHERE</string>
 
 </resources>
