@@ -173,12 +173,25 @@ public class PlatformDependencyResolver {
             }
         }
 
-        // Get MAX size.
+        // Check xperia recommended.
         Size maxSize = new Size(0, 0);
         for (Size eachSize : aspectAcceptable) {
+            if (eachSize.getWidth() == 3840 && eachSize.getHeight() == 2160) {
+                // 8MP 16:9
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "######   Recommended 8MP 16:9");
+                maxSize = eachSize;
+                break;
+            }
+            if (eachSize.getWidth() == 3264 && eachSize.getHeight() == 2448) {
+                // 8MP 4:3
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "######   Recommended 8MP 4:3");
+                maxSize = eachSize;
+                break;
+            }
+
+            // Larger is better.
             if (maxSize.getWidth() < eachSize.getWidth()) {
                 maxSize = eachSize;
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Size acceptable : " + maxSize.toString());
             }
         }
 

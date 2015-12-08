@@ -41,7 +41,7 @@ public class OverlayViewFinderController {
     private CameraPlatformInterface mCamera = null;
 
     // Current state.
-    private State mCurrentState = new State();
+    private State mCurrentState = new StateFinalized(); // Default.
 
     // View finder aspect.
     private float mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_1_1;
@@ -150,13 +150,14 @@ public class OverlayViewFinderController {
         // Load preferences.
         loadPreferences();
 
-        // State.
-        changeStateTo(new StateInitialized());
+        // Initial state.
+        mCurrentState = new StateFinalized();
 
         // Create overlay view.
         mRootView = (OverlayViewFinderRootView)
                 LayoutInflater.from(context).inflate(
-                R.layout.overlay_view_finder_root, null);
+                        R.layout.overlay_view_finder_root,
+                        null);
         mRootView.initialize(mViewFinderAspectWH);
 
         // Add to window.
@@ -230,13 +231,7 @@ public class OverlayViewFinderController {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "resume() : E");
 
         // State.
-        changeStateTo(new StateInitialized());
-
-        // Camera.
-        mCamera.openAsync(mViewFinderAspectWH, new OpenCallbackImpl());
-
-        // Receiver.
-        mScreenOffReceiver.enable(mContext);
+        mCurrentState.onResume();
 
         // Storage selector.
         if (ViewFinderAnywhereApplication.isStorageSelectorEnabled()) {
@@ -287,13 +282,7 @@ public class OverlayViewFinderController {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "pause() : E");
 
         // State.
-        changeStateTo(new State());
-
-        // Camera.
-        mCamera.closeAsync(new CloseCallbackImpl());
-
-        // Receiver.
-        mScreenOffReceiver.disable(mContext);
+        mCurrentState.onPause();
 
         // Storage selector.
         mUiWorker.removeCallbacks(mStartStorageSelectorTask);
@@ -333,12 +322,11 @@ public class OverlayViewFinderController {
             return;
         }
 
-        // State.
-        changeStateTo(new State());
+        // Reset state.
+        mCurrentState = new StateFinalized();
 
         // Release camera.
         if (mCamera != null) {
-            mCamera.closeAsync(new CloseCallbackImpl());
             mCamera.release();
             mCamera = null;
         }
@@ -389,7 +377,6 @@ public class OverlayViewFinderController {
         void onPreOpenRequested();
         void onPreOpenCanceled();
         void onSurfaceReady();
-        void onFinishRequested();
         void requestScan();
         void requestCancelScan();
         void requestStillCapture();
@@ -401,14 +388,15 @@ public class OverlayViewFinderController {
         void onScanDone(boolean isSuccess);
         void onCancelScanDone();
         void onShutterDone();
-        void onStillCaptureDone(byte[] jpegBuffer);
+        void onStillCaptureDone();
+        void onPhotoStoreReady(byte[] data);
     }
 
     private interface FromStorageInterface {
         void onPhotoStoreDone(boolean isSuccess, Uri uri);
     }
 
-    public class State
+    public abstract class State
             implements
                     StateInternalInterface,
                     LifeCycleInterface,
@@ -416,6 +404,8 @@ public class OverlayViewFinderController {
                     FromViewInterface,
                     FromDeviceInterface,
                     FromStorageInterface {
+        public final String TAG = "State";
+
         @Override
         public void entry() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "entry() : NOP");
@@ -444,37 +434,22 @@ public class OverlayViewFinderController {
 
         @Override
         public void requestForceStop() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestForceStop()");
-
-            // Force stop overlay.
-            mRootView.forceStop();
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestForceStop() : NOP");
         }
 
         @Override
         public void onPreOpenRequested() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenRequested()");
-
-            mCamera.openAsync(mViewFinderAspectWH, new OpenCallbackImpl());
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenRequested() : NOP");
         }
 
         @Override
         public void onPreOpenCanceled() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenCanceled()");
-
-            mCamera.closeAsync(new CloseCallbackImpl());
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenCanceled() : NOP");
         }
 
         @Override
         public void onSurfaceReady() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady() : NOP");
-        }
-
-        @Override
-        public void onFinishRequested() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onFinishRequested()");
-
-            // Finish Overlay.
-            OverlayViewFinderController.LifeCycleTrigger.getInstance().requestStop(mContext);
         }
 
         @Override
@@ -518,8 +493,13 @@ public class OverlayViewFinderController {
         }
 
         @Override
-        public void onStillCaptureDone(byte[] jpegBuffer) {
+        public void onStillCaptureDone() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onStillCaptureDone() : NOP");
+        }
+
+        @Override
+        public void onPhotoStoreReady(byte[] data) {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPhotoStoreReady() : NOP");
         }
 
         @Override
@@ -546,11 +526,80 @@ public class OverlayViewFinderController {
         return mCurrentState;
     }
 
-    private class StateInitialized extends State {
-        private final String TAG = StateInitialized.class.getSimpleName();
+    private class StateAllFallback extends State {
+        public final String TAG = "StateAllFallback";
+
+        @Override
+        public void requestForceStop() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestForceStop()");
+
+            // Force stop overlay.
+            mRootView.forceStop();
+
+            changeStateTo(new StateFinalized());
+        }
+    }
+
+    private class StateFinalized extends StateAllFallback {
+        public final String TAG = "StateFinalized";
+
+        @Override
+        public void entry() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "entry()");
+
+            // Camera.
+            mCamera.closeAsync(new CloseCallbackImpl());
+
+            // Receiver.
+            mScreenOffReceiver.disable(mContext);
+        }
+
+
+        @Override
+        public void onResume() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume()");
+
+            changeStateTo(new StateInitialized());
+        }
+
+        @Override
+        public void onPreOpenRequested() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenRequested()");
+
+            mCamera.openAsync(mViewFinderAspectWH, new OpenCallbackImpl());
+        }
+
+        @Override
+        public void onPreOpenCanceled() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenCanceled()");
+
+            mCamera.closeAsync(new CloseCallbackImpl());
+        }
+    }
+
+    private class StateInitialized extends StateAllFallback {
+        public final String TAG = "StateInitialized";
 
         private boolean mIsCameraAlreadyReady = false;
         private boolean mIsSurfaceAlreadyReady = false;
+
+        @Override
+        public void entry() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "entry()");
+
+            // Camera.
+            mCamera.openAsync(mViewFinderAspectWH, new OpenCallbackImpl());
+
+            // Receiver.
+            mScreenOffReceiver.enable(mContext);
+        }
+
+        @Override
+        public void onPause() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()");
+
+            changeStateTo(new StateFinalized());
+        }
 
         @Override
         public void onCameraReady() {
@@ -569,11 +618,6 @@ public class OverlayViewFinderController {
             mRootView.getHandler().postDelayed(
                     mForceStopTask,
                     TRIGGER_FAILED_FEEDBACK_DELAY_MILLIS);
-        }
-
-        @Override
-        public void onPreOpenCanceled() {
-            super.onPreOpenCanceled();
         }
 
         @Override
@@ -602,24 +646,24 @@ public class OverlayViewFinderController {
         }
     }
 
-    private class StateIdle extends State {
+    private class StateIdle extends StateAllFallback {
+        public final String TAG = "StateIdle";
+
         @Override
         public void entry() {
             mRootView.getHandler().post(mClear);
         }
 
         @Override
-        public boolean isActive() {
-            return true;
+        public void onPause() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()");
+
+            changeStateTo(new StateFinalized());
         }
 
         @Override
-        public void onSurfaceReady() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady()");
-
-            mCamera.bindPreviewSurfaceAsync(
-                    mRootView.getViewFinderSurface(),
-                    new BindSurfaceCallbackImpl());
+        public boolean isActive() {
+            return true;
         }
 
         @Override
@@ -632,7 +676,9 @@ public class OverlayViewFinderController {
         }
     }
 
-    private class StateScanning extends State {
+    private class StateScanning extends StateAllFallback {
+        public final String TAG = "StateScanning";
+
         private boolean mIsStillCaptureAlreadyRequested = false;
 
         @Override
@@ -646,12 +692,12 @@ public class OverlayViewFinderController {
         }
 
         @Override
-        public void onSurfaceReady() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady()");
+        public void onPause() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()");
 
-            mCamera.bindPreviewSurfaceAsync(
-                    mRootView.getViewFinderSurface(),
-                    new BindSurfaceCallbackImpl());
+            mCamera.requestCancelScanAsync(new CancelScanCallbackImpl());
+
+            changeStateTo(new StateFinalized());
         }
 
         @Override
@@ -688,7 +734,9 @@ public class OverlayViewFinderController {
         }
     }
 
-    private class StateScanDone extends State {
+    private class StateScanDone extends StateAllFallback {
+        public final String TAG = "StateScanDone";
+
         // Scan is done successfully or not.
         private final boolean mIsSuccess;
 
@@ -712,12 +760,12 @@ public class OverlayViewFinderController {
         }
 
         @Override
-        public void onSurfaceReady() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady()");
+        public void onPause() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()");
 
-            mCamera.bindPreviewSurfaceAsync(
-                    mRootView.getViewFinderSurface(),
-                    new BindSurfaceCallbackImpl());
+            mCamera.requestCancelScanAsync(new CancelScanCallbackImpl());
+
+            changeStateTo(new StateFinalized());
         }
 
         @Override
@@ -744,19 +792,33 @@ public class OverlayViewFinderController {
         }
     }
 
-    private class StateStillCapturing extends State {
+    private class StateStillCapturing extends StateAllFallback {
+        public final String TAG = "StateStillCapturing";
+
+        private boolean mIsPauseRequired = false;
+        private boolean mIsResumeRequired = false;
+
         @Override
         public boolean isActive() {
             return true;
         }
 
         @Override
-        public void onSurfaceReady() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady()");
+        public void onResume() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume()");
 
-            mCamera.bindPreviewSurfaceAsync(
-                    mRootView.getViewFinderSurface(),
-                    new BindSurfaceCallbackImpl());
+            // Resume state without camera release after still capture is done.
+
+            mIsResumeRequired = true;
+        }
+
+        @Override
+        public void onPause() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()");
+
+            // Do not pause here. Close device after still capture is assured.
+
+            mIsPauseRequired = true;
         }
 
         @Override
@@ -769,16 +831,17 @@ public class OverlayViewFinderController {
         }
 
         @Override
-        public void onStillCaptureDone(byte[] jpegBuffer) {
+        public void onStillCaptureDone() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onStillCaptureDone()");
-            // NOP.
-        }
 
-        @Override
-        public void onPhotoStoreDone(boolean isSuccess, Uri uri) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPhotoStoreDone()");
-
-            changeStateTo(new StateIdle());
+            if (mIsResumeRequired) {
+                changeStateTo(new StateInitialized());
+            } else if (mIsPauseRequired) {
+                changeStateTo(new StateFinalized());
+            } else {
+                // Normal sequence.
+                changeStateTo(new StateIdle());
+            }
         }
     }
 
@@ -932,11 +995,16 @@ public class OverlayViewFinderController {
         }
 
         @Override
-        public void onCaptureDone(int requestId, byte[] data) {
-            OverlayViewFinderController.getInstance().getCurrentState().onStillCaptureDone(data);
+        public void onCaptureDone(int requestId) {
+            OverlayViewFinderController.getInstance().getCurrentState().onStillCaptureDone();
+        }
 
+        @Override
+        public void onPhotoStoreReady(int requestId, byte[] data) {
             // Request store.
             mStorageController.storePicture(data);
+
+            OverlayViewFinderController.getInstance().getCurrentState().onPhotoStoreReady(data);
         }
     }
 }

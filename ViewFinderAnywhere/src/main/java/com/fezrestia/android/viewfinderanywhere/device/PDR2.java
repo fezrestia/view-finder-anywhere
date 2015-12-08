@@ -25,6 +25,7 @@ import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -519,22 +520,55 @@ public class PDR2 {
      * Get maximum JPEG frame size.
      *
      * @param map
+     * @param devicePreviewSize
      * @return
      */
-    public static Size getMaxJpegFrameSize(StreamConfigurationMap map) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "###### getMaxJpegFrameSize");
+    public static Size getOptimalJpegFrameSize(StreamConfigurationMap map, Size devicePreviewSize) {
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "###### getOptimalJpegFrameSize");
 
         Size[] jpegSizes = map.getOutputSizes(ImageFormat.JPEG);
 
-        Size maxSize = new Size(0, 0);
+        int previewAspectRatioWHx100 = (int)
+                ((float) devicePreviewSize.getWidth() / (float) devicePreviewSize.getHeight()
+                * 100.0f);
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "######   PreviewAspect = " + previewAspectRatioWHx100);
+
+        List<Size> capableSizes = new ArrayList<Size>();
         for (Size eachSize : jpegSizes) {
-            if (maxSize.getWidth() <= eachSize.getWidth()
-                    && maxSize.getHeight() <= eachSize.getHeight()) {
+            int aspectWHx100 = (int)
+                    ((float) eachSize.getWidth() / (float) eachSize.getHeight() * 100.0f);
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "######   EachAspect = " + aspectWHx100);
+
+            if (previewAspectRatioWHx100 == aspectWHx100) {
+                // Aspect matched.
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "######   Capable = " + eachSize.toString());
+                capableSizes.add(eachSize);
+            }
+        }
+
+        // Check xperia recommended.
+        Size maxSize = new Size(0, 0);
+        for (Size eachSize : capableSizes) {
+            if (eachSize.getWidth() == 3840 && eachSize.getHeight() == 2160) {
+                // 8MP 16:9
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "######   Recommended 8MP 16:9");
+                maxSize = eachSize;
+                break;
+            }
+            if (eachSize.getWidth() == 3264 && eachSize.getHeight() == 2448) {
+                // 8MP 4:3
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "######   Recommended 8MP 4:3");
+                maxSize = eachSize;
+                break;
+            }
+
+            // Larger is better.
+            if (maxSize.getWidth() < eachSize.getWidth()) {
                 maxSize = eachSize;
             }
         }
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "######   JPEG MAX = " + maxSize.toString());
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "######   JPEG Size = " + maxSize.toString());
         return maxSize;
     }
 

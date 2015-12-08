@@ -709,6 +709,9 @@ public class Camera1Device implements CameraPlatformInterface {
                 mJpegBuffer = jpegBuffer;
 
                 mLatch.countDown();
+
+                // Notify to controller.
+                mStillCaptureCallback.onCaptureDone(mRequestId);
             }
 
             public byte[] getJpegBuffer() {
@@ -761,7 +764,7 @@ public class Camera1Device implements CameraPlatformInterface {
                 @Override
                 public void run (){
                     // Notify to controller.
-                    mStillCaptureCallback.onCaptureDone(mRequestId, mResultJpeg);
+                    mStillCaptureCallback.onPhotoStoreReady(mRequestId, mResultJpeg);
                 }
             }
         }

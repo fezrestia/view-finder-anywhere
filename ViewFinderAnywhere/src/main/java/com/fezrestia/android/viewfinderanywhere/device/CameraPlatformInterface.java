@@ -130,11 +130,19 @@ public interface CameraPlatformInterface {
         void onShutterDone(int requestId);
 
         /**
-         * Picture data generation is done.
+         * Capturing sequence is done. After this callback, client app can requets next capture.
          *
          * @param requestId
          * @param picture
          */
-        void onCaptureDone(int requestId, byte[] picture);
+        void onCaptureDone(int requestId);
+
+        /**
+         * Still capture photo data is ready to store.
+         *
+         * @param requestId
+         * @param data
+         */
+        void onPhotoStoreReady(int requestId, byte[] data);
     }
 }

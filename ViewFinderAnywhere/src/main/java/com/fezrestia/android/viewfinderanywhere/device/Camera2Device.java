@@ -371,19 +371,23 @@ public class Camera2Device implements CameraPlatformInterface {
             }
             if (Log.IS_DEBUG) Log.logDebug(TAG, "Open request : DONE");
 
-            // Create still capture request and image reader.
-            // Size.
-            Size jpegSize = PDR2.getMaxJpegFrameSize(mStreamConfigMap);
-            // Image reader.
-            mStillImgReader = ImageReader.newInstance(
-                    jpegSize.getWidth(),
-                    jpegSize.getHeight(),
-                    ImageFormat.JPEG,
-                    1);
-            mStillImgReader.setOnImageAvailableListener(
-                    new OnImageAvailableListenerImpl(),
-                    mCameraHandler);
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Still ImageReader : DONE");
+            if (mStillImgReader == null) {
+                // Create still capture request and image reader.
+                // Size.
+                Size jpegSize = PDR2.getOptimalJpegFrameSize(
+                        mStreamConfigMap,
+                        mPreviewStreamFrameSize);
+                // Image reader.
+                mStillImgReader = ImageReader.newInstance(
+                        jpegSize.getWidth(),
+                        jpegSize.getHeight(),
+                        ImageFormat.JPEG,
+                        2);
+                mStillImgReader.setOnImageAvailableListener(
+                        new OnImageAvailableListenerImpl(),
+                        mCameraHandler);
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "Still ImageReader : DONE");
+            }
 
             // Orientation.
             mOrientationEventListenerImpl.enable();
@@ -770,8 +774,10 @@ public class Camera2Device implements CameraPlatformInterface {
                     e.printStackTrace();
 
                     // Notify.
+                    StillCaptureCallback callback = mClientStillCaptureCallback;
                     notifyShutterDoneCallback(mFixedReqId);
-                    notifyCaptureDoneCallback(mFixedReqId, null);
+                    notifyCaptureDoneCallback(mFixedReqId);
+                    notifyPhotoStoreReadyCallback(callback, mFixedReqId, null);
                     return;
                 }
             }
@@ -802,8 +808,10 @@ public class Camera2Device implements CameraPlatformInterface {
                 e.printStackTrace();
 
                 // Notify.
+                StillCaptureCallback callback = mClientStillCaptureCallback;
                 notifyShutterDoneCallback(mFixedReqId);
-                notifyCaptureDoneCallback(mFixedReqId, null);
+                notifyCaptureDoneCallback(mFixedReqId);
+                notifyPhotoStoreReadyCallback(callback, mFixedReqId, null);
                 return;
             }
 
@@ -815,14 +823,19 @@ public class Camera2Device implements CameraPlatformInterface {
     private class HandleStillCaptureResultTask implements Runnable {
         public final String TAG = "HandleStillCaptureResultTask";
 
+        private final StillCaptureCallback mCallback;
         private final RequestTag mReqTag;
 
         /**
          * CONSTRUCTOR.
          *
+         * @param callback
          * @param reqTag
          */
-        public HandleStillCaptureResultTask(RequestTag reqTag) {
+        public HandleStillCaptureResultTask(
+                StillCaptureCallback callback,
+                RequestTag reqTag) {
+            mCallback = callback;
             mReqTag = reqTag;
         }
 
@@ -833,7 +846,7 @@ public class Camera2Device implements CameraPlatformInterface {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "  Rotation = " + mReqTag.getRotation());
 
             // Get image.
-            Image img = mStillImgReader.acquireLatestImage();
+            Image img = mStillImgReader.acquireNextImage();
             if (Log.IS_DEBUG) Log.logDebug(TAG, "    acquireLatestImage() : DONE");
             if (Log.IS_DEBUG) {
                 Log.logDebug(TAG, "    WIDTH  = " + img.getWidth());
@@ -861,7 +874,7 @@ public class Camera2Device implements CameraPlatformInterface {
                     JPEG_QUALITY);
 
             // Notify.
-            notifyCaptureDoneCallback(mReqTag.getRequestId(), resultJpeg);
+            notifyPhotoStoreReadyCallback(mCallback, mReqTag.getRequestId(), resultJpeg);
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X");
         }
@@ -1029,15 +1042,20 @@ public class Camera2Device implements CameraPlatformInterface {
                     RequestTag reqTag = (RequestTag) request.getTag();
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "    getTag() : DONE");
 
-                    // Handle result in background.
-                    HandleStillCaptureResultTask task = new HandleStillCaptureResultTask(reqTag);
-                    mBackWorker.execute(task);
-
                     // Release scan lock.
                     mCameraHandler.post(new CancelScanTask());
 
                     // Restart preview.
                     startEvfStream();
+
+                    // Handle result in background.
+                    HandleStillCaptureResultTask task = new HandleStillCaptureResultTask(
+                            mClientStillCaptureCallback,
+                            reqTag);
+                    mBackWorker.execute(task);
+
+                    // Notify capture done, client may request next capture.
+                    notifyCaptureDoneCallback(reqTag.getRequestId());
                     break;
 
                 default:
@@ -1372,15 +1390,43 @@ public class Camera2Device implements CameraPlatformInterface {
         }
     }
 
-    private void notifyCaptureDoneCallback(int requestId, byte[] data) {
+    private void notifyCaptureDoneCallback(int requestId) {
         if (mClientStillCaptureCallback != null) {
             mClientCallbackHandler.post(
-                    new NotifyCaptureDoneCallback(mClientStillCaptureCallback, requestId, data));
+                    new NotifyCaptureDoneCallback(mClientStillCaptureCallback, requestId));
             mClientStillCaptureCallback = null;
         }
     }
 
     private static class NotifyCaptureDoneCallback implements Runnable {
+        private final StillCaptureCallback mStillCaptureCallback;
+        private final int mRequestId;
+
+        public NotifyCaptureDoneCallback(
+                StillCaptureCallback stillCaptureCallback,
+                int requestId) {
+            mStillCaptureCallback = stillCaptureCallback;
+            mRequestId = requestId;
+        }
+
+        @Override
+        public void run() {
+            mStillCaptureCallback.onCaptureDone(mRequestId);
+        }
+    }
+
+    private void notifyPhotoStoreReadyCallback(
+            StillCaptureCallback callback,
+            int requestId,
+            byte[] data) {
+        mClientCallbackHandler.post(
+                new NotifyPhotoStoreReadyCallback(
+                        callback,
+                        requestId,
+                        data));
+    }
+
+    private static class NotifyPhotoStoreReadyCallback implements Runnable {
         private final StillCaptureCallback mStillCaptureCallback;
         private final int mRequestId;
         private final byte[] mData;
@@ -1392,7 +1438,7 @@ public class Camera2Device implements CameraPlatformInterface {
          * @param requestId
          * @param data
          */
-        public NotifyCaptureDoneCallback(
+        public NotifyPhotoStoreReadyCallback(
                 StillCaptureCallback stillCaptureCallback,
                 int requestId,
                 byte[] data) {
@@ -1403,7 +1449,7 @@ public class Camera2Device implements CameraPlatformInterface {
 
         @Override
         public void run() {
-            mStillCaptureCallback.onCaptureDone(mRequestId, mData);
+            mStillCaptureCallback.onPhotoStoreReady(mRequestId, mData);
         }
     }
 }
