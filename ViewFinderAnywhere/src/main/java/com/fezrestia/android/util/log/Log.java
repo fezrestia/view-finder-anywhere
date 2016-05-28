@@ -4,7 +4,7 @@ import android.os.SystemClock;
 
 public class Log {
     // All area total log trigger.
-    public static final boolean IS_DEBUG = false;
+    public static final boolean IS_DEBUG = true;
 
     /**
      * Debug log.

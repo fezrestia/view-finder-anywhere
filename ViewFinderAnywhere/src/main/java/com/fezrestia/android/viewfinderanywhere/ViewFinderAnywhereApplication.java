@@ -10,7 +10,7 @@ import android.os.Handler;
 import android.preference.PreferenceManager;
 
 import com.fezrestia.android.util.log.Log;
-import com.fezrestia.android.viewfinderanywhere.R;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 public class ViewFinderAnywhereApplication extends Application {
     // Log tag.
@@ -27,7 +27,10 @@ public class ViewFinderAnywhereApplication extends Application {
 
     // SharedPreferences version key.
     private static final String KEY_SHARED_PREFERENCES_VERSION = "key-shared-preferences-version";
-    private static final int VAL_SHARED_PREFERENCES_VERSION = 2;
+    private static final int VAL_SHARED_PREFERENCES_VERSION = 3;
+
+    // Firebase analytics.
+    private static FirebaseAnalytics mFirebaseAnalytics = null;
 
     @Override
     public void onCreate() {
@@ -50,6 +53,11 @@ public class ViewFinderAnywhereApplication extends Application {
         // Resource container.
         mCustomResContainer = new CustomizableResourceContainer();
 
+        // Firebase.
+        Log.logError(TAG, "FirebaseAnalytics.getInstance() : E");
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+        Log.logError(TAG, "FirebaseAnalytics.getInstance() : X");
+
         if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR : X");
     }
 
@@ -61,6 +69,7 @@ public class ViewFinderAnywhereApplication extends Application {
         // Release.
         mGlobalSharedPreferences = null;
         mCustomResContainer = null;
+        mFirebaseAnalytics = null;
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onTerminate() : X");
     }
@@ -357,8 +366,14 @@ public class ViewFinderAnywhereApplication extends Application {
     }
 
 
-
-
+    /**
+     * Get global Firebase analytics interface.
+     *
+     * @return
+     */
+    public static FirebaseAnalytics getGlobalFirebaseAnalytics() {
+        return mFirebaseAnalytics;
+    }
 
 
 

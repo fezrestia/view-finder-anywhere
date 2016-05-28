@@ -8,8 +8,8 @@ android {
         applicationId "com.fezrestia.android.viewfinderanywhere"
         minSdkVersion 19
         targetSdkVersion 23
-        versionCode 201
-        versionName '2.01'
+        versionCode 202
+        versionName '2.02'
     }
 
     compileOptions {
@@ -43,5 +43,9 @@ android {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
+    // FireBase analytics.
+    compile 'com.google.firebase:firebase-core:9.0.0'
 }
+
+// Add for FireBase.
+apply plugin: 'com.google.gms.google-services'

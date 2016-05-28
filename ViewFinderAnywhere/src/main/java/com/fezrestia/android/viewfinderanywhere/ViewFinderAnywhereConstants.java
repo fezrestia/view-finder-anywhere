@@ -26,35 +26,71 @@ public class ViewFinderAnywhereConstants {
     public static final float ASPECT_RATIO_16_9 = 16.0f / 9.0f;
 
     // SharedPreferences constants.
-    /** View finder trigger key. */
+    /** View finder trigger key. Up to 36 chars for Firebase. */
     public static final String KEY_OVERLAY_TRIGGER_FROM_FOCUS_KEY_DOUBLE_CLICK
-            = "is_overlay_view_finder_enabled_from_focus_key_double_click";
+            = "is_trigger_focus_key_double_click";
     public static final String KEY_OVERLAY_TRIGGER_FROM_NOTIFICATION
-            = "is_overlay_view_finder_enabled_from_notification";
+            = "is_trigger_notification_tap";
     public static final String KEY_OVERLAY_TRIGGER_FROM_SCREEN_EDGE
-            = "is_overlay_view_finder_enabled_from_screen_edge";
+            = "is_trigger_screen_edge";
 
     /** View finder size key. */
-    public static final String KEY_VIEW_FINDER_SIZE = "overlay_view_finder_size";
+    public static final String KEY_VIEW_FINDER_SIZE
+            = "key_view_finder_size";
     /** View finder size value.*/
-    public static final String VAL_VIEW_FINDER_SIZE_XLARGE = "x-large";
+    public static final String VAL_VIEW_FINDER_SIZE_XLARGE
+            = "x-large";
     /** View finder size value.*/
-    public static final String VAL_VIEW_FINDER_SIZE_LARGE = "large";
+    public static final String VAL_VIEW_FINDER_SIZE_LARGE
+            = "large";
     /** View finder size value.*/
-    public static final String VAL_VIEW_FINDER_SIZE_SMALL = "small";
+    public static final String VAL_VIEW_FINDER_SIZE_SMALL
+            = "small";
 
     /** View finder aspect key. */
-    public static final String KEY_VIEW_FINDER_ASPECT = "overlay_view_finder_aspect";
+    public static final String KEY_VIEW_FINDER_ASPECT
+            = "key_view_finder_aspect";
     /** View finder aspect value.*/
-    public static final String VAL_VIEW_FINDER_ASPECT_1_1 = "1-1";
+    public static final String VAL_VIEW_FINDER_ASPECT_1_1
+            = "1-1";
     /** View finder aspect value.*/
-    public static final String VAL_VIEW_FINDER_ASPECT_4_3 = "4-3";
+    public static final String VAL_VIEW_FINDER_ASPECT_4_3
+            = "4-3";
     /** View finder aspect value.*/
-    public static final String VAL_VIEW_FINDER_ASPECT_16_9 = "16-9";
+    public static final String VAL_VIEW_FINDER_ASPECT_16_9
+            = "16-9";
+
+    /** View finder grip size key. */
+    public static final String KEY_VIEW_FINDER_GRIP_SIZE
+            = "key_view_finder_grip_size";
+    /** View finder grip size value. */
+    public static final String VAL_VIEW_FINDER_GRIP_SIZE_X_LARGE
+            = "x-large";
+    /** View finder grip size value. */
+    public static final String VAL_VIEW_FINDER_GRIP_SIZE_LARGE
+            = "large";
+    /** View finder grip size value. */
+    public static final String VAL_VIEW_FINDER_GRIP_SIZE_SMALL
+            = "small";
+
+    /** View finder grip position key. */
+    public static final String KEY_VIEW_FINDER_GRIP_POSITION
+            = "key_view_finder_grip_pos";
+    /** View finder grip position value. */
+    public static final String VAL_VIEW_FINDER_GRIP_POSITION_TOP_LEFT
+            = "top-left";
+    /** View finder grip position value. */
+    public static final String VAL_VIEW_FINDER_GRIP_POSITION_MIDDLE
+            = "middle";
+    /** View finder grip position value. */
+    public static final String VAL_VIEW_FINDER_GRIP_POSITION_BOTTOM_RIGHT
+            = "bottom-right";
+
+
 
     /** View finder UI plug-in key. */
     public static final String KEY_VIEW_FINDER_UI_PLUG_IN_PACKAGE
-            = "overlay_view_finder_ui_plugin_package";
+            = "key_ui_plugin_package";
 
 
 
@@ -77,13 +113,13 @@ public class ViewFinderAnywhereConstants {
      * View finder grip size.
      */
     public static enum ViewFinderGripSize {
-        X_LARGE("x-large", 1.0f),
-        LARGE("large", 0.5f),
-        SMALL("small", 0.333f),
+        X_LARGE(VAL_VIEW_FINDER_GRIP_SIZE_X_LARGE, 1.0f),
+        LARGE(VAL_VIEW_FINDER_GRIP_SIZE_LARGE, 0.5f),
+        SMALL(VAL_VIEW_FINDER_GRIP_SIZE_SMALL, 0.333f),
         ;
 
         // Preference key.
-        public static final String KEY = "view_finder_grip_size";
+        public static final String KEY = KEY_VIEW_FINDER_GRIP_SIZE;
 
         // Preference value.
         private final String mValue;
@@ -125,13 +161,13 @@ public class ViewFinderAnywhereConstants {
      * View finder grip position.
      */
     public static enum ViewFinderGripPosition {
-        TOP_LEFT("top-left", Gravity.TOP | Gravity.LEFT),
-        MIDDLE("middle", Gravity.CENTER),
-        BOTTOM_RIGHT("bottom-right", Gravity.BOTTOM | Gravity.RIGHT),
+        TOP_LEFT(VAL_VIEW_FINDER_GRIP_POSITION_TOP_LEFT, Gravity.TOP | Gravity.LEFT),
+        MIDDLE(VAL_VIEW_FINDER_GRIP_POSITION_MIDDLE, Gravity.CENTER),
+        BOTTOM_RIGHT(VAL_VIEW_FINDER_GRIP_POSITION_BOTTOM_RIGHT, Gravity.BOTTOM | Gravity.RIGHT),
         ;
 
         // Preference key.
-        public static final String KEY = "view_finder_grip_position";
+        public static final String KEY = KEY_VIEW_FINDER_GRIP_POSITION;
 
         // Preference value.
         private final String mValue;
@@ -173,19 +209,20 @@ public class ViewFinderAnywhereConstants {
 
 
     /** Storage selector is enabled or not. */
-    public static final String KEY_IS_STORAGE_SELECTOR_ENABLED = "is_storage_selector_enabled";
+    public static final String KEY_IS_STORAGE_SELECTOR_ENABLED
+            = "is_storage_selector_enabled";
 
     /** Storage selector creates new directory. */
     public static final String KEY_STORAGE_SELECTOR_CREATE_NEW_DIRECTORY
-            = "storage_selector_create_new_directory";
+            = "key_storage_create_new_dir";
 
     /** Storage selector target. */
     public static final String KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY
-            = "storage_selector_selectable_directory";
+            = "key_storage_selectable_dir";
 
     /** Storage selector store target. */
     public static final String KEY_STORAGE_SELECTOR_STORE_TARGET_DIRECTORY
-            = "storage_selector_store_target_directory";
+            = "key_storage_store_target_dir";
 
 
     /**
@@ -197,6 +234,6 @@ public class ViewFinderAnywhereConstants {
     }
 
     public static final String KEY_CAMERA_FUNCTION_API_LEVEL
-            = "sp-key-camera-function-api-level";
+            = "key_camera_api_level";
 
 }
