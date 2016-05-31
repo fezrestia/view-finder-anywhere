@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
-import android.os.Bundle;
 import android.os.Handler;
 import android.view.LayoutInflater;
 
@@ -21,7 +20,6 @@ import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface;
 import com.fezrestia.android.viewfinderanywhere.service.OverlayViewFinderService;
 import com.fezrestia.android.viewfinderanywhere.storage.StorageController;
 import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView;
-import com.google.firebase.analytics.FirebaseAnalytics;
 
 public class OverlayViewFinderController {
     // Log tag.
@@ -996,9 +994,10 @@ public class OverlayViewFinderController {
             OverlayViewFinderController.getInstance().getCurrentState().onShutterDone();
 
             // Firebase analytics.
-            Bundle bundle = new Bundle();
-            ViewFinderAnywhereApplication.getGlobalFirebaseAnalytics()
-                    .logEvent("on_shutter_done", bundle);
+            ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
+                    .createNewLogRequest()
+                    .setEvent(ViewFinderAnywhereConstants.FIREBASE_EVENT_ON_SHUTTER_DONE)
+                    .done();
         }
 
         @Override

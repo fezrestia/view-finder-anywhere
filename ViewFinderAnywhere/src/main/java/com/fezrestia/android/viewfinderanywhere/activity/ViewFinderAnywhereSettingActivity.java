@@ -19,9 +19,9 @@ import android.preference.ListPreference;
 import android.preference.MultiSelectListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
-import android.preference.PreferenceManager;
 import android.provider.Settings;
 
+import com.fezrestia.android.lib.firebase.FirebaseAnalyticsController;
 import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
@@ -109,10 +109,10 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
         updateStorageSelectorRelatedPreferences();
 
         // Firebase analytics.
-        Bundle bundle = new Bundle();
-        bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "preferences");
-        ViewFinderAnywhereApplication.getGlobalFirebaseAnalytics()
-                .logEvent(FirebaseAnalytics.Event.APP_OPEN, bundle);
+        ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController().createNewLogRequest()
+                .setEvent(FirebaseAnalytics.Event.APP_OPEN)
+                .setParam(FirebaseAnalytics.Param.ITEM_ID, TAG)
+                .done();
     }
 
     @Override
@@ -260,24 +260,16 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
                             ViewFinderAnywhereSettingActivity.this);
 
                     // For Firebase.
-                    String val = (String) value;
-                    String[] segments = val.split("\\.");
-                    if (1 <= segments.length) {
-                        value = segments[segments.length - 1];
-                    } else {
-                        value = segments[0];
-                    }
-                    if (36 < ((String) value).length()) {
-                        value = ((String) value).substring(val.length() - 36);
-                    }
+                    value = FirebaseAnalyticsController.getPkgNameValue((String) value);
                 }
 
                 // Firebase analytics.
-                Bundle bundle = new Bundle();
-                bundle.putString(FirebaseAnalytics.Param.ITEM_ID, preference.getKey());
-                bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, (String) value);
-                ViewFinderAnywhereApplication.getGlobalFirebaseAnalytics()
-                        .logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
+                ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
+                        .createNewLogRequest()
+                        .setEvent(FirebaseAnalytics.Event.SELECT_CONTENT)
+                        .setParam(FirebaseAnalytics.Param.ITEM_ID, preference.getKey())
+                        .setParam(FirebaseAnalytics.Param.ITEM_NAME, (String) value)
+                        .done();
             } else if (preference instanceof CheckBoxPreference) {
                 final boolean isChecked = ((Boolean) value).booleanValue();
 
@@ -290,13 +282,14 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
                     // NOP.
 
                     // Firebase analytics.
-                    Bundle bundle = new Bundle();
-                    bundle.putString(FirebaseAnalytics.Param.ITEM_ID, key);
-                    bundle.putString(
-                            FirebaseAnalytics.Param.ITEM_NAME,
-                            isChecked ? "true" : "false");
-                    ViewFinderAnywhereApplication.getGlobalFirebaseAnalytics()
-                            .logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
+                    ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
+                            .createNewLogRequest()
+                            .setEvent(FirebaseAnalytics.Event.SELECT_CONTENT)
+                            .setParam(FirebaseAnalytics.Param.ITEM_ID, key)
+                            .setParam(
+                                    FirebaseAnalytics.Param.ITEM_NAME,
+                                    ViewFinderAnywhereConstants.getBooleanString(isChecked))
+                            .done();
                 } else if (
                         ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_NOTIFICATION
                         .equals(key)) {
@@ -333,14 +326,14 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
                     }
 
                     // Firebase analytics.
-                    Bundle bundle = new Bundle();
-                    bundle.putString(FirebaseAnalytics.Param.ITEM_ID, key);
-                    bundle.putString(
-                            FirebaseAnalytics.Param.ITEM_NAME,
-                            isChecked ? "true" : "false");
-                    ViewFinderAnywhereApplication.getGlobalFirebaseAnalytics()
-                            .logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
-
+                    ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
+                            .createNewLogRequest()
+                            .setEvent(FirebaseAnalytics.Event.SELECT_CONTENT)
+                            .setParam(FirebaseAnalytics.Param.ITEM_ID, key)
+                            .setParam(
+                                    FirebaseAnalytics.Param.ITEM_NAME,
+                                    ViewFinderAnywhereConstants.getBooleanString(isChecked))
+                            .done();
                 } else if (
                         ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_SCREEN_EDGE
                         .equals(key)) {
@@ -355,13 +348,14 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
                     }
 
                     // Firebase analytics.
-                    Bundle bundle = new Bundle();
-                    bundle.putString(FirebaseAnalytics.Param.ITEM_ID, key);
-                    bundle.putString(
-                            FirebaseAnalytics.Param.ITEM_NAME,
-                            isChecked ? "true" : "false");
-                    ViewFinderAnywhereApplication.getGlobalFirebaseAnalytics()
-                            .logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
+                    ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
+                            .createNewLogRequest()
+                            .setEvent(FirebaseAnalytics.Event.SELECT_CONTENT)
+                            .setParam(FirebaseAnalytics.Param.ITEM_ID, key)
+                            .setParam(
+                                    FirebaseAnalytics.Param.ITEM_NAME,
+                                    ViewFinderAnywhereConstants.getBooleanString(isChecked))
+                            .done();
                 } else {
                     // NOP.
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "Unexpected CheckBox preference.");
@@ -372,11 +366,12 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
                 preference.setSummary(stringValue);
 
                 // Firebase analytics.
-                Bundle bundle = new Bundle();
-                bundle.putString(FirebaseAnalytics.Param.ITEM_ID, key);
-                bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, (String) value);
-                ViewFinderAnywhereApplication.getGlobalFirebaseAnalytics()
-                        .logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
+                ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
+                        .createNewLogRequest()
+                        .setEvent(FirebaseAnalytics.Event.SELECT_CONTENT)
+                        .setParam(FirebaseAnalytics.Param.ITEM_ID, key)
+                        .setParam(FirebaseAnalytics.Param.ITEM_NAME, (String) value)
+                        .done();
             }
             return true;
         }

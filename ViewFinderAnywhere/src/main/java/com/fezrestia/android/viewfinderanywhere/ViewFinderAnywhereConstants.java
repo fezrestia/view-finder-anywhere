@@ -236,4 +236,17 @@ public class ViewFinderAnywhereConstants {
     public static final String KEY_CAMERA_FUNCTION_API_LEVEL
             = "key_camera_api_level";
 
+
+
+    // Firebase analytics events.
+    public static final String FIREBASE_EVENT_ON_SHUTTER_DONE
+            = "on_shutter_done";
+
+    // Firebase values.
+    public static String getBooleanString(boolean bool) {
+        return bool ? "true" : "false";
+    }
+
+
+
 }
