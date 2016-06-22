@@ -45,6 +45,8 @@ android {
 dependencies {
     // FireBase analytics.
     compile 'com.google.firebase:firebase-core:9.0.0'
+    // Firebase notifications.
+    compile 'com.google.firebase:firebase-messaging:9.0.0'
 }
 
 // Add for FireBase.
