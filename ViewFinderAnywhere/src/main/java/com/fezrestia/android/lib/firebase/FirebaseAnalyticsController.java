@@ -8,6 +8,7 @@ import com.google.firebase.analytics.FirebaseAnalytics;
 
 public class FirebaseAnalyticsController {
     public static final String TAG = "FirebaseAnalyticsController";
+    private static final boolean IS_DEBUG = false | Log.IS_DEBUG;
 
     // Firebase instance.
     private final FirebaseAnalytics mFirebaseAnalytics;
@@ -67,9 +68,9 @@ public class FirebaseAnalyticsController {
      * @param context
      */
     public FirebaseAnalyticsController(Context context) {
-        Log.logDebug(TAG, "CONSTRUCTOR : E");
+        if (IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR : E");
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(context);
-        Log.logDebug(TAG, "CONSTRUCTOR : X");
+        if (IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR : X");
     }
 
     /**
