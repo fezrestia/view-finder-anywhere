@@ -992,6 +992,12 @@ public class OverlayViewFinderController {
         @Override
         public void onShutterDone(int requestId) {
             OverlayViewFinderController.getInstance().getCurrentState().onShutterDone();
+
+            // Firebase analytics.
+            ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
+                    .createNewLogRequest()
+                    .setEvent(ViewFinderAnywhereConstants.FIREBASE_EVENT_ON_SHUTTER_DONE)
+                    .done();
         }
 
         @Override
