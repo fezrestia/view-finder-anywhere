@@ -249,4 +249,9 @@ public class ViewFinderAnywhereConstants {
 
 
 
+    // Animation parameters.
+    public static final int STORAGE_SELECTOR_TRIGGER_DELAY_MILLIS = 1000;
+
+
+
 }

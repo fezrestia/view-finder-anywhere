@@ -963,8 +963,8 @@ public class OverlayViewFinderRootView extends RelativeLayout {
     private class TnteractionCallbackImpl implements InteractionEngine.InteractionCallback {
         @Override
         public void onSingleTouched(Point point) {
-//            if (Log.IS_DEBUG) Log.logDebug(TAG,
-//                    "onSingleTouched() : [X=" + point.x + "] [Y=" + point.y + "]");
+            if (Log.IS_DEBUG) Log.logDebug(TAG,
+                    "onSingleTouched() : [X=" + point.x + "] [Y=" + point.y + "]");
 
             // Pre-open.
             if (!mIsResumed) {
@@ -1047,8 +1047,8 @@ public class OverlayViewFinderRootView extends RelativeLayout {
 
         @Override
         public void onSingleReleased(Point point) {
-//            if (Log.IS_DEBUG) Log.logDebug(TAG,
-//                    "onSingleReleased() : [X=" + point.x + "] [Y=" + point.y + "]");
+            if (Log.IS_DEBUG) Log.logDebug(TAG,
+                    "onSingleReleased() : [X=" + point.x + "] [Y=" + point.y + "]");
 
             // Request still capture.
             OverlayViewFinderController.getInstance().getCurrentState().requestStillCapture();

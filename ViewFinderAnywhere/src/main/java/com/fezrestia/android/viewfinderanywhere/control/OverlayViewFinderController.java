@@ -237,9 +237,10 @@ public class OverlayViewFinderController {
         if (ViewFinderAnywhereApplication.isStorageSelectorEnabled()) {
             int delayedMillis;
             if (mRootView.isAttachedToWindow()) {
-                delayedMillis = 200;
+                delayedMillis = ViewFinderAnywhereConstants.STORAGE_SELECTOR_TRIGGER_DELAY_MILLIS;
             } else {
-                delayedMillis = 1000;
+                delayedMillis = ViewFinderAnywhereConstants.STORAGE_SELECTOR_TRIGGER_DELAY_MILLIS
+                        * 2;
             }
             mUiWorker.postDelayed(mStartStorageSelectorTask, delayedMillis);
         }
