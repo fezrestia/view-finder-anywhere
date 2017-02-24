@@ -544,6 +544,8 @@ public class OverlayViewFinderController {
     private class StateFinalized extends StateAllFallback {
         public final String TAG = "StateFinalized";
 
+        private boolean mIsPreOpenCanceled = true;
+
         @Override
         public void entry() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "entry()");
@@ -554,7 +556,6 @@ public class OverlayViewFinderController {
             // Receiver.
             mScreenOffReceiver.disable(mContext);
         }
-
 
         @Override
         public void onResume() {
@@ -568,13 +569,31 @@ public class OverlayViewFinderController {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenRequested()");
 
             mCamera.openAsync(mViewFinderAspectWH, new OpenCallbackImpl());
+
+            mIsPreOpenCanceled = false;
         }
 
         @Override
         public void onPreOpenCanceled() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenCanceled()");
 
+            mIsPreOpenCanceled = true;
+
             mCamera.closeAsync(new CloseCallbackImpl());
+        }
+
+        @Override
+        public void onCameraReady() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraReady()");
+
+            if (!mIsPreOpenCanceled) {
+                // Bind surface in advance.
+                if (mRootView.getViewFinderSurface() != null) {
+                    mCamera.bindPreviewSurfaceAsync(
+                            mRootView.getViewFinderSurface(),
+                            new BindSurfaceCallbackImpl());
+                }
+            }
         }
     }
 

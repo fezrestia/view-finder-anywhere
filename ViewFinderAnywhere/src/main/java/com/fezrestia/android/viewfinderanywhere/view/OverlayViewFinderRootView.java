@@ -874,9 +874,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
         private float mActualAlpha = SHOWN_ALPHA;
 
         // Alpha stride.
-        private static final float ALPHA_DELTA = 0.1f;
-        // Alpha animation interval.
-        private static final int FADE_INTERVAL_MILLIS = 16;
+        private static final float ALPHA_DELTA = 0.2f;
 
         /**
          * Reset state.
@@ -915,7 +913,11 @@ public class OverlayViewFinderRootView extends RelativeLayout {
             mViewFinder.setAlpha(mActualAlpha);
 
             if (isNextTaskRequired) {
-                mRootView.getHandler().postDelayed(this, FADE_INTERVAL_MILLIS);
+                // NOTICE:
+                //   On Android N, invalidate() is called in setAlpha().
+                //   So, this task takes 1 frame V-Sync millis (about 16[ms])
+                //   Not to delay fade in/out, post next control task immediately.
+                mRootView.getHandler().post(this);
             }
         }
     }
@@ -959,8 +961,8 @@ public class OverlayViewFinderRootView extends RelativeLayout {
     }
 
     private final InteractionEngine.InteractionCallback mInteractionCallbackImpl
-            = new TnteractionCallbackImpl();
-    private class TnteractionCallbackImpl implements InteractionEngine.InteractionCallback {
+            = new InteractionCallbackImpl();
+    private class InteractionCallbackImpl implements InteractionEngine.InteractionCallback {
         @Override
         public void onSingleTouched(Point point) {
             if (Log.IS_DEBUG) Log.logDebug(TAG,
