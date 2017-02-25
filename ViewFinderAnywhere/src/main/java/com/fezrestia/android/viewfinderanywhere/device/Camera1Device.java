@@ -7,6 +7,7 @@ import android.hardware.Camera;
 import android.hardware.SensorManager;
 import android.os.Handler;
 import android.os.PowerManager;
+import android.support.annotation.NonNull;
 import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.TextureView;
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Camera functions based on Camera API 1.0.
  */
+@SuppressWarnings("deprecation")
 public class Camera1Device implements CameraPlatformInterface {
     // Log tag.
     private static final String TAG = "Camera1Device";
@@ -60,7 +62,7 @@ public class Camera1Device implements CameraPlatformInterface {
             = new BackWorkerThreadFactoryImpl();
     private static class BackWorkerThreadFactoryImpl implements ThreadFactory {
         @Override
-        public Thread newThread(Runnable r) {
+        public Thread newThread(@NonNull Runnable r) {
             Thread thread = new Thread(r, TAG);
             thread.setPriority(Thread.MAX_PRIORITY);
             return thread;
@@ -74,7 +76,7 @@ public class Camera1Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          */
-        public OrientationEventListenerImpl(Context context, int rate) {
+        OrientationEventListenerImpl(Context context, int rate) {
             super(context, rate);
             // NOP.
         }
@@ -88,7 +90,7 @@ public class Camera1Device implements CameraPlatformInterface {
     /**
      * CONSTRUCTOR.
      *
-     * @param context
+     * @param context Master context.
      */
     public Camera1Device(Context context) {
         mContext = context;
@@ -134,9 +136,9 @@ public class Camera1Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param openCallback
+         * @param openCallback Callback.
          */
-        public OpenTask(OpenCallback openCallback) {
+        OpenTask(OpenCallback openCallback) {
             mOpenCallback = openCallback;
         }
 
@@ -167,8 +169,7 @@ public class Camera1Device implements CameraPlatformInterface {
                     Camera.Parameters params = mCamera.getParameters();
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "Camera.getParameters() : X");
 
-                    Set<PlatformDependencyResolver.Size> supportedSizes
-                            = new HashSet<PlatformDependencyResolver.Size>();
+                    Set<PlatformDependencyResolver.Size> supportedSizes = new HashSet<>();
 
                     // Preview size.
                     supportedSizes.clear();
@@ -280,9 +281,9 @@ public class Camera1Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param closeCallback
+         * @param closeCallback Callback.
          */
-        public CloseTask(CloseCallback closeCallback) {
+        CloseTask(CloseCallback closeCallback) {
             mCloseCallback = closeCallback;
         }
 
@@ -353,10 +354,10 @@ public class Camera1Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param texView
-         * @param matrix
+         * @param texView View finder texture.
+         * @param matrix Transform matrix from preview frame to finder.
          */
-        public SetTextureViewTransformTask(TextureView texView, Matrix matrix) {
+        SetTextureViewTransformTask(TextureView texView, Matrix matrix) {
             mTexView = texView;
             mMatrix = matrix;
         }
@@ -374,8 +375,8 @@ public class Camera1Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param surface
-         * @param bindSurfaceCallback
+         * @param surface Finder surface.
+         * @param bindSurfaceCallback Callback.
          */
         BindSurfaceTask(SurfaceTexture surface, BindSurfaceCallback bindSurfaceCallback) {
             mSurface = surface;
@@ -394,7 +395,7 @@ public class Camera1Device implements CameraPlatformInterface {
                     WindowManager winMng = (WindowManager)
                             mContext.getSystemService(Context.WINDOW_SERVICE);
                     final int rotation = winMng.getDefaultDisplay().getRotation();
-                    int degrees = 0;
+                    int degrees;
                     switch (rotation) {
                         case Surface.ROTATION_0:
                             degrees = 0;
@@ -466,13 +467,13 @@ public class Camera1Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param scanCallback
+         * @param scanCallback Callback.
          */
-        public ScanTask(ScanCallback scanCallback) {
+        ScanTask(ScanCallback scanCallback) {
             mScanCallback = scanCallback;
         }
 
-        public void cancel() {
+        void cancel() {
             isCanceled = true;
             if (mLatch != null) {
                 mLatch.countDown();
@@ -526,9 +527,9 @@ public class Camera1Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param latch
+         * @param latch Latch waiting for auto focus done.
          */
-        public FocusCallbackImpl(CountDownLatch latch) {
+        FocusCallbackImpl(CountDownLatch latch) {
             mLatch = latch;
         }
 
@@ -540,7 +541,7 @@ public class Camera1Device implements CameraPlatformInterface {
             mLatch.countDown();
         }
 
-        public boolean isSuccess() {
+        boolean isSuccess() {
             return mIsSuccess;
         }
     }
@@ -559,9 +560,9 @@ public class Camera1Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param cancelScanCallback
+         * @param cancelScanCallback Callback.
          */
-        public CancelScanTask(CancelScanCallback cancelScanCallback) {
+        CancelScanTask(CancelScanCallback cancelScanCallback) {
             mCancelScanCallback = cancelScanCallback;
         }
 
@@ -608,10 +609,10 @@ public class Camera1Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param requestId
-         * @param stillCaptureCallback
+         * @param requestId Capture request ID.
+         * @param stillCaptureCallback Callback.
          */
-        public StillCaptureTask(int requestId, StillCaptureCallback stillCaptureCallback) {
+        StillCaptureTask(int requestId, StillCaptureCallback stillCaptureCallback) {
             mRequestId = requestId;
             mStillCaptureCallback = stillCaptureCallback;
         }
@@ -627,21 +628,21 @@ public class Camera1Device implements CameraPlatformInterface {
                 Camera.CameraInfo camInfo = new Camera.CameraInfo();
                 Camera.getCameraInfo(mCameraId, camInfo);
                 final int orientation = (mOrientationDegree + 45) / 90 * 90;
-                int rotation = 0;
+                int rotationDeg;
                 switch (camInfo.facing) {
                     case Camera.CameraInfo.CAMERA_FACING_BACK:
-                        rotation = (camInfo.orientation + orientation) % 360;
+                        rotationDeg = (camInfo.orientation + orientation) % 360;
                         break;
 
                     case Camera.CameraInfo.CAMERA_FACING_FRONT:
-                        rotation = (camInfo.orientation - orientation + 360) % 360;
+                        rotationDeg = (camInfo.orientation - orientation + 360) % 360;
                         break;
 
                     default:
                         // Unexpected facing.
                         throw new IllegalArgumentException("Unexpected facing.");
                 }
-                params.setRotation(rotation);
+                params.setRotation(rotationDeg);
                 mCamera.setParameters(params);
 
                 // Do capture.
@@ -668,7 +669,7 @@ public class Camera1Device implements CameraPlatformInterface {
                 // Process JPEG and notify.
                 HandleJpegTask task = new HandleJpegTask(
                         pictCallback.getJpegBuffer(),
-                        rotation,
+                        rotationDeg,
                         mEvfAspectWH,
                         JPEG_QUALITY);
                 mBackWorker.execute(task);
@@ -696,9 +697,9 @@ public class Camera1Device implements CameraPlatformInterface {
             /**
              * CONSTRUCTOR.
              *
-              * @param latch
+             * @param latch Latch waiting for picture done.
              */
-            public PictureCallbackImpl(CountDownLatch latch) {
+            PictureCallbackImpl(CountDownLatch latch) {
                 mLatch = latch;
             }
 
@@ -714,14 +715,14 @@ public class Camera1Device implements CameraPlatformInterface {
                 mStillCaptureCallback.onCaptureDone(mRequestId);
             }
 
-            public byte[] getJpegBuffer() {
+            byte[] getJpegBuffer() {
                 return mJpegBuffer;
             }
         }
 
         private class HandleJpegTask implements Runnable {
             private final byte[] mSrcJpeg;
-            private final int mRotation;
+            private final int mRotationDeg;
             private final float mCropAspectWH;
             private final int mJpegQuality;
             private byte[] mResultJpeg = null;
@@ -729,18 +730,18 @@ public class Camera1Device implements CameraPlatformInterface {
             /**
              * CONSTRUCTOR.
              *
-             * @param srcJpeg
-             * @param rotation
-             * @param cropAspectWH
-             * @param jpegQuality
+             * @param srcJpeg Source JPEG frame buffer.
+             * @param rotationDeg Frame rotation degree.
+             * @param cropAspectWH Result aspect ratio.
+             * @param jpegQuality JPEG quality.
              */
-            public HandleJpegTask(
+            HandleJpegTask(
                     byte[] srcJpeg,
-                    int rotation,
+                    int rotationDeg,
                     float cropAspectWH,
                     int jpegQuality) {
                 mSrcJpeg = srcJpeg;
-                mRotation = rotation;
+                mRotationDeg = rotationDeg;
                 mCropAspectWH = cropAspectWH;
                 mJpegQuality = jpegQuality;
             }
@@ -751,7 +752,7 @@ public class Camera1Device implements CameraPlatformInterface {
 
                 mResultJpeg = PDR2.doCropRotJpeg(
                         mSrcJpeg,
-                        mRotation,
+                        mRotationDeg,
                         mCropAspectWH,
                         mJpegQuality);
 

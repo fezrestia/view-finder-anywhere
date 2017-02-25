@@ -1,7 +1,9 @@
 package com.fezrestia.android.viewfinderanywhere;
 
+import android.annotation.SuppressLint;
 import android.view.Gravity;
 
+@SuppressWarnings("WeakerAccess") // This is common constants.
 public class ViewFinderAnywhereConstants {
     /** Intent constants. */
     public static final String INTENT_ACTION_FOCUS_KEY_DOUBLE_CLICK
@@ -86,23 +88,17 @@ public class ViewFinderAnywhereConstants {
     public static final String VAL_VIEW_FINDER_GRIP_POSITION_BOTTOM_RIGHT
             = "bottom-right";
 
-
-
     /** View finder UI plug-in key. */
     public static final String KEY_VIEW_FINDER_UI_PLUG_IN_PACKAGE
             = "key_ui_plugin_package";
 
-
-
     /** Font file name. */
     public static final String FONT_FILENAME_CODA = "Coda/Coda-Regular.ttf";
 
-
-
     /** Resource type. */
-    public static final String RES_TYPE_DRAWABLE = "drawable";
+    static final String RES_TYPE_DRAWABLE = "drawable";
     /** Resource type. */
-    public static final String RES_TYPE_COLOR = "color";
+    static final String RES_TYPE_COLOR = "color";
     /** Resource type. */
     public static final String RES_TYPE_STRING = "string";
 
@@ -112,7 +108,8 @@ public class ViewFinderAnywhereConstants {
     /**
      * View finder grip size.
      */
-    public static enum ViewFinderGripSize {
+    @SuppressWarnings({"UnnecessaryEnumModifier", "unused"})
+    public enum ViewFinderGripSize {
         X_LARGE(VAL_VIEW_FINDER_GRIP_SIZE_X_LARGE, 1.0f),
         LARGE(VAL_VIEW_FINDER_GRIP_SIZE_LARGE, 0.5f),
         SMALL(VAL_VIEW_FINDER_GRIP_SIZE_SMALL, 0.333f),
@@ -130,8 +127,8 @@ public class ViewFinderAnywhereConstants {
         /**
          * CONSTRUCTOR
          *
-         * @param value
-         * @param scaleRate
+         * @param value Size
+         * @param scaleRate Scale rate.
          */
         private ViewFinderGripSize(String value, float scaleRate) {
             mValue = value;
@@ -141,7 +138,7 @@ public class ViewFinderAnywhereConstants {
         /**
          * Get default value.
          *
-         * @return
+         * @return Default grip size.
          */
         public static ViewFinderGripSize getDefault() {
             return X_LARGE;
@@ -150,7 +147,7 @@ public class ViewFinderAnywhereConstants {
         /**
          * Get grip scale rate.
          *
-         * @return
+         * @return Scale rate.
          */
         public float getScaleRate() {
             return mScaleRate;
@@ -160,7 +157,9 @@ public class ViewFinderAnywhereConstants {
     /**
      * View finder grip position.
      */
-    public static enum ViewFinderGripPosition {
+    @SuppressWarnings({"UnnecessaryEnumModifier", "unused"})
+    @SuppressLint("RtlHardcoded")
+    public enum ViewFinderGripPosition {
         TOP_LEFT(VAL_VIEW_FINDER_GRIP_POSITION_TOP_LEFT, Gravity.TOP | Gravity.LEFT),
         MIDDLE(VAL_VIEW_FINDER_GRIP_POSITION_MIDDLE, Gravity.CENTER),
         BOTTOM_RIGHT(VAL_VIEW_FINDER_GRIP_POSITION_BOTTOM_RIGHT, Gravity.BOTTOM | Gravity.RIGHT),
@@ -178,8 +177,8 @@ public class ViewFinderAnywhereConstants {
         /**
          * CONSTRUCTOR
          *
-         * @param value
-         * @param layoutGravity
+         * @param value Grip position.
+         * @param layoutGravity Layout gravity.
          */
         private ViewFinderGripPosition(String value, int layoutGravity) {
             mValue = value;
@@ -189,7 +188,7 @@ public class ViewFinderAnywhereConstants {
         /**
          * Get default value.
          *
-         * @return
+         * @return Default grip position.
          */
         public static ViewFinderGripPosition getDefault() {
             return BOTTOM_RIGHT;
@@ -198,15 +197,12 @@ public class ViewFinderAnywhereConstants {
         /**
          * Get layout gravity.
          *
-         * @return
+         * @return Layout gravity.
          */
         public int getLayoutGravity() {
             return mLayoutGravity;
         }
     }
-
-
-
 
     /** Storage selector is enabled or not. */
     public static final String KEY_IS_STORAGE_SELECTOR_ENABLED
@@ -224,7 +220,6 @@ public class ViewFinderAnywhereConstants {
     public static final String KEY_STORAGE_SELECTOR_STORE_TARGET_DIRECTORY
             = "key_storage_store_target_dir";
 
-
     /**
      * Used camera API level.
      */
@@ -236,8 +231,6 @@ public class ViewFinderAnywhereConstants {
     public static final String KEY_CAMERA_FUNCTION_API_LEVEL
             = "key_camera_api_level";
 
-
-
     // Firebase analytics events.
     public static final String FIREBASE_EVENT_ON_SHUTTER_DONE
             = "on_shutter_done";
@@ -247,11 +240,6 @@ public class ViewFinderAnywhereConstants {
         return bool ? "true" : "false";
     }
 
-
-
     // Animation parameters.
     public static final int STORAGE_SELECTOR_TRIGGER_DELAY_MILLIS = 1000;
-
-
-
 }

@@ -35,12 +35,8 @@ public class VectorCalculator {
     public static boolean isSquare(PointF vec0, PointF vec1) {
         float rad = getRadianFrom2Vector(vec0, vec1);
 
-        if ((RIGHT_ANGLE - RIGHT_ANGLE_TOLERANCE < rad)
-                && rad < RIGHT_ANGLE + RIGHT_ANGLE_TOLERANCE) {
-            return true;
-        }
-
-        return false;
+        return (RIGHT_ANGLE - RIGHT_ANGLE_TOLERANCE < rad)
+                && (rad < RIGHT_ANGLE + RIGHT_ANGLE_TOLERANCE);
     }
 
     public static boolean isParallel(PointF vec0, PointF vec1) {

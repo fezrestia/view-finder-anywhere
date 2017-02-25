@@ -2,6 +2,7 @@
 
 <manifest
         xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
         package="com.fezrestia.android.viewfinderanywhere"
 >
 
@@ -21,7 +22,8 @@
             android:icon="@drawable/application_icon"
             android:label="@string/application_label"
             android:hardwareAccelerated="true"
-            android:largeHeap="true"
+            android:allowBackup="false"
+            tools:ignore="GoogleAppIndexingWarning"
     >
 
         <!-- Activities. -->
@@ -44,6 +46,7 @@
         <!-- Receivers. -->
         <receiver
                  android:name=".receiver.OverlayViewFinderTriggerReceiver"
+                 android:exported="false"
         >
             <intent-filter>
                 <action android:name="com.fezrestia.android.viewfinderanywhere.intent.ACTION_FOCUS_KEY_DOUBLE_CLICK" />
@@ -65,6 +68,7 @@
         <!-- Firebase messaging -->
         <service
                 android:name="com.fezrestia.android.lib.firebase.FirebaseMessagingServiceImpl"
+                android:exported="false"
         >
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

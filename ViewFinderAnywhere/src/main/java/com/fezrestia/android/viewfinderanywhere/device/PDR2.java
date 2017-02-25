@@ -32,18 +32,19 @@ import java.util.List;
  * Platform Dependency Resolver based on Camera API 2.0.
  */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-public class PDR2 {
+class PDR2 {
     // Log tag.
     public static final String TAG = "PDR2";
 
     /**
      * Get back facing camera ID.
      *
-     * @param camMng
-     * @return
-     * @throws CameraAccessException
+     * @param camMng CameraManager instance.
+     * @return Back camera ID.
+     * @throws CameraAccessException Camera can not be accessed.
      */
-    public static String getBackCameraId(CameraManager camMng) throws CameraAccessException {
+    @SuppressWarnings("ConstantConditions")
+    static String getBackCameraId(CameraManager camMng) throws CameraAccessException {
         String[] ids = camMng.getCameraIdList();
 
         // Scan ID.
@@ -72,7 +73,7 @@ public class PDR2 {
         return null;
     }
 
-    public static void logOutputImageFormat(StreamConfigurationMap streamConfigMap) {
+    static void logOutputImageFormat(StreamConfigurationMap streamConfigMap) {
         android.util.Log.e("TraceLog", "###### SUPPORTED OUTPUT FORMATS");
         logImageFormats(streamConfigMap, streamConfigMap.getOutputFormats());
     }
@@ -146,7 +147,7 @@ public class PDR2 {
         }
     }
 
-    public static void logSurfaceTextureOutputSizes(StreamConfigurationMap configMap) {
+    static void logSurfaceTextureOutputSizes(StreamConfigurationMap configMap) {
         Size[] supportedSizes = configMap.getOutputSizes(SurfaceTexture.class);
 
         android.util.Log.e("TraceLog", "###### SurfaceTexture OUTPUT SIZES");
@@ -156,15 +157,13 @@ public class PDR2 {
         }
     }
 
-    public static void logAfTrigger(Integer afTrigger) {
+    static void logAfTrigger(Integer afTrigger) {
         if (afTrigger == null) {
             android.util.Log.e("TraceLog", "### AF Trigger == NULL");
             return;
         }
 
-        int trigger = afTrigger.intValue();
-
-        switch (trigger) {
+        switch (afTrigger) {
             case CaptureResult.CONTROL_AF_TRIGGER_CANCEL:
                 android.util.Log.e("TraceLog", "### AF Trigger == CANCEL");
                 break;
@@ -180,15 +179,13 @@ public class PDR2 {
         }
     }
 
-    public static void logAfState(Integer afState) {
+    static void logAfState(Integer afState) {
         if (afState == null) {
             android.util.Log.e("TraceLog", "### AF State == NULL");
             return;
         }
 
-        int state = afState.intValue();
-
-        switch (state) {
+        switch (afState) {
             case CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN:
                 android.util.Log.e("TraceLog", "### AF State == ACTIVE_SCAN");
                 break;
@@ -216,15 +213,13 @@ public class PDR2 {
         }
     }
 
-    public static void logAeTrigger(Integer aeTrigger) {
+    static void logAeTrigger(Integer aeTrigger) {
         if (aeTrigger == null) {
             android.util.Log.e("TraceLog", "### AE Trigger == NULL");
             return;
         }
 
-        int trigger = aeTrigger.intValue();
-
-        switch (trigger) {
+        switch (aeTrigger) {
             case CaptureResult.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL:
                 android.util.Log.e("TraceLog", "### AE Trigger == CANCEL");
                 break;
@@ -240,15 +235,13 @@ public class PDR2 {
         }
     }
 
-    public static void logAeState(Integer aeState) {
+    static void logAeState(Integer aeState) {
         if (aeState == null) {
             android.util.Log.e("TraceLog", "### AE State == NULL");
             return;
         }
 
-        int state = aeState.intValue();
-
-        switch (state) {
+        switch (aeState) {
             case CaptureResult.CONTROL_AE_STATE_CONVERGED:
                 android.util.Log.e("TraceLog", "### AE State == CONVERGED");
                 break;
@@ -278,11 +271,12 @@ public class PDR2 {
     /**
      * Get frame orientation.
      *
-     * @param camCharacteristics
-     * @param deviceOrientation
-     * @return
+     * @param camCharacteristics Camera characteristics.
+     * @param deviceOrientation Camera orientation degree.
+     * @return Frame orientation degree.
      */
-    public static int getFrameOrientation(
+    @SuppressWarnings("ConstantConditions")
+    static int getFrameOrientation(
             CameraCharacteristics camCharacteristics,
             int deviceOrientation) {
         // Check.
@@ -301,22 +295,20 @@ public class PDR2 {
         }
 
         int sensorOrientation = camCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-        int frameOrientation = (sensorOrientation + deviceOrientation + 360) % 360;
-
-        return frameOrientation;
+        return (sensorOrientation + deviceOrientation + 360) % 360;
     }
 
     /**
      * Get transform matrix for TextureView preview stream.
      *
-     * @param context
-     * @param bufferWidth
-     * @param bufferHeight
-     * @param finderWidth
-     * @param finderHeight
-     * @return
+     * @param context Master context.
+     * @param bufferWidth Frame buffer width.
+     * @param bufferHeight Frame buffer height.
+     * @param finderWidth Finder width.
+     * @param finderHeight Finder height.
+     * @return Transform matrix.
      */
-    public static Matrix getTextureViewTransformMatrix(
+    static Matrix getTextureViewTransformMatrix(
             Context context,
             int bufferWidth,
             int bufferHeight,
@@ -457,11 +449,12 @@ public class PDR2 {
     /**
      * Get optimal preview stream frame size.
      *
-     * @param c
-     * @return
+     * @param c Camera characteristics.
+     * @return Preview stream frame buffer size.
      */
     // TODO: Consider display size ?
-    public static Size getPreviewStreamFrameSize(CameraCharacteristics c) {
+    @SuppressWarnings("ConstantConditions")
+    static Size getPreviewStreamFrameSize(CameraCharacteristics c) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "###### PreviewFrameSize");
 
         // Sensor aspect.
@@ -519,11 +512,11 @@ public class PDR2 {
     /**
      * Get maximum JPEG frame size.
      *
-     * @param map
-     * @param devicePreviewSize
-     * @return
+     * @param map Stream configuration map.
+     * @param devicePreviewSize Camera device preview size.
+     * @return Optimal JPEG frame size.
      */
-    public static Size getOptimalJpegFrameSize(StreamConfigurationMap map, Size devicePreviewSize) {
+    static Size getOptimalJpegFrameSize(StreamConfigurationMap map, Size devicePreviewSize) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "###### getOptimalJpegFrameSize");
 
         Size[] jpegSizes = map.getOutputSizes(ImageFormat.JPEG);
@@ -533,7 +526,7 @@ public class PDR2 {
                 * 100.0f);
         if (Log.IS_DEBUG) Log.logDebug(TAG, "######   PreviewAspect = " + previewAspectRatioWHx100);
 
-        List<Size> capableSizes = new ArrayList<Size>();
+        List<Size> capableSizes = new ArrayList<>();
         for (Size eachSize : jpegSizes) {
             int aspectWHx100 = (int)
                     ((float) eachSize.getWidth() / (float) eachSize.getHeight() * 100.0f);
@@ -575,19 +568,19 @@ public class PDR2 {
     /**
      * Get crop size based on active array size.
      *
-     * @param c
-     * @param aspectWH
-     * @return
+     * @param c Camera characteristics.
+     * @param aspectWH Aspect ratio.
+     * @return Aspect considered scaler crop region.
      */
-    public static Rect getAspectConsideredScalerCropRegion(
+    @SuppressWarnings("ConstantConditions")
+    static Rect getAspectConsideredScalerCropRegion(
             CameraCharacteristics c,
             float aspectWH) {
         // Full resolution size.
         Rect fullRect = c.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
         float fullAspectWH = ((float) fullRect.width()) / ((float) fullRect.height());
         // Max zoom.
-        float maxZoom = c.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM)
-                .floatValue();
+        float maxZoom = c.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "### ActiveArraySize = " + fullRect.toShortString());
         if (Log.IS_DEBUG) Log.logDebug(TAG, "### MAX Zoom = " + maxZoom);
@@ -627,83 +620,73 @@ public class PDR2 {
     /**
      * AF function is available or not.
      *
-     * @param result
-     * @return
+     * @param result Capture result.
+     * @return AF is available or not.
      */
-    public static boolean isAfAvailable (CaptureResult result) {
+    static boolean isAfAvailable (CaptureResult result) {
         Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
-        if (afState == null) {
-            return false;
-        }
-        return true;
+        return afState != null;
     }
 
     /**
      * AF is locked or not.
      *
-     * @param result
-     * @return
+     * @param result Capture result.
+     * @return AF locked or not.
      */
-    public static boolean isAfLocked(CaptureResult result) {
-        int afState = result.get(CaptureResult.CONTROL_AF_STATE).intValue();
+    @SuppressWarnings("ConstantConditions")
+    static boolean isAfLocked(CaptureResult result) {
+        int afState = result.get(CaptureResult.CONTROL_AF_STATE);
 
-        if (afState == CaptureRequest.CONTROL_AF_STATE_FOCUSED_LOCKED
-                || afState == CaptureRequest.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED) {
-            return true;
-        }
-        return false;
+        return (afState == CaptureRequest.CONTROL_AF_STATE_FOCUSED_LOCKED)
+                || (afState == CaptureRequest.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED);
     }
 
     /**
      * AF is successfully focused or not.
      *
-     * @param result
-     * @return
+     * @param result Capture result.
+     * @return AF is success or not.
      */
-    public static boolean isAfSucceeded(CaptureResult result) {
-        int afState = result.get(CaptureResult.CONTROL_AF_STATE).intValue();
+    @SuppressWarnings("ConstantConditions")
+    static boolean isAfSucceeded(CaptureResult result) {
+        int afState = result.get(CaptureResult.CONTROL_AF_STATE);
         return (afState == CaptureRequest.CONTROL_AF_STATE_FOCUSED_LOCKED);
     }
 
     /**
      * AE function is available or not.
      *
-     * @param result
-     * @return
+     * @param result Capture result.
+     * @return AE is available or not.
      */
-    public static boolean isAeAvailable (CaptureResult result) {
+    static boolean isAeAvailable (CaptureResult result) {
         Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-        if (aeState == null) {
-            return false;
-        }
-
-        return true;
+        return aeState != null;
     }
 
     /**
      * AE is locked or not.
      *
-     * @param result
-     * @return
+     * @param result Capture result.
+     * @return AE is locked or not.
      */
-    public static boolean isAeLocked(CaptureResult result) {
-        int aeState = result.get(CaptureResult.CONTROL_AE_STATE).intValue();
-        if (aeState == CaptureRequest.CONTROL_AE_STATE_LOCKED) {
-            return true;
-        }
-        return false;
+    @SuppressWarnings("ConstantConditions")
+    static boolean isAeLocked(CaptureResult result) {
+        int aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+        return aeState == CaptureRequest.CONTROL_AE_STATE_LOCKED;
     }
 
     /**
      * Crop and rotate JPEG frame.
      *
-     * @param srcJpeg
+     * @param srcJpeg JPEG frame buffer.
      * @param rotation Get from getFrameOrientation()
      * @param cropAspectWH Must be greater than 1.0f.
      * @param jpegQuality ResultJPEG quality
-     * @return
+     * @return Result JPEG frame buffer.
      */
-    public static byte[] doCropRotJpeg(
+    static byte[] doCropRotJpeg(
             byte[] srcJpeg,
             int rotation,
             float cropAspectWH,

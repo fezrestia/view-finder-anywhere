@@ -7,6 +7,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -20,6 +21,7 @@ import android.preference.MultiSelectListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 
 import com.fezrestia.android.lib.firebase.FirebaseAnalyticsController;
 import com.fezrestia.android.util.log.Log;
@@ -36,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@SuppressWarnings("deprecation")
 public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
     // Log tag.
     private static final String TAG = "ViewFinderAnywhereSettingActivity";
@@ -44,22 +47,22 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
     private static final int OVERLAY_TRIGGER_NOTIFICATION_ID = 1000;
 
     // UI-Plug-IN.
-    private List<UiPlugInPackage> mUiPlugInPackageList = new ArrayList<UiPlugInPackage>();
+    private List<UiPlugInPackage> mUiPlugInPackageList = new ArrayList<>();
 
     // Customized resources.
     private ViewFinderAnywhereApplication.CustomizableResourceContainer mCustomResContainer = null;
 
     private class UiPlugInPackage {
-        public final String packageName;
-        public final String plugInTitle;
+        final String packageName;
+        final String plugInTitle;
 
         /**
          * CONSTRUCTOR.
          *
-         * @param packageName
-         * @param plugInTitle
+         * @param packageName Plug-In package name.
+         * @param plugInTitle Plug-In title label.
          */
-        public UiPlugInPackage(String packageName, String plugInTitle) {
+        UiPlugInPackage(String packageName, String plugInTitle) {
             this.packageName = packageName;
             this.plugInTitle = plugInTitle;
         }
@@ -162,7 +165,7 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
                     ViewFinderAnywhereConstants.RES_TYPE_STRING,
                     info.packageName);
 
-            UiPlugInPackage plugIn = null;
+            UiPlugInPackage plugIn;
             try {
                 plugIn = new UiPlugInPackage(
                     info.packageName,
@@ -186,8 +189,8 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
         // UI Plug-IN.
         String currentUiPlugInTitle = null;
         // Values.
-        List<String> entries = new ArrayList<String>();
-        List<String> entryValues = new ArrayList<String>();
+        List<String> entries = new ArrayList<>();
+        List<String> entryValues = new ArrayList<>();
         for (UiPlugInPackage eachPackage : mUiPlugInPackageList) {
             entries.add(eachPackage.plugInTitle);
             entryValues.add(eachPackage.packageName);
@@ -271,7 +274,7 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
                         .setParam(FirebaseAnalytics.Param.ITEM_NAME, (String) value)
                         .done();
             } else if (preference instanceof CheckBoxPreference) {
-                final boolean isChecked = ((Boolean) value).booleanValue();
+                final boolean isChecked = ((Boolean) value);
 
                 if (key == null) {
                     // NOP.
@@ -406,6 +409,7 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
              = new OnStorageSelectorPreferenceChangedListener();
     private class OnStorageSelectorPreferenceChangedListener
             implements  Preference.OnPreferenceChangeListener {
+        @SuppressWarnings("unchecked")
         @Override
         public boolean onPreferenceChange(Preference preference, Object newValue) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StorageSelector.onPreferenceChange() : E");
@@ -414,66 +418,78 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "[key = " + key + "]");
 
             if (key == null) {
-                // NOP.
-            } else if (ViewFinderAnywhereConstants.KEY_IS_STORAGE_SELECTOR_ENABLED
-                    .equals(key)) {
-                final boolean isEnabled = ((Boolean) newValue).booleanValue();
+                if (Log.IS_DEBUG) Log.logError(TAG, "Key is null.");
+            } else switch (key) {
+                case ViewFinderAnywhereConstants.KEY_IS_STORAGE_SELECTOR_ENABLED:
+                    final boolean isEnabled = ((Boolean) newValue);
 
-                if (!isEnabled) {
-                    // Reset all storage settings.
-                    ViewFinderAnywhereApplication.getGlobalSharedPreferences().edit().putStringSet(
-                          ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
-                          null).commit();
-                    ViewFinderAnywhereApplication.getGlobalSharedPreferences().edit().putStringSet(
-                          ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_STORE_TARGET_DIRECTORY,
-                          null).commit();
+                    if (!isEnabled) {
+                        // Reset all storage settings.
+                        SharedPreferences.Editor editor = ViewFinderAnywhereApplication
+                                .getGlobalSharedPreferences().edit();
+                        editor.putStringSet(
+                                ViewFinderAnywhereConstants
+                                        .KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
+                                null)
+                                .apply();
+                        editor.putStringSet(
+                                ViewFinderAnywhereConstants
+                                        .KEY_STORAGE_SELECTOR_STORE_TARGET_DIRECTORY,
+                                null)
+                                .apply();
 
-                    // Disable.
-                    setEnabledStorageSelectorRelatedPreferences(false);
-                } else {
-                    // Enable.
-                    setEnabledStorageSelectorRelatedPreferences(true);
-                }
-            } else if (ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_CREATE_NEW_DIRECTORY
-                    .equals(key)) {
-                String newDir = (String) newValue;
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "[NewDirectory = " + newDir + "]");
-
-                // Validation.
-                if (!newDir.isEmpty()) {
-                    // Create new directory.
-                    boolean isSuccess = StorageController.createNewContentsDirectory(newDir);
-
-                    if (isSuccess) {
-                        // Update available list.
-                        updateStorageSelectorTargetDirectoryList();
+                        // Disable.
+                        setEnabledStorageSelectorRelatedPreferences(false);
                     } else {
-                        if (Log.IS_DEBUG) Log.logDebug(TAG, "New dir creation FAILED");
+                        // Enable.
+                        setEnabledStorageSelectorRelatedPreferences(true);
                     }
-                }
+                    break;
 
-                // Do not update setting.
-                return false;
-            } else if (ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY
-                    .equals(key)) {
-                Set<String> validDir = (Set<String>) newValue;
+                case ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_CREATE_NEW_DIRECTORY:
+                    String newDir = (String) newValue;
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "[NewDirectory = " + newDir + "]");
 
-                // Add default storage.
-                validDir.add(StorageController.DEFAULT_STORAGE_DIR_NAME);
+                    // Validation.
+                    if (!newDir.isEmpty()) {
+                        // Create new directory.
+                        boolean isSuccess = StorageController.createNewContentsDirectory(newDir);
 
-                if (Log.IS_DEBUG) {
-                    for (String eachDir : validDir) {
-                        Log.logDebug(TAG, "[ValidDirectory = " + eachDir + "]");
+                        if (isSuccess) {
+                            // Update available list.
+                            updateStorageSelectorTargetDirectoryList();
+                        } else {
+                            if (Log.IS_DEBUG) Log.logDebug(TAG, "New dir creation FAILED");
+                        }
                     }
-                }
 
-                // Store.
-                ViewFinderAnywhereApplication.getGlobalSharedPreferences().edit().putStringSet(
-                        ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
-                        validDir)
-                        .commit();
-            } else {
-                // NOP.
+                    // Do not update setting.
+                    return false;
+
+                case ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY:
+                    Set<String> validDir = (Set<String>) newValue;
+
+                    // Add default storage.
+                    validDir.add(StorageController.DEFAULT_STORAGE_DIR_NAME);
+
+                    if (Log.IS_DEBUG) {
+                        for (String eachDir : validDir) {
+                            Log.logDebug(TAG, "[ValidDirectory = " + eachDir + "]");
+                        }
+                    }
+
+                    // Store.
+                    SharedPreferences.Editor editor = ViewFinderAnywhereApplication
+                            .getGlobalSharedPreferences().edit();
+                    editor.putStringSet(
+                            ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
+                            validDir)
+                            .apply();
+                    break;
+
+                default:
+                    // NOP.
+                    break;
             }
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StorageSelector.onPreferenceChange() : X");
@@ -619,7 +635,7 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
                 return true;
             }
 
-            List<String> permissions = new ArrayList<String>();
+            List<String> permissions = new ArrayList<>();
 
             if (!isCameraPermissionGranted()) {
                 permissions.add(Manifest.permission.CAMERA);
@@ -659,8 +675,8 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
     @Override
     public void onRequestPermissionsResult(
             int  requestCode,
-            String[] permissions,
-            int[] grantResults) {
+            @NonNull String[] permissions,
+            @NonNull int[] grantResults) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onRequestPermissionsResult()");
 
         if (requestCode == REQUEST_CODE_MANAGE_PERMISSIONS) {

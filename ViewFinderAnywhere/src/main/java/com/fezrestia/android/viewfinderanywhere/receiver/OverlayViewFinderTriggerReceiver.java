@@ -12,7 +12,7 @@ import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderControl
 
 public class OverlayViewFinderTriggerReceiver extends BroadcastReceiver {
     // Log tag.
-    private static final String TAG = OverlayViewFinderTriggerReceiver.class.getSimpleName();
+    private static final String TAG = "OverlayViewFinderTriggerReceiver";
 
     @Override
     public void onReceive(Context context, Intent intent) {

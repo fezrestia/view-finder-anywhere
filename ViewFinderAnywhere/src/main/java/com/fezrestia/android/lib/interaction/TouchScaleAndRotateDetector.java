@@ -39,9 +39,9 @@ class TouchScaleAndRotateDetector {
         /**
          * 2-finger scaling gesture is detected.
          *
-         * @param currentLength
-         * @param previousLength
-         * @param originalLength
+         * @param currentLength Current 2 point length.
+         * @param previousLength Previous length.
+         * @param originalLength Original length.
          */
         void onDoubleTouchScaleDetected(
                 float currentLength,
@@ -51,8 +51,8 @@ class TouchScaleAndRotateDetector {
         /**
          * 2-finger rotating gesture is detected.
          *
-         * @param degreeVsOrigin
-         * @param degreeVsPrevious
+         * @param degreeVsOrigin Degree diff from origin.
+         * @param degreeVsPrevious Degree diff from previous.
          */
         void onDoubleTouchRotateDetected(
                 float degreeVsOrigin,
@@ -78,7 +78,7 @@ class TouchScaleAndRotateDetector {
     /**
      * Set callback.
      *
-     * @param listener
+     * @param listener Callback.
      */
     void setScaleAndRotateDetectorListener(ScaleAndRotateDetectorListener listener) {
         mListener = listener;
@@ -87,8 +87,8 @@ class TouchScaleAndRotateDetector {
     /**
      * Start detection.
      *
-     * @param point0
-     * @param point1
+     * @param point0 Point 0.
+     * @param point1 Point 1.
      */
     void startScaleAndRotateDetection(PointF point0, PointF point1) {
         mPreviousTouchPos0 = new PointF(point0.x, point0.y);
@@ -100,8 +100,8 @@ class TouchScaleAndRotateDetector {
     /**
      * Update current position.
      *
-     * @param point0
-     * @param point1
+     * @param point0 Point 0.
+     * @param point1 Point 1.
      */
     void updateCurrentPosition(PointF point0, PointF point1) {
         // Cache touch position.

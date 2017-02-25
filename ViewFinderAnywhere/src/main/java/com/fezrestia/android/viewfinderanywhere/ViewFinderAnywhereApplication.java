@@ -43,11 +43,11 @@ public class ViewFinderAnywhereApplication extends Application {
         // Check version.
         int curVersion = mGlobalSharedPreferences.getInt(KEY_SHARED_PREFERENCES_VERSION, 0);
         if (curVersion != VAL_SHARED_PREFERENCES_VERSION) {
-            mGlobalSharedPreferences.edit().clear().commit();
+            mGlobalSharedPreferences.edit().clear().apply();
             mGlobalSharedPreferences.edit().putInt(
                     KEY_SHARED_PREFERENCES_VERSION,
                     VAL_SHARED_PREFERENCES_VERSION)
-                    .commit();
+                    .apply();
         }
 
         // Resource container.
@@ -76,7 +76,7 @@ public class ViewFinderAnywhereApplication extends Application {
     /**
      * Get UI thread handler.
      *
-     * @return
+     * @return Global UI thread handler.
      */
     public static Handler getUiThreadHandler() {
         return mUiThreadHandler;
@@ -85,7 +85,7 @@ public class ViewFinderAnywhereApplication extends Application {
     /**
      * Get global shared preferences instance.
      *
-     * @return
+     * @return Global SharedPreferences accessor.
      */
     public static SharedPreferences getGlobalSharedPreferences() {
         return mGlobalSharedPreferences;
@@ -96,7 +96,7 @@ public class ViewFinderAnywhereApplication extends Application {
     /**
      * Get current resource container.
      *
-     * @return
+     * @return Global custom rsource container.
      */
     public static CustomizableResourceContainer getCustomResContainer() {
         return mCustomResContainer;
@@ -105,6 +105,7 @@ public class ViewFinderAnywhereApplication extends Application {
     /**
      * Global current used resources.
      */
+    @SuppressWarnings("WeakerAccess") // Common resources.
     public class CustomizableResourceContainer {
         // Package.
         public String customPackage = null;
@@ -160,8 +161,9 @@ public class ViewFinderAnywhereApplication extends Application {
     /**
      * Load customized Plug-IN UI resources.
      *
-     * @param context
+     * @param context Master context.
      */
+    @SuppressWarnings("deprecation")
     public static void loadCustomizedUiResources(Context context) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "loadCustomizedUiResources() : E");
 
@@ -321,6 +323,7 @@ public class ViewFinderAnywhereApplication extends Application {
     /**
      * Total window configuration.
      */
+    @SuppressWarnings("WeakerAccess") // Common resources.
     public static class TotalWindowConfiguration {
         public static class OverlayViewFinderWindowConfig {
             public static int enabledWindowX = 0;
@@ -354,25 +357,20 @@ public class ViewFinderAnywhereApplication extends Application {
     /**
      * Currently, StorageSelector is enabled or not.
      *
-     * @return
+     * @return Storage selector is enabled or not.
      */
     public static boolean isStorageSelectorEnabled() {
-        Boolean isEnabled = getGlobalSharedPreferences().getBoolean(
+        return getGlobalSharedPreferences().getBoolean(
                 ViewFinderAnywhereConstants.KEY_IS_STORAGE_SELECTOR_ENABLED,
                 false);
-        return isEnabled.booleanValue();
     }
-
 
     /**
      * Get global Firebase analytics interface.
      *
-     * @return
+     * @return Global Firebase analytics controller.
      */
     public static FirebaseAnalyticsController getGlobalFirebaseAnalyticsController() {
         return mFirebaseAnalyticsController;
     }
-
-
-
 }

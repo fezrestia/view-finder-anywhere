@@ -6,9 +6,9 @@ import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 import java.util.HashSet;
 import java.util.Set;
 
-public class PlatformDependencyResolver {
+class PlatformDependencyResolver {
     // Log tag.
-    private static final String TAG = PlatformDependencyResolver.class.getSimpleName();
+    private static final String TAG = "PlatformDependencyResolver";
 
     // Platform specifications.
     private static final Size PREFERRED_PREVIEW_SIZE_FOR_STILL = new Size(1280, 720);
@@ -17,29 +17,30 @@ public class PlatformDependencyResolver {
     private static final float ASPECT_RATIO_CLEARANCE = 0.01f;
 
     //TODO:Replace this to android.util.Size after L.
-    public static class Size {
+    static class Size {
         private final int mWidth;
         private final int mHeight;
 
         /**
          * CONSTRUCTOR.
          *
-         * @param width
-         * @param height
+         * @param width Frame width.
+         * @param height Frame height.
          */
-        public Size(int width, int height) {
+        Size(int width, int height) {
             mWidth = width;
             mHeight = height;
         }
 
-        public int getWidth() {
+        int getWidth() {
             return mWidth;
         }
 
-        public int getHeight() {
+        int getHeight() {
             return mHeight;
         }
 
+        @SuppressWarnings("StringBufferReplaceableByString")
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder()
@@ -53,12 +54,12 @@ public class PlatformDependencyResolver {
     /**
      * Get optimal preview size for still picture.
      *
-     * @param requiredAspectRatioWH
-     * @param supportedPreviewSizeSet
+     * @param requiredAspectRatioWH Required aspect ratio.
+     * @param supportedPreviewSizeSet Supported preview sizes.
      *
-     * @return
+     * @return Optimal preview size for picture.
      */
-    public static final Size getOptimalPreviewSizeForStill(
+    static Size getOptimalPreviewSizeForStill(
             final float requiredAspectRatioWH,
             final Set<Size> supportedPreviewSizeSet) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "getOptimalPreviewSize() : E");
@@ -84,7 +85,7 @@ public class PlatformDependencyResolver {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "###### Estimated aspect = " + estimatedAspectWH);
 
         // Check aspect ratio.
-        Set<Size> aspectAcceptable = new HashSet<Size>();
+        Set<Size> aspectAcceptable = new HashSet<>();
         for (Size eachSize : supportedPreviewSizeSet) {
             final float aspect = ((float) eachSize.getWidth()) / ((float) eachSize.getHeight());
             if (Math.abs(estimatedAspectWH - aspect) < ASPECT_RATIO_CLEARANCE) {
@@ -131,12 +132,12 @@ public class PlatformDependencyResolver {
     /**
      * Get optimal picture size.
      *
-     * @param requiredAspectRatioWH
-     * @param supportedPictureSizeSet
+     * @param requiredAspectRatioWH Required aspect ratio.
+     * @param supportedPictureSizeSet Supported picture sizes.
      *
-     * @return
+     * @return Optimal picture size.
      */
-    public static final Size getOptimalPictureSize(
+    static Size getOptimalPictureSize(
             final float requiredAspectRatioWH,
             final Set<Size> supportedPictureSizeSet) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "getOptimalPictureSize() : E");
@@ -162,7 +163,7 @@ public class PlatformDependencyResolver {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "###### Estimated aspect = " + estimatedAspectWH);
 
         // Check aspect ratio.
-        Set<Size> aspectAcceptable = new HashSet<Size>();
+        Set<Size> aspectAcceptable = new HashSet<>();
         for (Size eachSize : supportedPictureSizeSet) {
             final float aspect = ((float) eachSize.getWidth()) / ((float) eachSize.getHeight());
             if (Math.abs(estimatedAspectWH - aspect) < ASPECT_RATIO_CLEARANCE) {

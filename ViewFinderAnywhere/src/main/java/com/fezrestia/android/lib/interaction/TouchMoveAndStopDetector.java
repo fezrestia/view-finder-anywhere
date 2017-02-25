@@ -21,6 +21,7 @@ class TouchMoveAndStopDetector {
     private TouchStopDetectorTimerTask mTouchStopDetectorTimerTask;
 
     // Touch stop timer interval.
+    @SuppressWarnings("FieldCanBeLocal") // Customizable value.
     private int TOUCH_STOP_DETECTION_TIMER_INTERVAL = 200;
 
     // Threshold to detect direction is same or not.
@@ -49,8 +50,8 @@ class TouchMoveAndStopDetector {
     /**
      * CONSTRUCTOR.
      *
-     * @param touchSlop
-     * @param callbackHandler
+     * @param touchSlop Touch slop.
+     * @param callbackHandler Callback handler.
      */
     TouchMoveAndStopDetector(int touchSlop, Handler callbackHandler) {
         mTouchSlop = touchSlop;
@@ -73,9 +74,9 @@ class TouchMoveAndStopDetector {
         /**
          * Single touch move is detected.
          *
-         * @param currentPoint
-         * @param lastPoint
-         * @param downPoint
+         * @param currentPoint Current touch point.
+         * @param lastPoint Last touched point.
+         * @param downPoint Touch start point.
          */
         void onSingleTouchMoveDetected(
                 final Point currentPoint,
@@ -85,9 +86,9 @@ class TouchMoveAndStopDetector {
         /**
          * Single touch stop is detected.
          *
-         * @param currentPoint
-         * @param lastPoint
-         * @param downPoint
+         * @param currentPoint Current touch point.
+         * @param lastPoint Last touched point.
+         * @param downPoint Touch start point.
          */
         void onSingleTouchStopDetected(
                 final Point currentPoint,
@@ -98,7 +99,7 @@ class TouchMoveAndStopDetector {
     /**
      * Set callback.
      *
-     * @param listener
+     * @param listener Callback.
      */
     void setTouchStopDetectorListener(TouchStopDetectorListener listener) {
         mListener = listener;
@@ -107,8 +108,8 @@ class TouchMoveAndStopDetector {
     /**
      * Start detection.
      *
-     * @param downX
-     * @param downY
+     * @param downX Touch stop detection start position X.
+     * @param downY Touch stop detection start position Y.
      */
     synchronized void startTouchStopDetection(int downX, int downY) {
         // Store down position.
@@ -136,8 +137,8 @@ class TouchMoveAndStopDetector {
     /**
      * Update current touch position.
      *
-     * @param curX
-     * @param curY
+     * @param curX Current position X.
+     * @param curY Current position Y.
      */
     void updateCurrentPosition(int curX, int curY) {
         // Store last position.
@@ -162,8 +163,8 @@ class TouchMoveAndStopDetector {
     /**
      * Update current and last position.
      *
-     * @param curX
-     * @param curY
+     * @param curX Current position X.
+     * @param curY Current position Y.
      */
     void updateCurrentAndLastPosition(int curX, int curY) {
         mPreviousTouchPos.set(curX, curY);

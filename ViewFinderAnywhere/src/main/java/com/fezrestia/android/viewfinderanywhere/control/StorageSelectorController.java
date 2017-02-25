@@ -1,11 +1,11 @@
 package com.fezrestia.android.viewfinderanywhere.control;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Handler;
 import android.view.LayoutInflater;
 
 import com.fezrestia.android.util.log.Log;
@@ -15,15 +15,14 @@ import com.fezrestia.android.viewfinderanywhere.view.StorageSelectorRootView;
 
 public class StorageSelectorController {
     // Log tag.
-    private static final String TAG = StorageSelectorController.class.getSimpleName();
+    private static final String TAG = "StorageSelectorController";
 
     // Master context.
     private  Context mContext;
 
-    // UI thread worker.
-    private Handler mUiWorker = new Handler();
-
     // Singleton instance
+    // TODO: Consider to change singleton.
+    @SuppressLint("StaticFieldLeak")
     private static final StorageSelectorController INSTANCE = new StorageSelectorController();
 
     // Overlay view.
@@ -38,7 +37,7 @@ public class StorageSelectorController {
     /**
      * Life cycle trigger interface.
      */
-    public static class LifeCycleTrigger {
+    static class LifeCycleTrigger {
         private static final String TAG = LifeCycleTrigger.class.getSimpleName();
         private static final LifeCycleTrigger INSTANCE = new LifeCycleTrigger();
 
@@ -50,7 +49,7 @@ public class StorageSelectorController {
         /**
          * Get accessor.
          *
-         * @return
+         * @return Life cycle instance.
          */
         public static LifeCycleTrigger getInstance() {
             return INSTANCE;
@@ -59,9 +58,9 @@ public class StorageSelectorController {
         /**
          * Start.
          *
-         * @param context
+         * @param context Master context.
          */
-        public void requestStart(Context context) {
+        void requestStart(Context context) {
             Intent service = new Intent(context, StorageSelectorService.class);
             ComponentName component = context.startService(service);
 
@@ -77,9 +76,9 @@ public class StorageSelectorController {
         /**
          * Stop.
          *
-         * @param context
+         * @param context Master context.
          */
-        public void requestStop(Context context) {
+        void requestStop(Context context) {
             Intent service = new Intent(context, StorageSelectorService.class);
             boolean isSuccess = context.stopService(service);
 
@@ -97,7 +96,7 @@ public class StorageSelectorController {
     /**
      * Get singleton controller instance.
      *
-     * @return
+     * @return Controller instance.
      */
     public static synchronized StorageSelectorController getInstance() {
         return INSTANCE;
@@ -106,8 +105,9 @@ public class StorageSelectorController {
     /**
      * Start overlay view finder.
      *
-     * @param context
+     * @param context Master context.
      */
+    @SuppressLint("InflateParams")
     public void start(Context context) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "start() : E");
 
@@ -179,7 +179,7 @@ public class StorageSelectorController {
     /**
      * Now on active or not.
      *
-     * @return
+     * @return Overlay is active or not.
      */
     public boolean isActive() {
         return mIsActive;
@@ -227,7 +227,7 @@ public class StorageSelectorController {
         /**
          * Enable screen off receiver.
          *
-         * @param context
+         * @param context Master context.
          */
         public void enable(Context context) {
             if (!mIsEnabled) {
@@ -239,7 +239,7 @@ public class StorageSelectorController {
         /**
          * Disable screen off receiver.
          *
-         * @param context
+         * @param context Master context.
          */
         public void disable(Context context) {
             if (mIsEnabled) {

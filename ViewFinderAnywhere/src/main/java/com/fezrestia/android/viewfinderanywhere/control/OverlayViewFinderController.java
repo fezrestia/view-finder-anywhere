@@ -1,5 +1,6 @@
 package com.fezrestia.android.viewfinderanywhere.control;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -23,7 +24,7 @@ import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView;
 
 public class OverlayViewFinderController {
     // Log tag.
-    private static final String TAG = OverlayViewFinderController.class.getSimpleName();
+    private static final String TAG = "OverlayViewFinderController";
 
     // Master context.
     private  Context mContext = null;
@@ -32,6 +33,8 @@ public class OverlayViewFinderController {
     private Handler mUiWorker = null;
 
     // Singleton instance
+    // TODO: Consider to change singleton.
+    @SuppressLint("StaticFieldLeak")
     private static final OverlayViewFinderController INSTANCE = new OverlayViewFinderController();
 
     // Overlay view.
@@ -77,7 +80,7 @@ public class OverlayViewFinderController {
         /**
          * Get accessor.
          *
-         * @return
+         * @return Life cycle trigger instance.
          */
         public static LifeCycleTrigger getInstance() {
             return INSTANCE;
@@ -86,7 +89,7 @@ public class OverlayViewFinderController {
         /**
          * Start.
          *
-         * @param context
+         * @param context Master context.
          */
         public void requestStart(Context context) {
             Intent service = new Intent(context, OverlayViewFinderService.class);
@@ -104,7 +107,7 @@ public class OverlayViewFinderController {
         /**
          * Stop.
          *
-         * @param context
+         * @param context Master context.
          */
         public void requestStop(Context context) {
             Intent service = new Intent(context, OverlayViewFinderService.class);
@@ -124,7 +127,7 @@ public class OverlayViewFinderController {
     /**
      * Get singleton controller instance.
      *
-     * @return
+     * @return Controller instance.
      */
     public static synchronized OverlayViewFinderController getInstance() {
         return INSTANCE;
@@ -133,8 +136,9 @@ public class OverlayViewFinderController {
     /**
      * Start overlay view finder.
      *
-     * @param context
+     * @param context Master context.
      */
+    @SuppressLint("InflateParams")
     public void start(Context context) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "start() : E");
 
@@ -254,9 +258,9 @@ public class OverlayViewFinderController {
         /**
          * CONSTRUCTOR.
          *
-         * @param context
+         * @param context Master context.
          */
-        public StartStorageSelectorTask(Context context) {
+        StartStorageSelectorTask(Context context) {
             mContext = context;
         }
 
@@ -270,7 +274,7 @@ public class OverlayViewFinderController {
     /**
      * Overlay UI is active or not.
      *
-     * @return
+     * @return Overlay view is active or not.
      */
     public boolean isOverlayActive() {
         return (mRootView != null);
@@ -298,9 +302,9 @@ public class OverlayViewFinderController {
         /**
          * CONSTRUCTOR.
          *
-         * @param context
+         * @param context Master context.
          */
-        public StopStorageSelectorTask(Context context) {
+        StopStorageSelectorTask(Context context) {
             mContext = context;
         }
 
@@ -359,21 +363,25 @@ public class OverlayViewFinderController {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "stop() : X");
     }
 
+    @SuppressWarnings("unused") // False positive.
     private interface StateInternalInterface {
         void entry();
         void exit();
         boolean isActive();
     }
 
+    @SuppressWarnings("unused") // False positive.
     private interface LifeCycleInterface {
         void onResume();
         void onPause();
     }
 
+    @SuppressWarnings("unused") // False positive.
     private interface FromExternalEnvironment {
         void requestForceStop();
     }
 
+    @SuppressWarnings("unused") // False positive.
     private interface FromViewInterface {
         void onPreOpenRequested();
         void onPreOpenCanceled();
@@ -383,6 +391,7 @@ public class OverlayViewFinderController {
         void requestStillCapture();
     }
 
+    @SuppressWarnings("unused") // False positive.
     private interface FromDeviceInterface {
         void onCameraReady();
         void onCameraBusy();
@@ -397,6 +406,7 @@ public class OverlayViewFinderController {
         void onPhotoStoreDone(boolean isSuccess, Uri uri);
     }
 
+    @SuppressWarnings("WeakerAccess") // False positive.
     public abstract class State
             implements
                     StateInternalInterface,
@@ -521,7 +531,7 @@ public class OverlayViewFinderController {
     /**
      * Send event to state from all of the related component including ownself.
      *
-     * @return
+     * @return Current state.
      */
     public synchronized State getCurrentState() {
         return mCurrentState;
@@ -763,9 +773,9 @@ public class OverlayViewFinderController {
         /**
          * CONSTRUCTOR.
          *
-         * @param isSuccess
+         * @param isSuccess Scan is success or not.
          */
-        public StateScanDone(boolean isSuccess) {
+        StateScanDone(boolean isSuccess) {
             mIsSuccess = isSuccess;
         }
 
@@ -890,10 +900,10 @@ public class OverlayViewFinderController {
         /**
          * Set scan done state.
          *
-         * @param isSuccess
-         * @return
+         * @param isSuccess Scan is success or not.
+         * @return Self.
          */
-        public Runnable setScanDoneState(boolean isSuccess) {
+        Runnable setScanDoneState(boolean isSuccess) {
             mIsSuccess = isSuccess;
             return this;
         }
@@ -935,7 +945,7 @@ public class OverlayViewFinderController {
         /**
          * Enable screen off receiver.
          *
-         * @param context
+         * @param context Master context.
          */
         public void enable(Context context) {
             if (!mIsEnabled) {
@@ -947,7 +957,7 @@ public class OverlayViewFinderController {
         /**
          * Disable screen off receiver.
          *
-         * @param context
+         * @param context Master context.
          */
         public void disable(Context context) {
             if (mIsEnabled) {

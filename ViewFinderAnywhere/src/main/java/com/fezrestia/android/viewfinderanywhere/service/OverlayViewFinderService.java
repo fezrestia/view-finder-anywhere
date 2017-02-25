@@ -14,7 +14,7 @@ import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderControl
 
 public class OverlayViewFinderService extends Service {
     // Log tag.
-    private static final String TAG = OverlayViewFinderService.class.getSimpleName();
+    private static final String TAG = "OverlayViewFinderService";
 
     // On going notification ID.
     private static final int ONGOING_NOTIFICATION_ID = 100;

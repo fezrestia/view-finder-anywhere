@@ -5,6 +5,7 @@ import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 
 import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -26,7 +28,7 @@ import java.util.concurrent.ThreadFactory;
 
 public class StorageController {
     // Log tag.
-    private static final String TAG = StorageController.class.getSimpleName();
+    private static final String TAG = "StorageController";
 
     // Master context.
     private Context mContext = null;
@@ -40,7 +42,7 @@ public class StorageController {
 
     // File name format.
     private static final SimpleDateFormat FILE_NAME_SDF
-            = new SimpleDateFormat("yyyy-MM-dd_HHmmss");
+            = new SimpleDateFormat("yyyy-MM-dd_HHmmss", Locale.getDefault());
 
     // Default storage dir name.
     public static final String DEFAULT_STORAGE_DIR_NAME = "";
@@ -49,7 +51,7 @@ public class StorageController {
     private ExecutorService mBackWorker = null;
     private static class BackWorkerThreadFactoryImpl implements ThreadFactory {
         @Override
-        public Thread newThread(Runnable r) {
+        public Thread newThread(@NonNull Runnable r) {
             Thread thread = new Thread(r, TAG);
             thread.setPriority(Thread.MAX_PRIORITY);
             return thread;
@@ -59,8 +61,8 @@ public class StorageController {
     /**
      * CONSTRUCTOR.
      *
-     * @param context
-     * @param callbackHandler
+     * @param context Master context.
+     * @param callbackHandler Callback handler thread.
      */
     public StorageController(Context context, Handler callbackHandler) {
         mContext = context;
@@ -88,7 +90,7 @@ public class StorageController {
     /**
      * Get contents storage root path.
      *
-     * @return
+     * @return Storage root path.
      */
     public static String getApplicationStorageRootPath() {
         return Environment.getExternalStorageDirectory().getPath() + "/" + ROOT_DIR_PATH;
@@ -97,7 +99,7 @@ public class StorageController {
     /**
      * Create new directory under root.
      *
-     * @param contentsDirName
+     * @param contentsDirName Contents directory name.
      * @return creation success or not
      */
     public static boolean createNewContentsDirectory(String contentsDirName) {
@@ -142,7 +144,7 @@ public class StorageController {
     /**
      * Store picture in background.
      *
-     * @param jpegBuffer
+     * @param jpegBuffer JPEG frame buffer.
      */
     public void storePicture(byte[] jpegBuffer) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "storePicture() : E");
@@ -222,12 +224,12 @@ public class StorageController {
         /**
          * CONSTRUCTOR.
          *
-         * @param context
-         * @param callbackHandler
-         * @param jpegBuffer
-         * @param fileFullPath
+         * @param context Master context.
+         * @param callbackHandler Callback thread handler.
+         * @param jpegBuffer JPEG frame buffer.
+         * @param fileFullPath Stored file full path.
          */
-        public SavePictureTask(
+        SavePictureTask(
                 Context context,
                 Handler callbackHandler,
                 byte[] jpegBuffer,
@@ -248,8 +250,8 @@ public class StorageController {
 
             if (!isSuccess) {
                 if (Log.IS_DEBUG) Log.logError(TAG, "File can not be stored.");
-                OverlayViewFinderController.getInstance().getCurrentState()
-                        .onPhotoStoreDone(false, null);
+                Runnable task = new NotifyPhotoStoreDoneTask(false, null);
+                mCallbackHandler.post(task);
                 return;
             }
 
@@ -269,10 +271,32 @@ public class StorageController {
                 throw new UnsupportedOperationException("Why thread is interrupted ?");
             }
 
-            OverlayViewFinderController.getInstance().getCurrentState()
-                    .onPhotoStoreDone(true, notifier.getUri());
+            Runnable task = new NotifyPhotoStoreDoneTask(true, notifier.getUri());
+            mCallbackHandler.post(task);
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X");
+        }
+
+        private class NotifyPhotoStoreDoneTask implements Runnable {
+            private final boolean mIsSuccess;
+            private final Uri mUri;
+
+            /**
+             * CONSTRUCTOR.
+             *
+             * @param isSuccess Store is success or not.
+             * @param uri Stored URI.
+             */
+            NotifyPhotoStoreDoneTask(boolean isSuccess, Uri uri) {
+                mIsSuccess = isSuccess;
+                mUri = uri;
+            }
+
+            @Override
+            public void run() {
+                OverlayViewFinderController.getInstance().getCurrentState()
+                        .onPhotoStoreDone(mIsSuccess, mUri);
+            }
         }
     }
 
@@ -323,11 +347,11 @@ public class StorageController {
         /**
          * CONSTRUCTOR.
          *
-         * @param context
-         * @param path
-         * @param latch
+         * @param context Master context.
+         * @param path Scan target path.
+         * @param latch Latch waiting for media scanner done.
          */
-        public MediaScannerNotifier(Context context, String path, CountDownLatch latch) {
+        MediaScannerNotifier(Context context, String path, CountDownLatch latch) {
             mContext = context;
             mPath = path;
             mLatch = latch;
@@ -362,7 +386,7 @@ public class StorageController {
             mConnection.disconnect();
         }
 
-        public Uri getUri() {
+        Uri getUri() {
             return mUri;
         }
     }

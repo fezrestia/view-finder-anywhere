@@ -6,8 +6,11 @@ import android.os.Bundle;
 import com.fezrestia.android.util.log.Log;
 import com.google.firebase.analytics.FirebaseAnalytics;
 
+@SuppressWarnings("WeakerAccess") // This is library interface.
 public class FirebaseAnalyticsController {
     public static final String TAG = "FirebaseAnalyticsController";
+
+    @SuppressWarnings("PointlessBooleanExpression")
     private static final boolean IS_DEBUG = false | Log.IS_DEBUG;
 
     // Firebase instance.
@@ -34,8 +37,8 @@ public class FirebaseAnalyticsController {
         /**
          * Set event string.
          *
-         * @param event
-         * @return
+         * @param event Log event.
+         * @return Self.
          */
         public LogRequest setEvent(String event) {
             mEvent = event;
@@ -45,9 +48,9 @@ public class FirebaseAnalyticsController {
         /**
          * Set parameter value.
          *
-         * @param key
-         * @param value
-         * @return
+         * @param key Parameter key.
+         * @param value Parameter value.
+         * @return Self.
          */
         public LogRequest setParam(String key, String value) {
             mBundle.putString(key, value);
@@ -65,7 +68,7 @@ public class FirebaseAnalyticsController {
     /**
      * CONSTRUCTOR.
      *
-     * @param context
+     * @param context Master context.
      */
     public FirebaseAnalyticsController(Context context) {
         if (IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR : E");
@@ -76,7 +79,7 @@ public class FirebaseAnalyticsController {
     /**
      * Create new LogRequest instance.
      *
-     * @return
+     * @return Log request.
      */
     public LogRequest createNewLogRequest() {
         return new LogRequest(mFirebaseAnalytics);
@@ -86,8 +89,8 @@ public class FirebaseAnalyticsController {
     /**
      * Get last package name for Firebase param value.
      *
-     * @param packageFullName
-     * @return
+     * @param packageFullName Package full name.
+     * @return Package name value.
      */
     public static String getPkgNameValue(String packageFullName) {
         String[] segments = packageFullName.split("\\.");

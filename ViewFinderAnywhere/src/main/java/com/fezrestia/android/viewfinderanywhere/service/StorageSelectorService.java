@@ -12,7 +12,7 @@ import com.fezrestia.android.viewfinderanywhere.control.StorageSelectorControlle
 
 public class StorageSelectorService extends Service {
     // Log tag.
-    private static final String TAG = StorageSelectorService.class.getSimpleName();
+    private static final String TAG = "StorageSelectorService";
 
     // On going notification ID.
     private static final int ONGOING_NOTIFICATION_ID = 101;

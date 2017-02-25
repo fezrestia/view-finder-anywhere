@@ -24,6 +24,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.PowerManager;
+import android.support.annotation.NonNull;
 import android.util.Size;
 import android.view.OrientationEventListener;
 import android.view.Surface;
@@ -57,7 +58,7 @@ public class Camera2Device implements CameraPlatformInterface {
     private ExecutorService mBackWorker = null;
     private static class BackWorkerThreadFactory implements ThreadFactory {
         @Override
-        public Thread newThread(Runnable r) {
+        public Thread newThread(@NonNull Runnable r) {
             Thread thread = new Thread(r);
             thread.setName(TAG + "-BackWorker");
             thread.setPriority(Thread.MAX_PRIORITY);
@@ -115,7 +116,7 @@ public class Camera2Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          */
-        public OrientationEventListenerImpl(Context context, int rate) {
+        OrientationEventListenerImpl(Context context, int rate) {
             super(context, rate);
             // NOP.
         }
@@ -133,33 +134,36 @@ public class Camera2Device implements CameraPlatformInterface {
         // Capture ID integer.
         private final int mRequestId;
         // Rotation, like as 0, 90, 180, or 270.
-        private final int mRotation;
+        private final int mRotationDeg;
 
         /**
          * CONSTRUCTOR.
          *
-         * @param requestId
-         * @param rotation
+         * @param requestId Request ID.
+         * @param rotationDeg Rotation degree.
          */
-        public RequestTag(int requestId, int rotation) {
+        RequestTag(int requestId, int rotationDeg) {
             mRequestId = requestId;
-            mRotation = rotation;
+            mRotationDeg = rotationDeg;
         }
 
-        public int getRequestId() {
+        int getRequestId() {
             return mRequestId;
         }
 
-        public int getRotation() {
-            return mRotation;
+        int getRotation() {
+            return mRotationDeg;
         }
     }
+
+    // Invalid request ID.
+    private static final int INVALID_REQUEST_ID = -1;
 
     /**
      * CONSTRUCTOR.
      *
-     * @param context
-     * @param callbackHandler
+     * @param context Master context.
+     * @param callbackHandler Callback handler thread.
      */
     //TODO: Consider facing.
     public Camera2Device(Context context, Handler callbackHandler) {
@@ -294,9 +298,9 @@ public class Camera2Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param aspectRatioWH
+         * @param aspectRatioWH Frame aspect ratio.
          */
-        public OpenTask(float aspectRatioWH) {
+        OpenTask(float aspectRatioWH) {
             mViewFinderAspectRatioWH = aspectRatioWH;
         }
 
@@ -483,7 +487,7 @@ public class Camera2Device implements CameraPlatformInterface {
 
             if (mCamDevice != null) {
                 // Outputs.
-                List<Surface> outputs = new ArrayList<Surface>();
+                List<Surface> outputs = new ArrayList<>();
                 outputs.add(mEvfSurface);
                 outputs.add(mStillImgReader.getSurface());
 
@@ -729,9 +733,9 @@ public class Camera2Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param requestId
+         * @param requestId Capture request ID.
          */
-        public StillCaptureTask(int requestId) {
+        StillCaptureTask(int requestId) {
             mFixedReqId = requestId;
         }
 
@@ -829,10 +833,10 @@ public class Camera2Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param callback
-         * @param reqTag
+         * @param callback Callback.
+         * @param reqTag Request tag.
          */
-        public HandleStillCaptureResultTask(
+        HandleStillCaptureResultTask(
                 StillCaptureCallback callback,
                 RequestTag reqTag) {
             mCallback = callback;
@@ -888,7 +892,7 @@ public class Camera2Device implements CameraPlatformInterface {
         public final String TAG = "CameraAvailabilityCallback";
 
         @Override
-        public void onCameraAvailable(String cameraId) {
+        public void onCameraAvailable(@NonNull String cameraId) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraAvailable() : ID=" + cameraId);
 
             // NOP.
@@ -896,7 +900,7 @@ public class Camera2Device implements CameraPlatformInterface {
         }
 
         @Override
-        public void onCameraUnavailable(String cameraId) {
+        public void onCameraUnavailable(@NonNull String cameraId) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraUnavailable() : ID=" + cameraId);
 
             // NOP.
@@ -908,7 +912,7 @@ public class Camera2Device implements CameraPlatformInterface {
         public final String TAG = "CameraStateCallback";
 
         @Override
-        public void onOpened(CameraDevice camera) {
+        public void onOpened(@NonNull CameraDevice camera) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onOpened()");
 
             // Wake lock.
@@ -927,7 +931,7 @@ public class Camera2Device implements CameraPlatformInterface {
         }
 
         @Override
-        public void onClosed(CameraDevice camera) {
+        public void onClosed(@NonNull CameraDevice camera) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onClosed()");
             super.onClosed(camera);
 
@@ -941,14 +945,14 @@ public class Camera2Device implements CameraPlatformInterface {
         }
 
         @Override
-        public void onDisconnected(CameraDevice camera) {
+        public void onDisconnected(@NonNull CameraDevice camera) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onDisconnected()");
 
             notifyOpenCallback(false);
         }
 
         @Override
-        public void onError(CameraDevice camera, int error) {
+        public void onError(@NonNull CameraDevice camera, int error) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onError()");
 
             notifyOpenCallback(false);
@@ -959,14 +963,14 @@ public class Camera2Device implements CameraPlatformInterface {
         public final String TAG = "CaptureSessionStateCallback";
 
         @Override
-        public void onActive(CameraCaptureSession session) {
+        public void onActive(@NonNull CameraCaptureSession session) {
             super.onActive(session);
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onActive()");
             // NOP.
         }
 
         @Override
-        public void onClosed(CameraCaptureSession session) {
+        public void onClosed(@NonNull CameraCaptureSession session) {
             super.onClosed(session);
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onClosed()");
 
@@ -978,7 +982,7 @@ public class Camera2Device implements CameraPlatformInterface {
         }
 
         @Override
-        public void onConfigured(CameraCaptureSession session) {
+        public void onConfigured(@NonNull CameraCaptureSession session) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onConfigured()");
 
             // Cache.
@@ -992,7 +996,7 @@ public class Camera2Device implements CameraPlatformInterface {
         }
 
         @Override
-        public void onConfigureFailed(CameraCaptureSession session) {
+        public void onConfigureFailed(@NonNull CameraCaptureSession session) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onConfigureFailed()");
 
             // Cache.
@@ -1003,14 +1007,16 @@ public class Camera2Device implements CameraPlatformInterface {
         }
 
         @Override
-        public void onReady(CameraCaptureSession session) {
+        public void onReady(@NonNull CameraCaptureSession session) {
             super.onReady(session);
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onReady()");
             // NOP.
         }
 
         @Override
-        public void onSurfacePrepared(CameraCaptureSession session, Surface surface) {
+        public void onSurfacePrepared(
+                @NonNull CameraCaptureSession session,
+                @NonNull Surface surface) {
             super.onSurfacePrepared(session, surface);
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfacePrepared()");
             // NOP.
@@ -1022,15 +1028,17 @@ public class Camera2Device implements CameraPlatformInterface {
 
         @Override
         public void onCaptureCompleted(
-                CameraCaptureSession session,
-                CaptureRequest request,
-                TotalCaptureResult result) {
+                @NonNull CameraCaptureSession session,
+                @NonNull CaptureRequest request,
+                @NonNull TotalCaptureResult result) {
             super.onCaptureCompleted(session, request, result);
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureCompleted()");
 
-            int intent = request.get(CaptureRequest.CONTROL_CAPTURE_INTENT).intValue();
+            Integer intent = request.get(CaptureRequest.CONTROL_CAPTURE_INTENT);
 
-            switch (intent) {
+            if (intent == null) {
+                if (Log.IS_DEBUG) Log.logError(TAG, "CaptureIntent is null.");
+            } else switch (intent) {
                 case CaptureRequest.CONTROL_CAPTURE_INTENT_PREVIEW:
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_PREVIEW");
                     handlePreviewIntentCaptureCompleted(result);
@@ -1055,7 +1063,12 @@ public class Camera2Device implements CameraPlatformInterface {
                     mBackWorker.execute(task);
 
                     // Notify capture done, client may request next capture.
-                    notifyCaptureDoneCallback(reqTag.getRequestId());
+                    if (reqTag != null) {
+                        notifyCaptureDoneCallback(reqTag.getRequestId());
+                    } else {
+                        if (Log.IS_DEBUG) Log.logError(TAG, "RequestID is null.");
+                        notifyCaptureDoneCallback(INVALID_REQUEST_ID);
+                    }
                     break;
 
                 default:
@@ -1126,9 +1139,9 @@ public class Camera2Device implements CameraPlatformInterface {
 
         @Override
         public void onCaptureFailed(
-                CameraCaptureSession session,
-                CaptureRequest request,
-                CaptureFailure failure) {
+                @NonNull CameraCaptureSession session,
+                @NonNull CaptureRequest request,
+                @NonNull CaptureFailure failure) {
             super.onCaptureFailed(session, request, failure);
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureFailed()");
             // NOP.
@@ -1136,9 +1149,9 @@ public class Camera2Device implements CameraPlatformInterface {
 
         @Override
         public void onCaptureProgressed(
-                CameraCaptureSession session,
-                CaptureRequest request,
-                CaptureResult partialResult) {
+                @NonNull CameraCaptureSession session,
+                @NonNull CaptureRequest request,
+                @NonNull CaptureResult partialResult) {
             super.onCaptureProgressed(session, request, partialResult);
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureProgressed()");
             // NOP.
@@ -1146,7 +1159,7 @@ public class Camera2Device implements CameraPlatformInterface {
 
         @Override
         public void onCaptureSequenceCompleted(
-                CameraCaptureSession session,
+                @NonNull CameraCaptureSession session,
                 int sequenceId,
                 long frameNumber) {
             super.onCaptureSequenceCompleted(session, sequenceId, frameNumber);
@@ -1155,7 +1168,9 @@ public class Camera2Device implements CameraPlatformInterface {
         }
 
         @Override
-        public void onCaptureSequenceAborted(CameraCaptureSession session, int sequenceId) {
+        public void onCaptureSequenceAborted(
+                @NonNull CameraCaptureSession session,
+                int sequenceId) {
             super.onCaptureSequenceAborted(session, sequenceId);
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureSequenceAborted()");
             // NOP.
@@ -1163,16 +1178,18 @@ public class Camera2Device implements CameraPlatformInterface {
 
         @Override
         public void onCaptureStarted(
-                CameraCaptureSession session,
-                CaptureRequest request,
+                @NonNull CameraCaptureSession session,
+                @NonNull CaptureRequest request,
                 long timestamp,
                 long frameNumber) {
             super.onCaptureStarted(session, request, timestamp, frameNumber);
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureStarted()");
 
-            int intent = request.get(CaptureRequest.CONTROL_CAPTURE_INTENT).intValue();
+            Integer intent = request.get(CaptureRequest.CONTROL_CAPTURE_INTENT);
 
-            if (intent == CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE) {
+            if (intent == null) {
+                if (Log.IS_DEBUG) Log.logError(TAG, "CaptureIntent is null.");
+            } else if (intent == CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE) {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_STILL_CAPTURE");
 
                 // TAG.
@@ -1182,7 +1199,12 @@ public class Camera2Device implements CameraPlatformInterface {
                 mShutterSound.play(MediaActionSound.SHUTTER_CLICK);
 
                 // Notify.
-                notifyShutterDoneCallback(reqTag.getRequestId());
+                if (reqTag != null) {
+                    notifyShutterDoneCallback(reqTag.getRequestId());
+                } else {
+                    if (Log.IS_DEBUG) Log.logError(TAG, "RequestID is null.");
+                    notifyShutterDoneCallback(INVALID_REQUEST_ID);
+                }
             }
         }
     }
@@ -1215,10 +1237,10 @@ public class Camera2Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param openCallback
-         * @param isSuccess
+         * @param openCallback Callback.
+         * @param isSuccess Open is success or not.
          */
-        public NotifyOpenCallback(OpenCallback openCallback, boolean isSuccess) {
+        NotifyOpenCallback(OpenCallback openCallback, boolean isSuccess) {
             mOpenCallback = openCallback;
             mIsSuccess = isSuccess;
         }
@@ -1243,11 +1265,11 @@ public class Camera2Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param closeCallback
-         * @param isSuccess
+         * @param closeCallback Callback.
+         * @param isSuccess Close is success or not.
          *
          */
-        public NotifyCloseCallback(CloseCallback closeCallback, boolean isSuccess) {
+        NotifyCloseCallback(CloseCallback closeCallback, boolean isSuccess) {
             mCloseCallback = closeCallback;
             mIsSuccess = isSuccess;
         }
@@ -1273,10 +1295,10 @@ public class Camera2Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param bindSurfaceCallback
-         * @param isSuccess
+         * @param bindSurfaceCallback Callback.
+         * @param isSuccess Bind surface is success or not.
          */
-        public NotifyBindSurfaceCallback(
+        NotifyBindSurfaceCallback(
                 BindSurfaceCallback bindSurfaceCallback,
                 boolean isSuccess) {
             mBindSurfaceCallback = bindSurfaceCallback;
@@ -1290,10 +1312,7 @@ public class Camera2Device implements CameraPlatformInterface {
     }
 
     private boolean isScanRequired() {
-        if (mClientScanCallback != null) {
-            return true;
-        }
-        return false;
+        return mClientScanCallback != null;
     }
 
     private void notifyScanDoneCallback(boolean isSuccess) {
@@ -1311,10 +1330,10 @@ public class Camera2Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param scanCallback
-         * @param isSuccess
+         * @param scanCallback Callback.
+         * @param isSuccess Scan is success or not.
          */
-        public NotifyScanDoneCallback(ScanCallback scanCallback, boolean isSuccess) {
+        NotifyScanDoneCallback(ScanCallback scanCallback, boolean isSuccess) {
             mScanCallback = scanCallback;
             mIsSuccess = isSuccess;
         }
@@ -1326,10 +1345,7 @@ public class Camera2Device implements CameraPlatformInterface {
     }
 
     private boolean isCancelScanRequired() {
-        if (mClientCancelScanCallback != null) {
-            return true;
-        }
-        return false;
+        return mClientCancelScanCallback != null;
     }
 
     private void notifyCancelScanDoneCallback() {
@@ -1346,9 +1362,9 @@ public class Camera2Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param cancelScanCallback
+         * @param cancelScanCallback Callback.
          */
-        public NotifyCancelScanDoneCallback(CancelScanCallback cancelScanCallback) {
+        NotifyCancelScanDoneCallback(CancelScanCallback cancelScanCallback) {
             mCancelScanCallback = cancelScanCallback;
         }
 
@@ -1374,10 +1390,10 @@ public class Camera2Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param stillCaptureCallback
-         * @param requestId
+         * @param stillCaptureCallback Callback.
+         * @param requestId Capture request ID.
          */
-        public NotifyShutterDoneCallback(
+        NotifyShutterDoneCallback(
                 StillCaptureCallback stillCaptureCallback,
                 int requestId) {
             mStillCaptureCallback = stillCaptureCallback;
@@ -1402,7 +1418,7 @@ public class Camera2Device implements CameraPlatformInterface {
         private final StillCaptureCallback mStillCaptureCallback;
         private final int mRequestId;
 
-        public NotifyCaptureDoneCallback(
+        NotifyCaptureDoneCallback(
                 StillCaptureCallback stillCaptureCallback,
                 int requestId) {
             mStillCaptureCallback = stillCaptureCallback;
@@ -1434,11 +1450,11 @@ public class Camera2Device implements CameraPlatformInterface {
         /**
          * CONSTRUCTOR.
          *
-         * @param stillCaptureCallback
-         * @param requestId
-         * @param data
+         * @param stillCaptureCallback Callback.
+         * @param requestId Capture request ID.
+         * @param data JPEG frame data.
          */
-        public NotifyPhotoStoreReadyCallback(
+        NotifyPhotoStoreReadyCallback(
                 StillCaptureCallback stillCaptureCallback,
                 int requestId,
                 byte[] data) {

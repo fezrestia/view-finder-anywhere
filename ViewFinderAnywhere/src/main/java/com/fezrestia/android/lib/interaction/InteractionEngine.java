@@ -13,6 +13,7 @@ import android.view.ViewConfiguration;
 /**
  * This class is used to detect interaction between user and target view.
  */
+@SuppressWarnings({"WeakerAccess", "unused"}) // This is library interface.
 public class InteractionEngine
         implements
                 TouchMoveAndStopDetector.TouchStopDetectorListener,
@@ -55,7 +56,7 @@ public class InteractionEngine
     /**
      * Set callback.
      *
-     * @param callback
+     * @param callback Callback.
      */
     public void setInteractionCallback(InteractionCallback callback) {
         if (callback != null) {
@@ -187,9 +188,9 @@ public class InteractionEngine
      *
      * Hit area is same as target view.
      *
-     * @param context
-     * @param targetView
-     * @param callbackHandler
+     * @param context Master context.
+     * @param targetView Touch target view.
+     * @param callbackHandler Callback handler.
      */
     public InteractionEngine(Context context, View targetView, Handler callbackHandler) {
         this(context, targetView, 0, callbackHandler);
@@ -200,10 +201,10 @@ public class InteractionEngine
      *
      * Hit area is same as target view with margin.
      *
-     * @param context
-     * @param targetView
-     * @param margin
-     * @param callbackHandler
+     * @param context Master context.
+     * @param targetView Touch target view.
+     * @param margin Touch target area margin.
+     * @param callbackHandler Callback handler.
      */
     public InteractionEngine(
             Context context,
@@ -224,11 +225,11 @@ public class InteractionEngine
      * Hit area is same as target view with margin.
      * Touch stop is detected within touch slop. (Android default is used in default)
      *
-     * @param context
-     * @param targetView
-     * @param margin
-     * @param touchSlop
-     * @param callbackHandler
+     * @param context Master context.
+     * @param targetView Touch target view.
+     * @param margin Touch target area margin.
+     * @param touchSlop Touch slop value.
+     * @param callbackHandler Callback handler.
      */
     public InteractionEngine(
             Context context,
@@ -294,11 +295,11 @@ public class InteractionEngine
                     mInteractionCallback.onSingleTouched(
                             new Point((int) motion.getX(0), (int) motion.getY(0)));
                     changeTo(new SingleDown());
-                    return;
+                    break;
 
                 default:
                     // NOP.
-                    return;
+                    break;
             }
         }
 
@@ -339,32 +340,32 @@ public class InteractionEngine
                 case MotionEvent.ACTION_MOVE:
                     // NOP. Move is detected in TouchMoveAndStopDetector.
                     changeTo(new SingleMove());
-                    return;
+                    break;
 
                 case MotionEvent.ACTION_UP:
                     mInteractionCallback.onSingleReleased(
                             new Point((int) motion.getX(0), (int) motion.getY(0)));
                     changeTo(new Idle());
-                    return;
+                    break;
 
                 case MotionEvent.ACTION_CANCEL:
                     mInteractionCallback.onSingleCanceled();
                     changeTo(new Idle());
-                    return;
+                    break;
 
                 case MotionEvent.ACTION_POINTER_DOWN:
                     if (motion.getPointerCount() == 1) {
-                        return;
+                        break;
                     }
                     mInteractionCallback.onDoubleTouched(
                             new Point((int) motion.getX(0), (int) motion.getY(0)),
                             new Point((int) motion.getX(1), (int) motion.getY(1)));
                     changeTo(new DoubleDown());
-                    return;
+                    break;
 
                 default:
                     // NOP.
-                    return;
+                    break;
             }
         }
 
@@ -408,26 +409,26 @@ public class InteractionEngine
                     mInteractionCallback.onSingleReleased(
                             new Point((int) motion.getX(0), (int) motion.getY(0)));
                     changeTo(new Idle());
-                    return;
+                    break;
 
                 case MotionEvent.ACTION_CANCEL:
                     mInteractionCallback.onSingleCanceled();
                     changeTo(new Idle());
-                    return;
+                    break;
 
                 case MotionEvent.ACTION_POINTER_DOWN:
                     if (motion.getPointerCount() == 1) {
-                        return;
+                        break;
                     }
                     mInteractionCallback.onDoubleTouched(
                             new Point((int) motion.getX(0), (int) motion.getY(0)),
                             new Point((int) motion.getX(1), (int) motion.getY(1)));
                     changeTo(new DoubleDown());
-                    return;
+                    break;
 
                 default:
                     // NOP.
-                    return;
+                    break;
             }
         }
 
@@ -470,26 +471,26 @@ public class InteractionEngine
                     mInteractionCallback.onSingleReleased(
                             new Point((int) motion.getX(0), (int) motion.getY(0)));
                     changeTo(new Idle());
-                    return;
+                    break;
 
                 case MotionEvent.ACTION_CANCEL:
                     mInteractionCallback.onSingleCanceled();
                     changeTo(new Idle());
-                    return;
+                    break;
 
                 case MotionEvent.ACTION_POINTER_DOWN:
                     if (motion.getPointerCount() == 1) {
-                        return;
+                        break;
                     }
                     mInteractionCallback.onDoubleTouched(
                             new Point((int) motion.getX(0), (int) motion.getY(0)),
                             new Point((int) motion.getX(1), (int) motion.getY(1)));
                     changeTo(new DoubleDown());
-                    return;
+                    break;
 
                 default:
                     // NOP.
-                    return;
+                    break;
             }
         }
 
@@ -530,26 +531,26 @@ public class InteractionEngine
             switch (motion.getActionMasked()) {
                 case MotionEvent.ACTION_MOVE:
                     if (motion.getPointerCount() != 2) {
-                        return;
+                        break;
                     }
                     Point index0 = new Point((int) motion.getX(0), (int) motion.getY(0));
                     Point index1 = new Point((int) motion.getX(1), (int) motion.getY(1));
                     mInteractionCallback.onDoubleMoved(index0, index1);
                     changeTo(new DoubleMove(index0, index1));
-                    return;
+                    break;
 
                 case MotionEvent.ACTION_CANCEL:
                     mInteractionCallback.onDoubleCanceled();
                     changeTo(new Idle());
-                    return;
+                    break;
 
                 case MotionEvent.ACTION_POINTER_DOWN:
                     changeTo(new OverTriple());
-                    return;
+                    break;
 
                 case MotionEvent.ACTION_POINTER_UP:
                     if (motion.getPointerCount() == 1) {
-                        return;
+                        break;
                     }
                     int release = motion.getActionIndex();
                     int remain;
@@ -568,11 +569,11 @@ public class InteractionEngine
                             (int) motion.getY(remain));
 
                     changeTo(new SingleMove());
-                    return;
+                    break;
 
                 default:
                     // NOP.
-                    return;
+                    break;
             }
         }
 
@@ -610,8 +611,8 @@ public class InteractionEngine
         /**
          * CONSTRUCTOR.
          *
-         * @param point0
-         * @param point1
+         * @param point0 Touch point 0.
+         * @param point1 Touch point 1.
          */
         DoubleMove(Point point0, Point point1) {
             // Start scale and rotate detection.
@@ -625,7 +626,7 @@ public class InteractionEngine
             switch (motion.getActionMasked()) {
                 case MotionEvent.ACTION_MOVE:
                     if (motion.getPointerCount() != 2) {
-                        return;
+                        break;
                     }
                     // Update scale and rotate detection.
                     mDoubleTouchScaleAndRotateDetector.updateCurrentPosition(
@@ -635,18 +636,18 @@ public class InteractionEngine
                     mInteractionCallback.onDoubleMoved(
                             new Point((int) motion.getX(0), (int) motion.getY(0)),
                             new Point((int) motion.getX(1), (int) motion.getY(1)));
-                    return;
+                    break;
 
                 case MotionEvent.ACTION_CANCEL:
                     mInteractionCallback.onDoubleCanceled();
                     changeTo(new Idle());
-                    return;
+                    break;
 
                 case MotionEvent.ACTION_POINTER_DOWN:
                     // Stop touch scale and rotate detection.
                     mDoubleTouchScaleAndRotateDetector.stopScaleAndRotateDetection();
                     changeTo(new OverTriple());
-                    return;
+                    break;
 
                 case MotionEvent.ACTION_POINTER_UP:
                     // Stop touch scale and rotate detection.
@@ -669,7 +670,7 @@ public class InteractionEngine
                             (int) motion.getY(remain));
 
                     changeTo(new SingleMove());
-                    return;
+                    break;
             }
         }
 
@@ -710,17 +711,17 @@ public class InteractionEngine
                 case MotionEvent.ACTION_CANCEL:
                     mInteractionCallback.onOverTripleCanceled();
                     changeTo(new Idle());
-                    return;
+                    break;
 
                 case MotionEvent.ACTION_POINTER_UP:
                     if (motion.getPointerCount() == 3) {
                         changeTo(new DoubleDown());
                     }
-                    return;
+                    break;
 
                 default:
                     // NOP.
-                    return;
+                    break;
             }
         }
 
@@ -757,8 +758,8 @@ public class InteractionEngine
     /**
      * Input touch event to interaction engine.
      *
-     * @param motion
-     * @return
+     * @param motion Motion event.
+     * @return Touch event is occupied or not.
      */
     public synchronized boolean onTouchEvent(MotionEvent motion) {
         // Check touch area.
