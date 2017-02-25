@@ -2,14 +2,14 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion '25.0.0'
+    buildToolsVersion '25.0.2'
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere"
         minSdkVersion 19
         targetSdkVersion 23
-        versionCode 206
-        versionName '2.06'
+        versionCode 207
+        versionName '2.07'
     }
 
     compileOptions {
@@ -39,6 +39,11 @@ android {
     }
 
     productFlavors {
+    }
+
+    lintOptions {
+        lintConfig file("lint.xml")
+        disable 'OldTargetApi', 'IconColors', 'IconDuplicates', 'IconMissingDensityFolder'
     }
 }
 

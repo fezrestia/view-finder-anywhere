@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<lint>
+
+    <!-- Auto generated codes. -->
+    <issue id="UnusedResources">
+        <ignore path="build/generated/res/google-services/debug/values/values.xml"/>
+        <ignore path="build/generated/res/google-services/release/values/values.xml"/>
+    </issue>
+
+</lint>

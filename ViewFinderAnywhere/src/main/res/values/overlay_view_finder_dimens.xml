@@ -8,8 +8,8 @@
     <!-- Grip height. -->
     <dimen name="viewfinder_grip_size">12dp</dimen>
     <dimen name="viewfinder_grip_label_font_size">10dp</dimen>
-    <dimen name="viewfinder_grip_label_side_padding">-10dp</dimen>
-    <dimen name="viewfinder_grip_label_top_padding">4px</dimen>
+    <dimen name="viewfinder_grip_label_horizontal_padding">-10dp</dimen>
+    <dimen name="viewfinder_grip_label_vertical_padding">4px</dimen>
 
     <!-- Scan done indicator. -->
     <dimen name="viewfinder_scan_indicator_edge_padding">3dp</dimen>

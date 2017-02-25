@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <string-array
             name="overlay_view_finder_size_entry_labels"
+            tools:ignore="TypographyFractions"
     >
         <item>X-Large (1/2 of screen)</item>
         <item>Large (1/3 of screen)</item>
@@ -26,6 +27,7 @@
     </string-array>
     <string-array
             name="overlay_view_finder_aspect_entry_values"
+            tools:ignore="TypographyDashes"
     >
         <item>1-1</item>
         <item>4-3</item>
@@ -34,6 +36,7 @@
 
     <string-array
             name="view_finder_grip_size_entry_labels"
+            tools:ignore="TypographyFractions"
     >
         <item>X-Large (1/1)</item>
         <item>Large (1/2)</item>

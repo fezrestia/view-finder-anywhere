@@ -1,15 +1,15 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 20
-    buildToolsVersion '25.0.0'
+    compileSdkVersion 23
+    buildToolsVersion '25.0.2'
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere.uiplugin.redframe"
         minSdkVersion 19
-        targetSdkVersion 20
-        versionCode 100
-        versionName '1.00'
+        targetSdkVersion 23
+        versionCode 101
+        versionName '1.01'
     }
 
     compileOptions {
@@ -39,6 +39,10 @@ android {
     }
 
     productFlavors {
+    }
+
+    lintOptions {
+        disable 'OldTargetApi', 'UnusedResources', 'IconDuplicates', 'IconMissingDensityFolder'
     }
 }
 

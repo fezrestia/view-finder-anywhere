@@ -3,6 +3,8 @@
 <resources>
 
     <color name="storage_selector_item_text_color">#FFFFFF</color>
+<!--
     <color name="storage_selector_item_text_shadow_color">#000000</color>
+-->
 
 </resources>

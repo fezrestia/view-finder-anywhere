@@ -1,5 +1,6 @@
 package com.fezrestia.android.viewfinderanywhere.view;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
@@ -36,7 +37,7 @@ import java.util.Set;
 
 public class StorageSelectorRootView extends RelativeLayout {
     // Log tag.
-    private static final String TAG = StorageSelectorRootView.class.getSimpleName();
+    private static final String TAG = "StorageSelectorRootView";
 
     // UI.
     private RelativeLayout mTotalContainer = null;
@@ -44,7 +45,6 @@ public class StorageSelectorRootView extends RelativeLayout {
     private View mDefaultStorageItem = null;
 
     // UI coordinates.
-    private int mDisplayLongLineLength = 0;
     private int mDisplayShortLineLength = 0;
     private int mWindowEdgePadding = 0;
 
@@ -55,86 +55,9 @@ public class StorageSelectorRootView extends RelativeLayout {
     private WindowManager mWindowManager = null;
     private WindowManager.LayoutParams mWindowLayoutParams = null;
 
-    // Last window position.
-    private Point mLastWindowPosition = new Point();
     // Limit position.
     private Point mWindowEnabledPosit = new Point();
     private Point mWindowDisabledPosit = new Point();
-
-    // Window position correction animation interval.
-    private static final int WINDOW_ANIMATION_INTERVAL = 16;
-
-    // Current window position correction task
-    private WindowPositionCorrectionTask mWindowPositionCorrectionTask = null;
-    private class WindowPositionCorrectionTask implements Runnable {
-        private final Point mTargetWindowPosit;
-
-        // Proportional gain.
-        private static final float P_GAIN = 0.3f;
-
-        // Last delta.
-        private int mLastDeltaX = 0;
-        private int mLastDeltaY = 0;
-
-        /**
-         * CONSTRUCTOR.
-         *
-         * @param target
-         */
-        public WindowPositionCorrectionTask(Point target) {
-            mTargetWindowPosit = target;
-        }
-
-        @Override
-        public void run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "WindowPositionCorrectionTask.run() : E");
-
-            final int dX = mTargetWindowPosit.x - mWindowLayoutParams.x;
-            final int dY = mTargetWindowPosit.y - mWindowLayoutParams.y;
-
-            // Update layout.
-            mWindowLayoutParams.x += (int) (dX * P_GAIN);
-            mWindowLayoutParams.y += (int) (dY * P_GAIN);
-
-            if (StorageSelectorRootView.this.isAttachedToWindow()) {
-                mWindowManager.updateViewLayout(
-                        StorageSelectorRootView.this,
-                        mWindowLayoutParams);
-            } else {
-                // Already detached from window.
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Already detached from window.");
-                return;
-            }
-
-            // Check next.
-            if (mLastDeltaX == dX && mLastDeltaY == dY) {
-                // Correction is already convergent.
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Already position fixed.");
-
-                // Remove or fix position.
-                if (mTargetWindowPosit.equals(mWindowDisabledPosit)) {
-                    // Remove.
-
-                    //TODO:Remove this view.
-
-                }
-                return;
-            }
-            mLastDeltaX = dX;
-            mLastDeltaY = dY;
-
-            // Next.
-            StorageSelectorRootView.this.getHandler().postDelayed(
-                    this,
-                    WINDOW_ANIMATION_INTERVAL);
-
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "WindowPositionCorrectionTask.run() : X");
-        }
-    }
-
-    // Alpha definitions.
-    private static final float SHOWN_ALPHA = 1.0f;
-    private static final float HIDDEN_ALPHA = 0.0f;
 
     // Storage list.
     private List<String> mAvailableStorageList = new ArrayList<>();
@@ -188,8 +111,6 @@ public class StorageSelectorRootView extends RelativeLayout {
     private void cacheInstances() {
         mTotalContainer = (RelativeLayout) findViewById(R.id.total_container);
         mItemList = (LinearLayout) findViewById(R.id.item_list);
-
-
     }
 
     private void loadPreferences() {
@@ -244,6 +165,7 @@ public class StorageSelectorRootView extends RelativeLayout {
                 PixelFormat.TRANSLUCENT);
     }
 
+    @SuppressLint("InflateParams")
     private void createUiLayout() {
         LayoutInflater layoutInflater = LayoutInflater.from(getContext());
 
@@ -255,9 +177,7 @@ public class StorageSelectorRootView extends RelativeLayout {
                 itemHeight);
 
         // Set default storage.
-        mDefaultStorageItem = (RelativeLayout) layoutInflater.inflate(
-                R.layout.storage_selector_list_item,
-                null);
+        mDefaultStorageItem = layoutInflater.inflate(R.layout.storage_selector_list_item, null);
         mDefaultStorageItem.setOnTouchListener(mOnStorageItemTouchListenerImpl);
         mDefaultStorageItem.setTag(StorageController.DEFAULT_STORAGE_DIR_NAME);
         if (mTargetStorageList.contains(StorageController.DEFAULT_STORAGE_DIR_NAME)) {
@@ -307,6 +227,7 @@ public class StorageSelectorRootView extends RelativeLayout {
     private final OnStorageItemTouchListenerImpl mOnStorageItemTouchListenerImpl
             = new OnStorageItemTouchListenerImpl();
     private class OnStorageItemTouchListenerImpl implements OnTouchListener {
+        @SuppressLint("ClickableViewAccessibility")
         @Override
         public boolean onTouch(View v, MotionEvent event) {
             switch (event.getAction()) {
@@ -370,7 +291,7 @@ public class StorageSelectorRootView extends RelativeLayout {
                     .putStringSet(
                     ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_STORE_TARGET_DIRECTORY,
                     mTargetStorageList)
-                    .commit();
+                    .apply();
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "updateTargetStorage() : X");
         }
@@ -389,21 +310,12 @@ public class StorageSelectorRootView extends RelativeLayout {
      * Release all resources.
      */
     public void release() {
-        releaseWindowPositionCorrector();
-
         mTotalContainer = null;
         mItemList = null;
         mDefaultStorageItem = null;
 
         mWindowManager = null;
         mWindowLayoutParams = null;
-    }
-
-    private void releaseWindowPositionCorrector() {
-        if (mWindowPositionCorrectionTask != null) {
-            getHandler().removeCallbacks(mWindowPositionCorrectionTask);
-            mWindowPositionCorrectionTask = null;
-        }
     }
 
     /**
@@ -419,9 +331,8 @@ public class StorageSelectorRootView extends RelativeLayout {
         winMng.addView(this, mWindowLayoutParams);
     }
 
+    @SuppressLint("RtlHardcoded")
     private void updateWindowParams(boolean isInitialSetup) {
-        releaseWindowPositionCorrector();
-
         switch (mOrientation) {
             case Configuration.ORIENTATION_LANDSCAPE:
             {
@@ -501,7 +412,6 @@ public class StorageSelectorRootView extends RelativeLayout {
         display.getSize(screenSize);
         final int width = screenSize.x;
         final int height = screenSize.y;
-        mDisplayLongLineLength = Math.max(width, height);
         mDisplayShortLineLength = Math.min(width, height);
 
         // Get display orientation.

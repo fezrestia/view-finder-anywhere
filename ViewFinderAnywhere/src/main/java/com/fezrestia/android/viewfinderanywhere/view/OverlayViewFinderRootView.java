@@ -1,5 +1,6 @@
 package com.fezrestia.android.viewfinderanywhere.view;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
@@ -39,7 +40,7 @@ import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderControl
 
 public class OverlayViewFinderRootView extends RelativeLayout {
     // Log tag.
-    private static final String TAG = OverlayViewFinderRootView.class.getSimpleName();
+    private static final String TAG = "OverlayViewFinderRootView";
 
     // Root view.
     private RelativeLayout mRootView = null;
@@ -119,9 +120,9 @@ public class OverlayViewFinderRootView extends RelativeLayout {
         /**
          * CONSTRUCTOR.
          *
-         * @param target
+         * @param target Position control target.
          */
-        public WindowPositionCorrectionTask(Point target) {
+        WindowPositionCorrectionTask(Point target) {
             mTargetWindowPosit = target;
         }
 
@@ -444,6 +445,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
         winMng.addView(this, mWindowLayoutParams);
     }
 
+    @SuppressLint("RtlHardcoded")
     private void updateWindowParams(boolean isInitialSetup) {
         releaseWindowPositionCorrector();
         final int edgeClearance = getContext().getResources().getDimensionPixelSize(
@@ -675,7 +677,6 @@ public class OverlayViewFinderRootView extends RelativeLayout {
 
         // Viewfinder slider.
         if (mOverlaySlider != null) {
-            ViewGroup.LayoutParams params = mOverlaySlider.getLayoutParams();
             switch (mOrientation) {
                 case Configuration.ORIENTATION_LANDSCAPE:
                     mOverlaySlider.setOrientation(LinearLayout.VERTICAL);
@@ -739,15 +740,19 @@ public class OverlayViewFinderRootView extends RelativeLayout {
         if (mViewFinderGripLabel != null) {
             FrameLayout.LayoutParams params = (FrameLayout.LayoutParams)
                     mViewFinderGripLabel.getLayoutParams();
-            final int sidePadding = getResources().getDimensionPixelSize(
-                    R.dimen.viewfinder_grip_label_side_padding);
-            final int topPadding = getResources().getDimensionPixelSize(
-                    R.dimen.viewfinder_grip_label_top_padding);
+            final int horizontalPadding = getResources().getDimensionPixelSize(
+                    R.dimen.viewfinder_grip_label_horizontal_padding);
+            final int verticalPadding = getResources().getDimensionPixelSize(
+                    R.dimen.viewfinder_grip_label_vertical_padding);
             int visibility = View.VISIBLE;
             switch (mOrientation) {
                 case Configuration.ORIENTATION_LANDSCAPE:
                     mViewFinderGripLabel.setImageBitmap(mViewFinderGripLabelLandscapeBitmap);
-                    mViewFinderGripLabel.setPadding(sidePadding, topPadding, sidePadding, 0);
+                    mViewFinderGripLabel.setPadding(
+                            horizontalPadding,
+                            verticalPadding,
+                            horizontalPadding,
+                            0);
                     params.gravity
                             = mGripPositionSetting.getLayoutGravity() | Gravity.CENTER_VERTICAL;
                     params.width = ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -760,7 +765,11 @@ public class OverlayViewFinderRootView extends RelativeLayout {
 
                 case Configuration.ORIENTATION_PORTRAIT:
                     mViewFinderGripLabel.setImageBitmap(mViewFinderGripLabelPortraitBitmap);
-                    mViewFinderGripLabel.setPadding(topPadding, sidePadding, 0, sidePadding);
+                    mViewFinderGripLabel.setPadding(
+                            verticalPadding,
+                            horizontalPadding,
+                            0,
+                            horizontalPadding);
                     params.gravity
                             = Gravity.CENTER_HORIZONTAL | mGripPositionSetting.getLayoutGravity();
                     params.width = mViewFinderGripSize;
@@ -805,7 +814,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
             if (Log.IS_DEBUG) Log.logDebug(TAG,
                     "onSurfaceTextureAvailable() : [W=" + width + "] [H=" + height +"]");
 
-            checkViewFinderAspect(surface, width, height);
+            checkViewFinderAspect(width, height);
         }
 
         @Override
@@ -813,7 +822,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
             if (Log.IS_DEBUG) Log.logDebug(TAG,
                     "onSurfaceTextureSizeChanged() : [W=" + width + "] [H=" + height +"]");
 
-            checkViewFinderAspect(surface, width, height);
+            checkViewFinderAspect(width, height);
         }
 
         @Override
@@ -821,8 +830,9 @@ public class OverlayViewFinderRootView extends RelativeLayout {
             return super.toString();
         }
 
-        private void checkViewFinderAspect(SurfaceTexture surface, int width, int height) {
+        private void checkViewFinderAspect(int width, int height) {
             if (width == mViewFinderWidth && height == mViewFinderHeight) {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "checkViewFinderAspect() : Resize DONE");
                 // Resize done.
 
                 // Set touch interceptor.
@@ -838,6 +848,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
                 // Notify to device.
                 OverlayViewFinderController.getInstance().getCurrentState().onSurfaceReady();
             } else {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "checkViewFinderAspect() : Now on resizing...");
                 // NOP. Now on resizing.
             }
         }
@@ -942,7 +953,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
     /**
      * Get view finder target surface.
      *
-     * @return
+     * @return Finder TextureView.
      */
     public TextureView getViewFinderSurface() {
         return mViewFinder;
@@ -950,6 +961,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
 
     private final OnTouchListenerImpl mOnTouchListenerImpl = new OnTouchListenerImpl();
     private class OnTouchListenerImpl implements OnTouchListener {
+        @SuppressLint("ClickableViewAccessibility")
         @Override
         public boolean onTouch(View v, MotionEvent event) {
             // Use absolute position, because window position change affects view motion event.
@@ -1311,6 +1323,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
     /**
      * Visual feedback trigger.
      */
+    @SuppressWarnings("WeakerAccess") // False positive.
     public interface VisualFeedbackTrigger {
         void onScanStarted();
         void onScanDone(boolean isSuccess);
@@ -1321,7 +1334,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
     /**
      * Get visual feedback trigger interface.
      *
-     * @return
+     * @return Visual feedback trigger accessor.
      */
     public VisualFeedbackTrigger getVisualFeedbackTrigger() {
         return mVisualFeedbackTriggerImpl;
