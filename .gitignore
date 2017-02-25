@@ -1,20 +1,16 @@
+# .gitignore for Android Studio project
+
 # Gradle related
 .gradle/
-gradle/
-gradlew
-gradlew.bat
-gradle.properties
 
 # Android Studio related
-.idea
+.idea/
 *.iml
 
 # Build outputs and intermediates
 build/
-bin/
-gen/
-obj/
+*/build/
 
 # Local environment related
 local.properties
-.DS_Store
+
