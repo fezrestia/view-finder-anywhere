@@ -1327,6 +1327,11 @@ public class OverlayViewFinderRootView extends RelativeLayout {
 
         // Force stop.
         forceStop();
+
+        // Hide grip when configuration is landscape.
+        if (mOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+            hide();
+        }
     }
 
     @Override
