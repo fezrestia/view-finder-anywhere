@@ -14,6 +14,9 @@ public class ViewFinderAnywhereConstants {
     /** Intent constants. */
     public static final String INTENT_ACTION_REGISTER_UI_PLUG_IN
             = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_REGISTER_UI_PLUG_IN";
+    /** Intent constants. */
+    public static final String INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY
+            = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_TOGGLE_OVERLAY_VISIBILITY";
 
     /** View finder size scale against screen short line length. */
     public static final float VIEW_FINDER_SCALE_XLARGE = 1.0f / 2.0f;

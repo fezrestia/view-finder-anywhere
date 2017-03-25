@@ -9,6 +9,7 @@ import android.os.IBinder;
 import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
+import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 import com.fezrestia.android.viewfinderanywhere.activity.ViewFinderAnywhereSettingActivity;
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
 
@@ -43,16 +44,26 @@ public class OverlayViewFinderService extends Service {
         // load current selected resources here.
         ViewFinderAnywhereApplication.loadCustomizedUiResources(this);
 
-        // Preference trigger intent.
-        Intent preferenceTrigger = new Intent(this, ViewFinderAnywhereSettingActivity.class);
-        preferenceTrigger.setFlags(
-                Intent.FLAG_ACTIVITY_SINGLE_TOP
-                | Intent.FLAG_ACTIVITY_NO_HISTORY);
-        PendingIntent notificationContent = PendingIntent.getActivity(
+        // Visibility toggle intent.
+        Intent visibilityToggler = new Intent(
+                ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY);
+        visibilityToggler.setPackage(getApplicationContext().getPackageName());
+        PendingIntent notificationContent = PendingIntent.getBroadcast(
                 this,
                 0,
-                preferenceTrigger,
+                visibilityToggler,
                 PendingIntent.FLAG_UPDATE_CURRENT);
+
+        // Preference trigger intent.
+//        Intent preferenceTrigger = new Intent(this, ViewFinderAnywhereSettingActivity.class);
+//        preferenceTrigger.setFlags(
+//                Intent.FLAG_ACTIVITY_SINGLE_TOP
+//                | Intent.FLAG_ACTIVITY_NO_HISTORY);
+//        PendingIntent notificationContent = PendingIntent.getActivity(
+//                this,
+//                0,
+//                preferenceTrigger,
+//                PendingIntent.FLAG_UPDATE_CURRENT);
 
         // Foreground notification.
         Notification notification = new Notification.Builder(this)

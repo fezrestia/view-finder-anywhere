@@ -374,6 +374,7 @@ public class OverlayViewFinderController {
     private interface LifeCycleInterface {
         void onResume();
         void onPause();
+        void onToggleShowHideRequired();
     }
 
     @SuppressWarnings("unused") // False positive.
@@ -441,6 +442,11 @@ public class OverlayViewFinderController {
         @Override
         public void onPause() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause() : NOP");
+        }
+
+        @Override
+        public void onToggleShowHideRequired() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onToggleShowHideRequired() : NOP");
         }
 
         @Override
@@ -603,6 +609,17 @@ public class OverlayViewFinderController {
                             mRootView.getViewFinderSurface(),
                             new BindSurfaceCallbackImpl());
                 }
+            }
+        }
+
+        @Override
+        public void onToggleShowHideRequired() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onToggleShowHideRequired() : NOP");
+
+            if (mRootView.isOverlayShown()) {
+                mRootView.hide();
+            } else {
+                mRootView.show();
             }
         }
     }

@@ -24,43 +24,62 @@ public class OverlayViewFinderTriggerReceiver extends BroadcastReceiver {
         if (action == null) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "ACTION is NULL.");
             // NOP.
-        } else if (ViewFinderAnywhereConstants.INTENT_ACTION_FOCUS_KEY_DOUBLE_CLICK
-                .equals(action)) {
-            if (isAlreadyTriggered()) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Already triggered.");
-                return;
-            }
+        } else switch (action) {
+            case ViewFinderAnywhereConstants.INTENT_ACTION_FOCUS_KEY_DOUBLE_CLICK:
+                {
+                    if (isAlreadyTriggered()) {
+                        if (Log.IS_DEBUG) Log.logDebug(TAG, "Already triggered.");
+                        return;
+                    }
 
-            // En/Disable
-            SharedPreferences sp = ViewFinderAnywhereApplication.getGlobalSharedPreferences();
-            final boolean isEnabled = sp.getBoolean(
-                    ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_FOCUS_KEY_DOUBLE_CLICK,
-                    false);
-            // Trigger.
-            if (isEnabled) {
-                // Start.
-                OverlayViewFinderController.LifeCycleTrigger.getInstance().requestStart(context);
-            }
-        } else if (ViewFinderAnywhereConstants.INTENT_ACTION_TRIGGER_OVERLAY_VIEW_FINDER
-                .equals(action)) {
-            if (isAlreadyTriggered()) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Already triggered.");
-                return;
-            }
+                    // En/Disable
+                    SharedPreferences sp
+                            = ViewFinderAnywhereApplication.getGlobalSharedPreferences();
+                    final boolean isEnabled = sp.getBoolean(
+                            ViewFinderAnywhereConstants
+                                    .KEY_OVERLAY_TRIGGER_FROM_FOCUS_KEY_DOUBLE_CLICK,
+                            false);
+                    // Trigger.
+                    if (isEnabled) {
+                        // Start.
+                        OverlayViewFinderController.LifeCycleTrigger.getInstance()
+                                .requestStart(context);
+                    }
+                }
+                break;
 
-            // En/Disable
-            SharedPreferences sp = ViewFinderAnywhereApplication.getGlobalSharedPreferences();
-            final boolean isEnabled = sp.getBoolean(
-                    ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_NOTIFICATION,
-                    false);
-            // Trigger.
-            if (isEnabled) {
-                // Start.
-                OverlayViewFinderController.LifeCycleTrigger.getInstance().requestStart(context);
-            }
-        } else {
-            // Unexpected Action.
-            throw new IllegalArgumentException("Unexpected Action : " + action);
+            case ViewFinderAnywhereConstants.INTENT_ACTION_TRIGGER_OVERLAY_VIEW_FINDER:
+                {
+                    if (isAlreadyTriggered()) {
+                        if (Log.IS_DEBUG) Log.logDebug(TAG, "Already triggered.");
+                        return;
+                    }
+
+                    // En/Disable
+                    SharedPreferences sp
+                            = ViewFinderAnywhereApplication.getGlobalSharedPreferences();
+                    final boolean isEnabled = sp.getBoolean(
+                            ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_NOTIFICATION,
+                            false);
+                    // Trigger.
+                    if (isEnabled) {
+                        // Start.
+                        OverlayViewFinderController.LifeCycleTrigger.getInstance()
+                                .requestStart(context);
+                    }
+                }
+                break;
+
+            case ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY:
+                {
+                    OverlayViewFinderController.getInstance().getCurrentState()
+                            .onToggleShowHideRequired();
+                }
+                break;
+
+            default:
+                // Unexpected Action.
+                throw new IllegalArgumentException("Unexpected Action : " + action);
         }
     }
 

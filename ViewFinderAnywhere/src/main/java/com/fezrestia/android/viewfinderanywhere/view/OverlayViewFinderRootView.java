@@ -200,6 +200,9 @@ public class OverlayViewFinderRootView extends RelativeLayout {
     private ViewFinderAnywhereConstants.ViewFinderGripSize mGripSizeSetting = null;
     private ViewFinderGripPosition mGripPositionSetting = null;
 
+    // Hidden window position.
+    private static final int WINDOW_HIDDEN_POS_X = -5000;
+
     // CONSTRUCTOR.
     public OverlayViewFinderRootView(final Context context) {
         this(context, null);
@@ -1232,7 +1235,32 @@ public class OverlayViewFinderRootView extends RelativeLayout {
         }
     }
 
+    /**
+     * Overlay window is shown or not.
+     *
+     * @return Overlay window is shown or not
+     */
+    public boolean isOverlayShown() {
+        return mWindowLayoutParams.x != WINDOW_HIDDEN_POS_X;
+    }
 
+    /**
+     * Show overlay window.
+     */
+    public void show() {
+        mWindowLayoutParams.x = mWindowDisabledPosit.x;
+        mWindowLayoutParams.y = mWindowDisabledPosit.y;
+        mWindowManager.updateViewLayout(this, mWindowLayoutParams);
+    }
+
+    /**
+     * Hide overlay window.
+     */
+    public void hide() {
+        mWindowLayoutParams.x = WINDOW_HIDDEN_POS_X;
+        mWindowLayoutParams.y = mWindowDisabledPosit.y;
+        mWindowManager.updateViewLayout(this, mWindowLayoutParams);
+    }
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent keyEvent) {
