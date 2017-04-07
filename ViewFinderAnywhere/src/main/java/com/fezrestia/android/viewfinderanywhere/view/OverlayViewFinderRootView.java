@@ -1322,6 +1322,9 @@ public class OverlayViewFinderRootView extends RelativeLayout {
                 "onConfigurationChanged() : [Config=" + newConfig.toString());
         super.onConfigurationChanged(newConfig);
 
+        // Cache.
+        int lastOrientation = mOrientation;
+
         // Update UI.
         updateTotalUserInterface();
 
@@ -1330,7 +1333,13 @@ public class OverlayViewFinderRootView extends RelativeLayout {
 
         // Hide grip when configuration is landscape.
         if (mOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+            // Landscape always.
             hide();
+        } else {
+            // Changed from landscape to portrait.
+            if (lastOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+                hide();
+            }
         }
     }
 
