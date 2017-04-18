@@ -49,6 +49,11 @@ public class ViewFinderAnywhereApplication extends Application {
                     VAL_SHARED_PREFERENCES_VERSION)
                     .apply();
         }
+        // Reset overlay enable flag.
+        mGlobalSharedPreferences.edit().putBoolean(
+                ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_SCREEN_EDGE,
+                false)
+                .apply();
 
         // Resource container.
         mCustomResContainer = new CustomizableResourceContainer();
