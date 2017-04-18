@@ -6,12 +6,6 @@ import android.view.Gravity;
 @SuppressWarnings("WeakerAccess") // This is common constants.
 public class ViewFinderAnywhereConstants {
     /** Intent constants. */
-    public static final String INTENT_ACTION_FOCUS_KEY_DOUBLE_CLICK
-            = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_FOCUS_KEY_DOUBLE_CLICK";
-    /** Intent constants. */
-    public static final String INTENT_ACTION_TRIGGER_OVERLAY_VIEW_FINDER
-            = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_TRIGGER_OVERLAY_VIEW_FINDER";
-    /** Intent constants. */
     public static final String INTENT_ACTION_REGISTER_UI_PLUG_IN
             = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_REGISTER_UI_PLUG_IN";
     /** Intent constants. */
@@ -32,10 +26,6 @@ public class ViewFinderAnywhereConstants {
 
     // SharedPreferences constants.
     /** View finder trigger key. Up to 36 chars for Firebase. */
-    public static final String KEY_OVERLAY_TRIGGER_FROM_FOCUS_KEY_DOUBLE_CLICK
-            = "is_trigger_focus_key_double_click";
-    public static final String KEY_OVERLAY_TRIGGER_FROM_NOTIFICATION
-            = "is_trigger_notification_tap";
     public static final String KEY_OVERLAY_TRIGGER_FROM_SCREEN_EDGE
             = "is_trigger_screen_edge";
 

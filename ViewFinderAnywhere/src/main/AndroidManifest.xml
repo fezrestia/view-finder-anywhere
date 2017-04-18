@@ -49,8 +49,6 @@
                  android:exported="false"
         >
             <intent-filter>
-                <action android:name="com.fezrestia.android.viewfinderanywhere.intent.ACTION_FOCUS_KEY_DOUBLE_CLICK" />
-                <action android:name="com.fezrestia.android.viewfinderanywhere.intent.ACTION_TRIGGER_OVERLAY_VIEW_FINDER" />
                 <action android:name="com.fezrestia.android.viewfinderanywhere.intent.ACTION_TOGGLE_OVERLAY_VISIBILITY" />
             </intent-filter>
         </receiver>

@@ -10,7 +10,6 @@ import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
-import com.fezrestia.android.viewfinderanywhere.activity.ViewFinderAnywhereSettingActivity;
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
 
 public class OverlayViewFinderService extends Service {
@@ -53,17 +52,6 @@ public class OverlayViewFinderService extends Service {
                 0,
                 visibilityToggler,
                 PendingIntent.FLAG_UPDATE_CURRENT);
-
-        // Preference trigger intent.
-//        Intent preferenceTrigger = new Intent(this, ViewFinderAnywhereSettingActivity.class);
-//        preferenceTrigger.setFlags(
-//                Intent.FLAG_ACTIVITY_SINGLE_TOP
-//                | Intent.FLAG_ACTIVITY_NO_HISTORY);
-//        PendingIntent notificationContent = PendingIntent.getActivity(
-//                this,
-//                0,
-//                preferenceTrigger,
-//                PendingIntent.FLAG_UPDATE_CURRENT);
 
         // Foreground notification.
         Notification notification = new Notification.Builder(this)

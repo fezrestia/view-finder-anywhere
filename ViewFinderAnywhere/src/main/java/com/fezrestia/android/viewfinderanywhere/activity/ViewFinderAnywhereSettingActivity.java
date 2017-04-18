@@ -2,9 +2,6 @@ package com.fezrestia.android.viewfinderanywhere.activity;
 
 import android.Manifest;
 import android.annotation.TargetApi;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -208,10 +205,6 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
     private void applyCurrentPreferences() {
         // Update summary binding.
         bindPreferenceSummaryToValue(findPreference(
-                ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_FOCUS_KEY_DOUBLE_CLICK));
-        bindPreferenceSummaryToValue(findPreference(
-                ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_NOTIFICATION));
-        bindPreferenceSummaryToValue(findPreference(
                 ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_SCREEN_EDGE));
         bindPreferenceSummaryToValue(findPreference(
                 ViewFinderAnywhereConstants.KEY_VIEW_FINDER_SIZE));
@@ -279,89 +272,33 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
                 if (key == null) {
                     // NOP.
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "CheckBox key == null");
-                } else if (
-                        ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_FOCUS_KEY_DOUBLE_CLICK
-                        .equals(key)) {
-                    // NOP.
+                } else switch (key) {
+                    case ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_SCREEN_EDGE:
+                        if (isChecked) {
+                            // Start.
+                            OverlayViewFinderController.LifeCycleTrigger.getInstance()
+                                    .requestStart(getApplicationContext());
+                        } else {
+                            // Remove.
+                            OverlayViewFinderController.LifeCycleTrigger.getInstance()
+                                    .requestStop(getApplicationContext());
+                        }
 
-                    // Firebase analytics.
-                    ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
-                            .createNewLogRequest()
-                            .setEvent(FirebaseAnalytics.Event.SELECT_CONTENT)
-                            .setParam(FirebaseAnalytics.Param.ITEM_ID, key)
-                            .setParam(
-                                    FirebaseAnalytics.Param.ITEM_NAME,
-                                    ViewFinderAnywhereConstants.getBooleanString(isChecked))
-                            .done();
-                } else if (
-                        ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_NOTIFICATION
-                        .equals(key)) {
+                        // Firebase analytics.
+                        ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
+                                .createNewLogRequest()
+                                .setEvent(FirebaseAnalytics.Event.SELECT_CONTENT)
+                                .setParam(FirebaseAnalytics.Param.ITEM_ID, key)
+                                .setParam(
+                                        FirebaseAnalytics.Param.ITEM_NAME,
+                                        ViewFinderAnywhereConstants.getBooleanString(isChecked))
+                                .done();
+                        break;
 
-                    NotificationManager notificationManager = (NotificationManager)
-                            getSystemService(NOTIFICATION_SERVICE);
-                    if (isChecked) {
-                        // Intent.
-                        Intent intent = new Intent(ViewFinderAnywhereConstants
-                                .INTENT_ACTION_TRIGGER_OVERLAY_VIEW_FINDER);
-                        intent.setPackage(getApplicationContext().getPackageName());
-                        intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
-
-                        // Pending intent.
-                        PendingIntent pendIntent = PendingIntent.getBroadcast(
-                                getApplicationContext(),
-                                0,
-                                intent,
-                                PendingIntent.FLAG_UPDATE_CURRENT);
-
-                        // Notification.
-                        Notification notification
-                                = new Notification.Builder(getApplicationContext())
-                                .setContentTitle(getString(R.string.notification_overlay_trigger))
-                                .setSmallIcon(R.drawable.application_icon)
-                                .setContentIntent(pendIntent)
-                                .build();
-
-                        // Notify.
-                        notificationManager.notify(OVERLAY_TRIGGER_NOTIFICATION_ID, notification);
-                    } else {
-                        // Cancel.
-                        notificationManager.cancel(OVERLAY_TRIGGER_NOTIFICATION_ID);
-                    }
-
-                    // Firebase analytics.
-                    ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
-                            .createNewLogRequest()
-                            .setEvent(FirebaseAnalytics.Event.SELECT_CONTENT)
-                            .setParam(FirebaseAnalytics.Param.ITEM_ID, key)
-                            .setParam(
-                                    FirebaseAnalytics.Param.ITEM_NAME,
-                                    ViewFinderAnywhereConstants.getBooleanString(isChecked))
-                            .done();
-                } else if (
-                        ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_SCREEN_EDGE
-                        .equals(key)) {
-                    if (isChecked) {
-                        // Start.
-                        OverlayViewFinderController.LifeCycleTrigger.getInstance()
-                                .requestStart(getApplicationContext());
-                    } else {
-                        // Remove.
-                        OverlayViewFinderController.LifeCycleTrigger.getInstance()
-                                .requestStop(getApplicationContext());
-                    }
-
-                    // Firebase analytics.
-                    ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
-                            .createNewLogRequest()
-                            .setEvent(FirebaseAnalytics.Event.SELECT_CONTENT)
-                            .setParam(FirebaseAnalytics.Param.ITEM_ID, key)
-                            .setParam(
-                                    FirebaseAnalytics.Param.ITEM_NAME,
-                                    ViewFinderAnywhereConstants.getBooleanString(isChecked))
-                            .done();
-                } else {
-                    // NOP.
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "Unexpected CheckBox preference.");
+                    default:
+                        // NOP.
+                        if (Log.IS_DEBUG) Log.logDebug(TAG, "Unexpected CheckBox preference.");
+                        break;
                 }
             } else {
                 // For all other preferences, set the summary to the value's
