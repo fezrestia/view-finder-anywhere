@@ -43,9 +43,8 @@ android {
 
     lintOptions {
         lintConfig file("lint.xml")
-        xmlReport false
-        htmlReport true
         htmlOutput file("$project.buildDir/reports/test-results-lint.html")
+        xmlOutput file("$project.buildDir/reports/test-results-lint.xml")
     }
 }
 
