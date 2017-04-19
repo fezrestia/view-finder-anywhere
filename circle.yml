@@ -8,7 +8,7 @@ test:
     - ./gradlew test
     - ./gradlew :ViewFinderAnywhere:lint
 
-  past:
-    - cp -r ViewFinderAnywhere/build/reports/test-results-lint.html $CIRCLE_ARTIFACTS
-    - cp -r ViewFinderAnywhere/build/reports/test-results-lint.html $CIRCLE_TEST_REPORTS
+  post:
+    - cp -r ViewFinderAnywhere/build/reports/test-results-lint.html $CIRCLE_ARTIFACTS/lint
+    - cp -r ViewFinderAnywhere/build/reports/test-results-lint.html $CIRCLE_TEST_REPORTS/lint
 
