@@ -2,6 +2,20 @@
 
 <lint>
 
+    <!-- Disable: OldTargetApi -->
+    <issue id="OldTargetApi" severity="ignore" />
+
+    <!-- Disable: IconDuplicates -->
+    <issue id="IconDuplicates" severity="ignore" />
+
+    <!-- Disable: IconMissingDensityFolder -->
+    <issue id="IconMissingDensityFolder" severity="ignore" />
+
+    <!-- .xml ignore is not worked well -->
+    <issue id="ExportedPreferenceActivity">
+        <ignore path="src/main/AndroidManifest.xml" />
+    </issue>
+
     <!-- Auto generated codes. -->
     <issue id="UnusedResources">
         <ignore path="build/generated/res/google-services/debug/values/values.xml"/>

@@ -31,6 +31,7 @@
                 android:name=".activity.ViewFinderAnywhereSettingActivity"
                 android:label="@string/preference_app_label"
                 android:launchMode="singleTask"
+                tools:ignore="ExportedPreferenceActivity"
         >
 
             <intent-filter>

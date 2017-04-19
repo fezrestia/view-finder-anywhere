@@ -11,12 +11,6 @@
 
 
 
-    <string name="title_is_overlay_view_finder_enabled_from_focus_key_double_click">Focus Key Double-Click (Rooted-Custom ROM required)</string>
-    <string name="summary_is_overlay_view_finder_enabled_from_focus_key_double_click">Camera will be triggered by focus key double click.</string>
-
-    <string name="title_is_overlay_view_finder_enabled_from_notification">Notification Click</string>
-    <string name="summary_is_overlay_view_finder_enabled_from_notification">Camera will be triggered by notification click.</string>
-
     <string name="title_is_overlay_view_finder_enabled_from_screen_edge">Screen Edge</string>
     <string name="summary_is_overlay_view_finder_enabled_from_screen_edge">Camera will be triggered by screen edge swipe.</string>
 
@@ -38,10 +32,6 @@
     <string name="title_view_finder_grip_preference">View Finder Grip</string>
     <string name="title_view_finder_grip_size">Size</string>
     <string name="title_view_finder_grip_position">Position</string>
-
-
-
-    <string name="notification_overlay_trigger">Trigger overlay view finder</string>
 
 
 
