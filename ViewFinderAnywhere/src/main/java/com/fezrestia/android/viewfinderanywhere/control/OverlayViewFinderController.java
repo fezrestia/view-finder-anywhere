@@ -2,7 +2,6 @@ package com.fezrestia.android.viewfinderanywhere.control;
 
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -18,7 +17,6 @@ import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.device.Camera1Device;
 import com.fezrestia.android.viewfinderanywhere.device.Camera2Device;
 import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface;
-import com.fezrestia.android.viewfinderanywhere.service.OverlayViewFinderService;
 import com.fezrestia.android.viewfinderanywhere.storage.StorageController;
 import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView;
 
@@ -64,58 +62,6 @@ public class OverlayViewFinderController {
 
     // API level.
     private CameraApiLevel mCamApiLv = CameraApiLevel.CAMERA_API_1;
-
-    /**
-     * Life cycle trigger interface.
-     */
-    public static class LifeCycleTrigger {
-        private static final String TAG = LifeCycleTrigger.class.getSimpleName();
-        private static final LifeCycleTrigger INSTANCE = new LifeCycleTrigger();
-
-        // CONSTRUCTOR.
-        private LifeCycleTrigger() {
-            // NOP.
-        }
-
-        /**
-         * Get accessor.
-         *
-         * @return Life cycle trigger instance.
-         */
-        public static LifeCycleTrigger getInstance() {
-            return INSTANCE;
-        }
-
-        /**
-         * Start.
-         *
-         * @param context Master context.
-         */
-        public void requestStart(Context context) {
-            Intent service = new Intent(context, OverlayViewFinderService.class);
-            ComponentName component = context.startService(service);
-
-            if (Log.IS_DEBUG) {
-                if (component != null) {
-                    Log.logDebug(TAG, "requestStart() : Component = " + component.toString());
-                } else {
-                    Log.logDebug(TAG, "requestStart() : Component = NULL");
-                }
-            }
-        }
-
-        /**
-         * Stop.
-         *
-         * @param context Master context.
-         */
-        public void requestStop(Context context) {
-            Intent service = new Intent(context, OverlayViewFinderService.class);
-            boolean isSuccess = context.stopService(service);
-
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStop() : isSuccess = " + isSuccess);
-        }
-    }
 
     /**
      * CONSTRUCTOR.

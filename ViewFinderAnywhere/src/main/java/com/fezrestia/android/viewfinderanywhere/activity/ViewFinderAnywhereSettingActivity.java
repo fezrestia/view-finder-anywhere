@@ -25,7 +25,7 @@ import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 import com.fezrestia.android.viewfinderanywhere.R;
-import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
+import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger;
 import com.fezrestia.android.viewfinderanywhere.storage.StorageController;
 import com.google.firebase.analytics.FirebaseAnalytics;
 
@@ -276,12 +276,10 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
                     case ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_SCREEN_EDGE:
                         if (isChecked) {
                             // Start.
-                            OverlayViewFinderController.LifeCycleTrigger.getInstance()
-                                    .requestStart(getApplicationContext());
+                            OnOffTrigger.requestStart(getApplicationContext());
                         } else {
                             // Remove.
-                            OverlayViewFinderController.LifeCycleTrigger.getInstance()
-                                    .requestStop(getApplicationContext());
+                            OnOffTrigger.requestStop(getApplicationContext());
                         }
 
                         // Firebase analytics.
