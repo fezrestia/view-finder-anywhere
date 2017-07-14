@@ -36,6 +36,9 @@ public class StorageController {
     // Callback handler.
     private Handler mCallbackHandler = null;
 
+    // Core instances.
+    private OverlayViewFinderController mController = null;
+
     // Constants.
     private static final String ROOT_DIR_PATH = "ViewFinderAnywhere";
     private static final String JPEG_FILE_EXTENSION = ".JPG";
@@ -63,10 +66,15 @@ public class StorageController {
      *
      * @param context Master context.
      * @param callbackHandler Callback handler thread.
+     * @param controller Master controller
      */
-    public StorageController(Context context, Handler callbackHandler) {
+    public StorageController(
+            Context context,
+            Handler callbackHandler,
+            OverlayViewFinderController controller) {
         mContext = context;
         mCallbackHandler = callbackHandler;
+        mController = controller;
 
         createContentsRootDirectory();
 
@@ -85,6 +93,7 @@ public class StorageController {
 
         mContext = null;
         mCallbackHandler = null;
+        mController = null;
     }
 
     /**
@@ -151,8 +160,7 @@ public class StorageController {
 
         if (jpegBuffer == null) {
             if (Log.IS_DEBUG) Log.logError(TAG, "JPEG buffer is NULL.");
-            OverlayViewFinderController.getInstance().getCurrentState()
-                    .onPhotoStoreDone(false, null);
+            mController.getCurrentState().onPhotoStoreDone(false, null);
             return;
         }
 
@@ -214,7 +222,7 @@ public class StorageController {
         return (getApplicationStorageRootPath() + "/" + fileName + JPEG_FILE_EXTENSION);
     }
 
-    private static class SavePictureTask implements Runnable {
+    private class SavePictureTask implements Runnable {
         private final String TAG = SavePictureTask.class.getSimpleName();
         private final Context mContext;
         private final Handler mCallbackHandler;
@@ -294,8 +302,7 @@ public class StorageController {
 
             @Override
             public void run() {
-                OverlayViewFinderController.getInstance().getCurrentState()
-                        .onPhotoStoreDone(mIsSuccess, mUri);
+                mController.getCurrentState().onPhotoStoreDone(mIsSuccess, mUri);
             }
         }
     }

@@ -45,14 +45,6 @@
 
 
         <!-- Receivers. -->
-        <receiver
-                 android:name=".receiver.OverlayViewFinderTriggerReceiver"
-                 android:exported="false"
-        >
-            <intent-filter>
-                <action android:name="com.fezrestia.android.viewfinderanywhere.intent.ACTION_TOGGLE_OVERLAY_VISIBILITY" />
-            </intent-filter>
-        </receiver>
 
 
 

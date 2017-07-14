@@ -7,13 +7,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Handler;
-import android.view.LayoutInflater;
 
 import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants.CameraApiLevel;
-import com.fezrestia.android.viewfinderanywhere.R;
+import com.fezrestia.android.viewfinderanywhere.config.ConfigManager;
 import com.fezrestia.android.viewfinderanywhere.device.Camera1Device;
 import com.fezrestia.android.viewfinderanywhere.device.Camera2Device;
 import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface;
@@ -25,27 +23,20 @@ public class OverlayViewFinderController {
     private static final String TAG = "OverlayViewFinderController";
 
     // Master context.
-    private  Context mContext = null;
+    private Context mContext = null;
 
     // UI thread handler.
     private Handler mUiWorker = null;
 
-    // Singleton instance
-    // TODO: Consider to change singleton.
-    @SuppressLint("StaticFieldLeak")
-    private static final OverlayViewFinderController INSTANCE = new OverlayViewFinderController();
-
-    // Overlay view.
+    // Core instances.
     private OverlayViewFinderRootView mRootView = null;
+    private ConfigManager mConfigManager = null;
 
     // Camera platform interface.
     private CameraPlatformInterface mCamera = null;
 
     // Current state.
     private State mCurrentState = new StateFinalized(); // Default.
-
-    // View finder aspect.
-    private float mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_1_1;
 
     // Receiver.
     private ScreenOffReceiver mScreenOffReceiver = null;
@@ -60,61 +51,51 @@ public class OverlayViewFinderController {
     private StartStorageSelectorTask mStartStorageSelectorTask = null;
     private StopStorageSelectorTask mStopStorageSelectorTask = null;
 
-    // API level.
-    private CameraApiLevel mCamApiLv = CameraApiLevel.CAMERA_API_1;
-
     /**
      * CONSTRUCTOR.
+     *
+     * @param context Master context
      */
-    private OverlayViewFinderController() {
+    public OverlayViewFinderController(Context context) {
+        mContext = context;
         mUiWorker = ViewFinderAnywhereApplication.getUiThreadHandler();
     }
 
     /**
-     * Get singleton controller instance.
+     * Set core instance dependency.
      *
-     * @return Controller instance.
+     * @param rootView RootView
+     * @param configManager ConfigManager
      */
-    public static synchronized OverlayViewFinderController getInstance() {
-        return INSTANCE;
+    public void setCoreInstances(
+            OverlayViewFinderRootView rootView,
+            ConfigManager configManager) {
+        mRootView = rootView;
+        mConfigManager = configManager;
+    }
+
+    /**
+     * Release all references.
+     */
+    public void release() {
+        mContext = null;
+        mUiWorker = null;
+        mRootView = null;
+        mConfigManager = null;
     }
 
     /**
      * Start overlay view finder.
-     *
-     * @param context Master context.
      */
     @SuppressLint("InflateParams")
-    public void start(Context context) {
+    public void start() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "start() : E");
-
-        if (mRootView != null) {
-            // NOP. Already started.
-            Log.logError(TAG, "Error. Already started.");
-            return;
-        }
-
-        // Cache master context.
-        mContext = context;
-
-        // Load preferences.
-        loadPreferences();
 
         // Initial state.
         mCurrentState = new StateFinalized();
 
-        // Create overlay view.
-        mRootView = (OverlayViewFinderRootView)
-                LayoutInflater.from(context).inflate(
-                        R.layout.overlay_view_finder_root,
-                        null);
-        mRootView.initialize(mViewFinderAspectWH);
-
-        // Add to window.
-        mRootView.addToOverlayWindow();
-
         // Camera.
-        switch (mCamApiLv) {
+        switch (mConfigManager.getCamApiLv()) {
             case CAMERA_API_1:
                 mCamera = new Camera1Device(mContext);
                 break;
@@ -135,43 +116,9 @@ public class OverlayViewFinderController {
         mScreenOffReceiver = new ScreenOffReceiver();
 
         // Storage.
-        mStorageController = new StorageController(mContext, mUiWorker);
+        mStorageController = new StorageController(mContext, mUiWorker, this);
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "start() : X");
-    }
-
-    private void loadPreferences() {
-        // Level.
-        String apiLevel = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
-                .getString(ViewFinderAnywhereConstants.KEY_CAMERA_FUNCTION_API_LEVEL, null);
-        if (apiLevel == null) {
-            // Use default.
-            mCamApiLv = CameraApiLevel.CAMERA_API_1;
-        } else if (CameraApiLevel.CAMERA_API_1.name().equals(apiLevel)) {
-            mCamApiLv = CameraApiLevel.CAMERA_API_1;
-        } else if (CameraApiLevel.CAMERA_API_2.name().equals(apiLevel)) {
-            mCamApiLv = CameraApiLevel.CAMERA_API_2;
-        } else {
-            // NOP. Unexpected.
-            throw new IllegalArgumentException("Unexpected API level.");
-        }
-
-        // Aspect.
-        String aspect = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
-                .getString(ViewFinderAnywhereConstants.KEY_VIEW_FINDER_ASPECT, null);
-        if (aspect == null) {
-            // Unexpected or not initialized yet. Use default.
-            mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_1_1;
-        } else if (ViewFinderAnywhereConstants.VAL_VIEW_FINDER_ASPECT_16_9.equals(aspect)) {
-            mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_16_9;
-        } else if (ViewFinderAnywhereConstants.VAL_VIEW_FINDER_ASPECT_4_3.equals(aspect)) {
-            mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_4_3;
-        } else if (ViewFinderAnywhereConstants.VAL_VIEW_FINDER_ASPECT_1_1.equals(aspect)) {
-            mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_1_1;
-        } else {
-            // NOP. Unexpected.
-            throw new IllegalArgumentException("Unexpected Aspect.");
-        }
     }
 
     /**
@@ -267,12 +214,6 @@ public class OverlayViewFinderController {
     public void stop() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "stop() : E");
 
-        if (mRootView == null) {
-            // NOP. Already stopped.
-            Log.logError(TAG, "Error. Already stopped.");
-            return;
-        }
-
         // Reset state.
         mCurrentState = new StateFinalized();
 
@@ -297,14 +238,6 @@ public class OverlayViewFinderController {
         // Storage selector.
         mStartStorageSelectorTask = null;
         mStopStorageSelectorTask = null;
-
-        // Release references.
-        mContext = null;
-        if (mRootView != null) {
-            mRootView.release();
-            mRootView.removeFromOverlayWindow();
-            mRootView = null;
-        }
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "stop() : X");
     }
@@ -530,7 +463,7 @@ public class OverlayViewFinderController {
         public void onPreOpenRequested() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenRequested()");
 
-            mCamera.openAsync(mViewFinderAspectWH, new OpenCallbackImpl());
+            mCamera.openAsync(mConfigManager.getEvfAspectWH(), new OpenCallbackImpl());
 
             mIsPreOpenCanceled = false;
         }
@@ -581,7 +514,7 @@ public class OverlayViewFinderController {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "entry()");
 
             // Camera.
-            mCamera.openAsync(mViewFinderAspectWH, new OpenCallbackImpl());
+            mCamera.openAsync(mConfigManager.getEvfAspectWH(), new OpenCallbackImpl());
 
             // Receiver.
             mScreenOffReceiver.enable(mContext);
@@ -895,9 +828,9 @@ public class OverlayViewFinderController {
         }
     }
 
-    private static class ScreenOffReceiver extends BroadcastReceiver {
+    private class ScreenOffReceiver extends BroadcastReceiver {
         // Log tag.
-        private static final String TAG = ScreenOffReceiver.class.getSimpleName();
+        private final String TAG = "ScreenOffReceiver";
 
         // Screen OFF receiver filter.
         private IntentFilter mScreenOffFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
@@ -933,7 +866,7 @@ public class OverlayViewFinderController {
         public void onReceive(Context context, Intent intent) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onReceive() : ACTION = " + intent.getAction());
 
-            OverlayViewFinderController.getInstance().getCurrentState().requestForceStop();
+            getCurrentState().requestForceStop();
         }
     }
 
@@ -945,9 +878,9 @@ public class OverlayViewFinderController {
         @Override
         public void onOpened(boolean isSuccess) {
             if (isSuccess) {
-                OverlayViewFinderController.getInstance().getCurrentState().onCameraReady();
+                getCurrentState().onCameraReady();
             } else {
-                OverlayViewFinderController.getInstance().getCurrentState().onCameraBusy();
+                getCurrentState().onCameraBusy();
             }
         }
     }
@@ -969,14 +902,14 @@ public class OverlayViewFinderController {
     private class ScanCallbackImpl implements CameraPlatformInterface.ScanCallback {
         @Override
         public void onScanDone(boolean isSuccess) {
-            OverlayViewFinderController.getInstance().getCurrentState().onScanDone(isSuccess);
+            getCurrentState().onScanDone(isSuccess);
         }
     }
 
     private class CancelScanCallbackImpl implements CameraPlatformInterface.CancelScanCallback {
         @Override
         public void onCancelScanDone() {
-            OverlayViewFinderController.getInstance().getCurrentState().onCancelScanDone();
+            getCurrentState().onCancelScanDone();
         }
     }
 
@@ -984,7 +917,7 @@ public class OverlayViewFinderController {
             implements CameraPlatformInterface.StillCaptureCallback {
         @Override
         public void onShutterDone(int requestId) {
-            OverlayViewFinderController.getInstance().getCurrentState().onShutterDone();
+            getCurrentState().onShutterDone();
 
             // Firebase analytics.
             ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
@@ -995,7 +928,7 @@ public class OverlayViewFinderController {
 
         @Override
         public void onCaptureDone(int requestId) {
-            OverlayViewFinderController.getInstance().getCurrentState().onStillCaptureDone();
+            getCurrentState().onStillCaptureDone();
         }
 
         @Override
@@ -1003,7 +936,7 @@ public class OverlayViewFinderController {
             // Request store.
             mStorageController.storePicture(data);
 
-            OverlayViewFinderController.getInstance().getCurrentState().onPhotoStoreReady(data);
+            getCurrentState().onPhotoStoreReady(data);
         }
     }
 }

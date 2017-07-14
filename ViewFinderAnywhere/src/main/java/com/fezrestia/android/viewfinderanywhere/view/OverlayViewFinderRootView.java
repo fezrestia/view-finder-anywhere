@@ -35,12 +35,18 @@ import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants.ViewFinderGripPosition;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants.ViewFinderGripSize;
 import com.fezrestia.android.viewfinderanywhere.R;
+import com.fezrestia.android.viewfinderanywhere.config.ConfigManager;
+import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger;
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
 
 
 public class OverlayViewFinderRootView extends RelativeLayout {
     // Log tag.
     private static final String TAG = "OverlayViewFinderRootView";
+
+    // Core instances.
+    private OverlayViewFinderController mController = null;
+    private ConfigManager mConfigManager = null;
 
     // Root view.
     private RelativeLayout mRootView = null;
@@ -155,8 +161,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
                 // Remove or fix position.
                 if (!mIsResidence && (mTargetWindowPosit.equals(mWindowDisabledPosit))) {
                     // Remove.
-                    OverlayViewFinderController.LifeCycleTrigger.getInstance()
-                                .requestStop(getContext());
+                    OnOffTrigger.requestStop(getContext());
                 } else {
                     // Fix position.
                     mWindowLayoutParams.x = mTargetWindowPosit.x;
@@ -182,9 +187,6 @@ public class OverlayViewFinderRootView extends RelativeLayout {
 
     // Already resumed or not.
     private boolean mIsResumed = true;
-
-    // View finder aspect.
-    private float mViewFinderAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_1_1;
 
     // Viewfinder grip size.
     private int mViewFinderGripSize = 0;
@@ -225,12 +227,23 @@ public class OverlayViewFinderRootView extends RelativeLayout {
     }
 
     /**
+     * Set core instance dependency.
+     *
+     * @param controller Master controller
+     * @param configManager ConfigManager
+     */
+    public void setCoreInstances(
+            OverlayViewFinderController controller,
+            ConfigManager configManager) {
+        mController = controller;
+        mConfigManager = configManager;
+    }
+
+    /**
      * Initialize all of configurations.
      */
-    public void initialize(float aspectRatioWH) {
+    public void initialize() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "initialize() : E");
-
-        mViewFinderAspectWH = aspectRatioWH;
 
         // Cache instance references.
         cacheInstances();
@@ -426,6 +439,9 @@ public class OverlayViewFinderRootView extends RelativeLayout {
 
         mWindowManager = null;
         mWindowLayoutParams = null;
+
+        mController = null;
+        mConfigManager = null;
     }
 
     private void releaseWindowPositionCorrector() {
@@ -520,8 +536,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
         }
 
         // Check active.
-        if (mIsResidence && !isInitialSetup
-                 && !OverlayViewFinderController.getInstance().getCurrentState().isActive()) {
+        if (mIsResidence && !isInitialSetup && !mController.getCurrentState().isActive()) {
             mWindowLayoutParams.x = mWindowDisabledPosit.x;
             mWindowLayoutParams.y = mWindowDisabledPosit.y;
         }
@@ -596,14 +611,14 @@ public class OverlayViewFinderRootView extends RelativeLayout {
                 mViewFinderWidth = (int)
                         (mDisplayLongLineLength * mViewFinderScaleRatioAgainstToScreen);
                 mViewFinderHeight = (int)
-                        (mViewFinderWidth / mViewFinderAspectWH);
+                        (mViewFinderWidth / mConfigManager.getEvfAspectWH());
                 break;
 
             case Configuration.ORIENTATION_PORTRAIT:
                 mViewFinderHeight = (int)
                         (mDisplayLongLineLength * mViewFinderScaleRatioAgainstToScreen);
                 mViewFinderWidth = (int)
-                        (mViewFinderHeight / mViewFinderAspectWH);
+                        (mViewFinderHeight / mConfigManager.getEvfAspectWH());
                 break;
 
             default:
@@ -849,7 +864,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
                 mRootView.setOnTouchListener(mOnTouchListenerImpl);
 
                 // Notify to device.
-                OverlayViewFinderController.getInstance().getCurrentState().onSurfaceReady();
+                mController.getCurrentState().onSurfaceReady();
             } else {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "checkViewFinderAspect() : Now on resizing...");
                 // NOP. Now on resizing.
@@ -985,11 +1000,11 @@ public class OverlayViewFinderRootView extends RelativeLayout {
 
             // Pre-open.
             if (!mIsResumed) {
-                OverlayViewFinderController.getInstance().getCurrentState().onPreOpenRequested();
+                mController.getCurrentState().onPreOpenRequested();
             }
 
             // Request scan.
-            OverlayViewFinderController.getInstance().getCurrentState().requestScan();
+            mController.getCurrentState().requestScan();
 
             // Stop animation.
             if (mWindowPositionCorrectionTask != null) {
@@ -1013,7 +1028,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
             // Check moving.
             final int touchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
             if (touchSlop < Math.abs(diffX) || touchSlop < Math.abs(diffY)) {
-                OverlayViewFinderController.getInstance().getCurrentState().requestCancelScan();
+                mController.getCurrentState().requestCancelScan();
             }
 
             int newX = mWindowLayoutParams.x;
@@ -1068,7 +1083,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
                     "onSingleReleased() : [X=" + point.x + "] [Y=" + point.y + "]");
 
             // Request still capture.
-            OverlayViewFinderController.getInstance().getCurrentState().requestStillCapture();
+            mController.getCurrentState().requestStillCapture();
 
             // Decide correction target position.
             final int diffToEnable;
@@ -1095,10 +1110,9 @@ public class OverlayViewFinderRootView extends RelativeLayout {
                 // Resume controller.
                 if (!mIsResumed) {
                     mIsResumed = true;
-                    OverlayViewFinderController.getInstance().resume();
+                    mController.resume();
                     if (mViewFinder.isAvailable()) {
-                        OverlayViewFinderController.getInstance().getCurrentState()
-                                .onSurfaceReady();
+                        mController.getCurrentState().onSurfaceReady();
                     }
                 }
             } else {
@@ -1111,12 +1125,12 @@ public class OverlayViewFinderRootView extends RelativeLayout {
                     // Hide surface.
                     clearSurface();
 
-                    OverlayViewFinderController.getInstance().pause();
+                    mController.pause();
                 }
             }
 
             if (!mIsResumed) {
-                OverlayViewFinderController.getInstance().getCurrentState().onPreOpenCanceled();
+                mController.getCurrentState().onPreOpenCanceled();
             }
 
             // Correct position start.
@@ -1224,7 +1238,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
             clearSurface();
 
             // Pause controller.
-            OverlayViewFinderController.getInstance().pause();
+            mController.pause();
 
             // Fix position.
             mWindowLayoutParams.x = mWindowDisabledPosit.x;
