@@ -8,7 +8,6 @@ import android.content.IntentFilter;
 import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger;
-import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
 
 public class OverlayViewFinderTriggerReceiver extends BroadcastReceiver {
     // Log tag.
@@ -22,6 +21,8 @@ public class OverlayViewFinderTriggerReceiver extends BroadcastReceiver {
     public void register(Context context) {
         IntentFilter filter = new IntentFilter();
         filter.addAction(ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY);
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
 
         context.registerReceiver(this, filter);
     }
@@ -46,11 +47,20 @@ public class OverlayViewFinderTriggerReceiver extends BroadcastReceiver {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "ACTION is NULL.");
             // NOP.
         } else switch (action) {
-            case ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY:
-                {
-                    OnOffTrigger.requestToggleVisibility(context);
-                }
-                break;
+            case ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY: {
+                OnOffTrigger.requestToggleVisibility(context);
+            }
+            break;
+
+            case Intent.ACTION_SCREEN_ON: {
+                OnOffTrigger.onScreenOn(context);
+            }
+            break;
+
+            case Intent.ACTION_SCREEN_OFF: {
+                OnOffTrigger.onScreenOff(context);
+            }
+            break;
 
             default:
                 // Unexpected Action.

@@ -14,9 +14,9 @@ import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 import com.fezrestia.android.viewfinderanywhere.config.ConfigManager;
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
-import com.fezrestia.android.viewfinderanywhere.control.StorageSelectorController;
 import com.fezrestia.android.viewfinderanywhere.receiver.OverlayViewFinderTriggerReceiver;
 import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView;
+import com.fezrestia.android.viewfinderanywhere.view.StorageSelectorRootView;
 
 public class OverlayViewFinderService extends Service {
     // Log tag.
@@ -30,6 +30,7 @@ public class OverlayViewFinderService extends Service {
     private OverlayViewFinderController mController = null;
     private OverlayViewFinderRootView mRootView = null;
     private OverlayViewFinderTriggerReceiver mTriggerReceiver = null;
+    private StorageSelectorRootView mStorageView = null;
 
     @Nullable
     @Override
@@ -96,6 +97,11 @@ public class OverlayViewFinderService extends Service {
         // Receiver.
         mTriggerReceiver = new OverlayViewFinderTriggerReceiver();
 
+        // Storage selector view.
+        mStorageView = (StorageSelectorRootView) LayoutInflater.from(this).inflate(
+                R.layout.storage_selector_root,
+                null);
+
         // Set up dependency injection.
         mController.setCoreInstances(mRootView, mConfigManager);
         mRootView.setCoreInstances(mController, mConfigManager);
@@ -123,16 +129,26 @@ public class OverlayViewFinderService extends Service {
             break;
 
             case ViewFinderAnywhereConstants.INTENT_ACTION_OPEN_STORAGE_SELECTOR: {
-                // Start overlay view finder.
-                StorageSelectorController.getInstance().start(this);
-                StorageSelectorController.getInstance().resume();
+                // Add UI.
+                mStorageView.initialize();
+                mStorageView.addToOverlayWindow();
             }
             break;
 
             case ViewFinderAnywhereConstants.INTENT_ACTION_CLOSE_STORAGE_SELECTOR: {
-                // Stop overlay view finder.
-                StorageSelectorController.getInstance().pause();
-                StorageSelectorController.getInstance().stop();
+                // Remove UI.
+                mStorageView.removeFromOverlayWindow();
+            }
+            break;
+
+            case Intent.ACTION_SCREEN_ON: {
+                // NOP.
+            }
+            break;
+
+            case Intent.ACTION_SCREEN_OFF: {
+                // Close overlay window.
+                mController.getCurrentState().requestForceStop();
             }
             break;
 
@@ -175,5 +191,8 @@ public class OverlayViewFinderService extends Service {
         mRootView = null;
 
         mTriggerReceiver = null;
+
+        mStorageView.release();
+        mStorageView = null;
     }
 }

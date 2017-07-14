@@ -25,7 +25,6 @@ import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
-import com.fezrestia.android.viewfinderanywhere.control.StorageSelectorController;
 import com.fezrestia.android.viewfinderanywhere.storage.StorageController;
 
 import java.io.File;
@@ -167,6 +166,9 @@ public class StorageSelectorRootView extends RelativeLayout {
 
     @SuppressLint("InflateParams")
     private void createUiLayout() {
+        // Clear.
+        mItemList.removeAllViews();
+
         LayoutInflater layoutInflater = LayoutInflater.from(getContext());
 
         // Item params.
@@ -376,7 +378,7 @@ public class StorageSelectorRootView extends RelativeLayout {
         }
 
         // Check active.
-        if (!isInitialSetup && !StorageSelectorController.getInstance().isActive()) {
+        if (!isInitialSetup && !isAttachedToWindow()) {
             mWindowLayoutParams.x = mWindowDisabledPosit.x;
             mWindowLayoutParams.y = mWindowDisabledPosit.y;
         }

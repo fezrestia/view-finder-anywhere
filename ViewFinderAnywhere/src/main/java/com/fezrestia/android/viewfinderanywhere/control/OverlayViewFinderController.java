@@ -1,10 +1,7 @@
 package com.fezrestia.android.viewfinderanywhere.control;
 
 import android.annotation.SuppressLint;
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Handler;
 
@@ -37,9 +34,6 @@ public class OverlayViewFinderController {
 
     // Current state.
     private State mCurrentState = new StateFinalized(); // Default.
-
-    // Receiver.
-    private ScreenOffReceiver mScreenOffReceiver = null;
 
     // Trigger failed delay.
     private static final int TRIGGER_FAILED_FEEDBACK_DELAY_MILLIS = 1000;
@@ -112,9 +106,6 @@ public class OverlayViewFinderController {
         mStartStorageSelectorTask = new StartStorageSelectorTask(mContext);
         mStopStorageSelectorTask = new StopStorageSelectorTask(mContext);
 
-        // Receiver.
-        mScreenOffReceiver = new ScreenOffReceiver();
-
         // Storage.
         mStorageController = new StorageController(mContext, mUiWorker, this);
 
@@ -165,15 +156,6 @@ public class OverlayViewFinderController {
     }
 
     /**
-     * Overlay UI is active or not.
-     *
-     * @return Overlay view is active or not.
-     */
-    public boolean isOverlayActive() {
-        return (mRootView != null);
-    }
-
-    /**
      * Pause overlay view finder.
      */
     public void pause() {
@@ -221,12 +203,6 @@ public class OverlayViewFinderController {
         if (mCamera != null) {
             mCamera.release();
             mCamera = null;
-        }
-
-        // Release receiver.
-        if (mScreenOffReceiver != null) {
-            mScreenOffReceiver.disable(mContext);
-            mScreenOffReceiver = null;
         }
 
         // Storage.
@@ -447,9 +423,6 @@ public class OverlayViewFinderController {
 
             // Camera.
             mCamera.closeAsync(new CloseCallbackImpl());
-
-            // Receiver.
-            mScreenOffReceiver.disable(mContext);
         }
 
         @Override
@@ -515,9 +488,6 @@ public class OverlayViewFinderController {
 
             // Camera.
             mCamera.openAsync(mConfigManager.getEvfAspectWH(), new OpenCallbackImpl());
-
-            // Receiver.
-            mScreenOffReceiver.enable(mContext);
         }
 
         @Override
@@ -827,50 +797,6 @@ public class OverlayViewFinderController {
             mRootView.getVisualFeedbackTrigger().clear();
         }
     }
-
-    private class ScreenOffReceiver extends BroadcastReceiver {
-        // Log tag.
-        private final String TAG = "ScreenOffReceiver";
-
-        // Screen OFF receiver filter.
-        private IntentFilter mScreenOffFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
-
-        // This receiver is enabled or not.
-        private boolean mIsEnabled = false;
-
-        /**
-         * Enable screen off receiver.
-         *
-         * @param context Master context.
-         */
-        public void enable(Context context) {
-            if (!mIsEnabled) {
-                mIsEnabled = true;
-                context.registerReceiver(this, mScreenOffFilter);
-            }
-        }
-
-        /**
-         * Disable screen off receiver.
-         *
-         * @param context Master context.
-         */
-        public void disable(Context context) {
-            if (mIsEnabled) {
-               context.unregisterReceiver(this);
-               mIsEnabled = false;
-            }
-        }
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onReceive() : ACTION = " + intent.getAction());
-
-            getCurrentState().requestForceStop();
-        }
-    }
-
-
 
     //// CAMERA PLATFORM INTERFACE CALLBACK ///////////////////////////////////////////////////////
 

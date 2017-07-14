@@ -14,6 +14,18 @@ object OnOffTrigger {
     // Log tag.
     private val TAG = "OnOffTrigger"
 
+    private fun notifyToService(context: Context, action: String) {
+        val service = Intent(action);
+        service.setClass(context, OverlayViewFinderService::class.java)
+        val component = context.startService(service)
+
+        if (Log.IS_DEBUG) {
+            if (component == null) {
+                Log.logDebug(TAG, "notifyToService() : FAILED action=" + action)
+            }
+        }
+    }
+
     /**
      * Start.
      *
@@ -21,17 +33,7 @@ object OnOffTrigger {
      */
     @JvmStatic
     fun requestStart(context: Context) {
-        val service = Intent(ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_START_SERVICE);
-        service.setClass(context, OverlayViewFinderService::class.java)
-        val component = context.startService(service)
-
-        if (Log.IS_DEBUG) {
-            if (component != null) {
-                Log.logDebug(TAG, "requestStart() : Component = " + component.toString())
-            } else {
-                Log.logDebug(TAG, "requestStart() : Component = NULL")
-            }
-        }
+        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_START_SERVICE);
     }
 
     /**
@@ -54,9 +56,9 @@ object OnOffTrigger {
      */
     @JvmStatic
     fun requestToggleVisibility(context: Context) {
-        val service = Intent(ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY);
-        service.setClass(context, OverlayViewFinderService::class.java)
-        context.startService(service)
+        notifyToService(
+                context,
+                ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY);
     }
 
     /**
@@ -66,9 +68,7 @@ object OnOffTrigger {
      */
     @JvmStatic
     fun openStorageSelector(context: Context) {
-        val service = Intent(ViewFinderAnywhereConstants.INTENT_ACTION_OPEN_STORAGE_SELECTOR);
-        service.setClass(context, OverlayViewFinderService::class.java)
-        val component = context.startService(service)
+        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_OPEN_STORAGE_SELECTOR);
     }
 
     /**
@@ -78,8 +78,26 @@ object OnOffTrigger {
      */
     @JvmStatic
     fun closeStorageSelector(context: Context) {
-        val service = Intent(ViewFinderAnywhereConstants.INTENT_ACTION_CLOSE_STORAGE_SELECTOR);
-        service.setClass(context, OverlayViewFinderService::class.java)
-        val component = context.startService(service)
+        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_CLOSE_STORAGE_SELECTOR);
+    }
+
+    /**
+     * Notify screen ON.
+     *
+     * @param context Master context.
+     */
+    @JvmStatic
+    fun onScreenOn(context: Context) {
+        notifyToService(context, Intent.ACTION_SCREEN_ON);
+    }
+
+    /**
+     * Notify screen OFF.
+     *
+     * @param context Master context.
+     */
+    @JvmStatic
+    fun onScreenOff(context: Context) {
+        notifyToService(context, Intent.ACTION_SCREEN_OFF);
     }
 }
