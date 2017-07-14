@@ -7,36 +7,12 @@ import android.content.IntentFilter;
 
 import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
+import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger;
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
 
 public class OverlayViewFinderTriggerReceiver extends BroadcastReceiver {
     // Log tag.
     private static final String TAG = "OverlayViewFinderTriggerReceiver";
-
-    private OverlayViewFinderController mController = null;
-
-    /**
-     * CONSTRUCTOR.
-     */
-    public OverlayViewFinderTriggerReceiver() {
-        // NOP.
-    }
-
-    /**
-     * Set core instances.
-     *
-     * @param controller
-     */
-    public void setCoreInstances(OverlayViewFinderController controller) {
-        mController = controller;
-    }
-
-    /**
-     * Release all references.
-     */
-    public void release() {
-        mController = null;
-    }
 
     /**
      * Register this receiver to system.
@@ -72,7 +48,7 @@ public class OverlayViewFinderTriggerReceiver extends BroadcastReceiver {
         } else switch (action) {
             case ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY:
                 {
-                    mController.getCurrentState().onToggleShowHideRequired();
+                    OnOffTrigger.requestToggleVisibility(context);
                 }
                 break;
 

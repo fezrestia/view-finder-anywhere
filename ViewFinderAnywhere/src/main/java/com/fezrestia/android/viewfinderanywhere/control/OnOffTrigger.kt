@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 
 import com.fezrestia.android.util.log.Log
+import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
 import com.fezrestia.android.viewfinderanywhere.service.OverlayViewFinderService
 
 /**
@@ -15,12 +16,13 @@ object OnOffTrigger {
 
     /**
      * Start.
-
+     *
      * @param context Master context.
      */
     @JvmStatic
     fun requestStart(context: Context) {
-        val service = Intent(context, OverlayViewFinderService::class.java)
+        val service = Intent(ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_START_SERVICE);
+        service.setClass(context, OverlayViewFinderService::class.java)
         val component = context.startService(service)
 
         if (Log.IS_DEBUG) {
@@ -34,7 +36,7 @@ object OnOffTrigger {
 
     /**
      * Stop.
-
+     *
      * @param context Master context.
      */
     @JvmStatic
@@ -43,5 +45,41 @@ object OnOffTrigger {
         val isSuccess = context.stopService(service)
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStop() : isSuccess = " + isSuccess)
+    }
+
+    /**
+     * Request toggle overlay view finder visibility.
+     *
+     * @param context Master context.
+     */
+    @JvmStatic
+    fun requestToggleVisibility(context: Context) {
+        val service = Intent(ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY);
+        service.setClass(context, OverlayViewFinderService::class.java)
+        context.startService(service)
+    }
+
+    /**
+     * Open StorageSelector.
+     *
+     * @param context Master context.
+     */
+    @JvmStatic
+    fun openStorageSelector(context: Context) {
+        val service = Intent(ViewFinderAnywhereConstants.INTENT_ACTION_OPEN_STORAGE_SELECTOR);
+        service.setClass(context, OverlayViewFinderService::class.java)
+        val component = context.startService(service)
+    }
+
+    /**
+     * Close StorageSelector.
+     *
+     * @param context Master context.
+     */
+    @JvmStatic
+    fun closeStorageSelector(context: Context) {
+        val service = Intent(ViewFinderAnywhereConstants.INTENT_ACTION_CLOSE_STORAGE_SELECTOR);
+        service.setClass(context, OverlayViewFinderService::class.java)
+        val component = context.startService(service)
     }
 }

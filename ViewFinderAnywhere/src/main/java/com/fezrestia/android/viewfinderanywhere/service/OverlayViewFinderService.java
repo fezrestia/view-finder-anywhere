@@ -14,6 +14,7 @@ import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 import com.fezrestia.android.viewfinderanywhere.config.ConfigManager;
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
+import com.fezrestia.android.viewfinderanywhere.control.StorageSelectorController;
 import com.fezrestia.android.viewfinderanywhere.receiver.OverlayViewFinderTriggerReceiver;
 import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView;
 
@@ -98,13 +99,48 @@ public class OverlayViewFinderService extends Service {
         // Set up dependency injection.
         mController.setCoreInstances(mRootView, mConfigManager);
         mRootView.setCoreInstances(mController, mConfigManager);
-        mTriggerReceiver.setCoreInstances(mController);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onStartCommand() : E");
-        // NOP.
+
+        String action = intent.getAction();
+
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "ACTION = " + action);
+
+        if (action == null) {
+            Log.logError(TAG, "ACTION = NULL");
+        } else switch (action) {
+            case ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_START_SERVICE: {
+                // NOP.
+            }
+            break;
+
+            case ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY: {
+                mController.getCurrentState().onToggleShowHideRequired();
+            }
+            break;
+
+            case ViewFinderAnywhereConstants.INTENT_ACTION_OPEN_STORAGE_SELECTOR: {
+                // Start overlay view finder.
+                StorageSelectorController.getInstance().start(this);
+                StorageSelectorController.getInstance().resume();
+            }
+            break;
+
+            case ViewFinderAnywhereConstants.INTENT_ACTION_CLOSE_STORAGE_SELECTOR: {
+                // Stop overlay view finder.
+                StorageSelectorController.getInstance().pause();
+                StorageSelectorController.getInstance().stop();
+            }
+            break;
+
+            default: {
+                throw new RuntimeException("Unexpected ACTION");
+            }
+        }
+
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onStartCommand() : X");
         return START_NOT_STICKY;
     }
@@ -138,7 +174,6 @@ public class OverlayViewFinderService extends Service {
         mRootView.release();
         mRootView = null;
 
-        mTriggerReceiver.release();
         mTriggerReceiver = null;
     }
 }

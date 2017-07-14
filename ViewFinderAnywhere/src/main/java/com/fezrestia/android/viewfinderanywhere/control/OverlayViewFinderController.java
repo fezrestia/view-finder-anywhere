@@ -160,7 +160,7 @@ public class OverlayViewFinderController {
         @Override
         public void run() {
             // Start storage selector.
-            StorageSelectorController.LifeCycleTrigger.getInstance().requestStart(mContext);
+            OnOffTrigger.openStorageSelector(mContext);
         }
     }
 
@@ -204,7 +204,7 @@ public class OverlayViewFinderController {
         @Override
         public void run() {
             // Start storage selector.
-            StorageSelectorController.LifeCycleTrigger.getInstance().requestStop(mContext);
+            OnOffTrigger.closeStorageSelector(mContext);
         }
     }
 

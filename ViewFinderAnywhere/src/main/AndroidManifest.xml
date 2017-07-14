@@ -53,10 +53,6 @@
                 android:name=".service.OverlayViewFinderService"
                 android:exported="false"
         />
-        <service
-                android:name=".service.StorageSelectorService"
-                android:exported="false"
-        />
         <!-- Firebase messaging -->
         <service
                 android:name="com.fezrestia.android.lib.firebase.FirebaseMessagingServiceImpl"

@@ -2,7 +2,6 @@ package com.fezrestia.android.viewfinderanywhere.control;
 
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -10,7 +9,6 @@ import android.view.LayoutInflater;
 
 import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.R;
-import com.fezrestia.android.viewfinderanywhere.service.StorageSelectorService;
 import com.fezrestia.android.viewfinderanywhere.view.StorageSelectorRootView;
 
 public class StorageSelectorController {
@@ -33,58 +31,6 @@ public class StorageSelectorController {
 
     // Active flag.
     private boolean mIsActive = false;
-
-    /**
-     * Life cycle trigger interface.
-     */
-    static class LifeCycleTrigger {
-        private static final String TAG = LifeCycleTrigger.class.getSimpleName();
-        private static final LifeCycleTrigger INSTANCE = new LifeCycleTrigger();
-
-        // CONSTRUCTOR.
-        private LifeCycleTrigger() {
-            // NOP.
-        }
-
-        /**
-         * Get accessor.
-         *
-         * @return Life cycle instance.
-         */
-        public static LifeCycleTrigger getInstance() {
-            return INSTANCE;
-        }
-
-        /**
-         * Start.
-         *
-         * @param context Master context.
-         */
-        void requestStart(Context context) {
-            Intent service = new Intent(context, StorageSelectorService.class);
-            ComponentName component = context.startService(service);
-
-            if (Log.IS_DEBUG) {
-                if (component != null) {
-                    Log.logDebug(TAG, "requestStart() : Component = " + component.toString());
-                } else {
-                    Log.logDebug(TAG, "requestStart() : Component = NULL");
-                }
-            }
-        }
-
-        /**
-         * Stop.
-         *
-         * @param context Master context.
-         */
-        void requestStop(Context context) {
-            Intent service = new Intent(context, StorageSelectorService.class);
-            boolean isSuccess = context.stopService(service);
-
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStop() : isSuccess = " + isSuccess);
-        }
-    }
 
     /**
      * CONSTRUCTOR.
@@ -120,9 +66,6 @@ public class StorageSelectorController {
         // Cache master context.
         mContext = context;
 
-        // Load preferences.
-        loadPreferences();
-
         // Create overlay view.
         mRootView = (StorageSelectorRootView)
                 LayoutInflater.from(context).inflate(
@@ -136,14 +79,6 @@ public class StorageSelectorController {
         mScreenOffReceiver = new ScreenOffReceiver();
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "start() : X");
-    }
-
-    private void loadPreferences() {
-
-
-
-
-
     }
 
     /**

@@ -2,13 +2,7 @@
 
 <resources>
 
-    <string name="storage_selector_ongoing_notification">StorageSelector Enabled</string>
-
-
-
     <string name="storage_selector_default_storage_label">DEFAULT</string>
-
-
 
     <string name="title_storage_selector_preference">Storage Selector</string>
 

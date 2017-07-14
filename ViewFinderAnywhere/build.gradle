@@ -9,8 +9,8 @@ android {
         applicationId "com.fezrestia.android.viewfinderanywhere"
         minSdkVersion 19
         targetSdkVersion 23
-        versionCode 213
-        versionName '2.13'
+        versionCode 214
+        versionName '2.14'
     }
 
     compileOptions {
