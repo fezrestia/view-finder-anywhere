@@ -43,10 +43,7 @@ object OnOffTrigger {
      */
     @JvmStatic
     fun requestStop(context: Context) {
-        val service = Intent(context, OverlayViewFinderService::class.java)
-        val isSuccess = context.stopService(service)
-
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStop() : isSuccess = " + isSuccess)
+        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_STOP_SERVICE);
     }
 
     /**

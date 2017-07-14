@@ -50,13 +50,6 @@ public class OverlayViewFinderService extends Service {
         // Create and dependency injection.
         setupCoreInstances();
 
-        // Start overlay view finder.
-        mRootView.initialize();
-        mRootView.addToOverlayWindow();
-        mController.start();
-        mController.resume();
-        mTriggerReceiver.register(this);
-
         // Visibility toggle intent.
         Intent visibilityToggle = new Intent(
                 ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY);
@@ -119,7 +112,23 @@ public class OverlayViewFinderService extends Service {
             Log.logError(TAG, "ACTION = NULL");
         } else switch (action) {
             case ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_START_SERVICE: {
-                // NOP.
+                // Start overlay view finder.
+                mRootView.initialize();
+                mRootView.addToOverlayWindow();
+                mController.start();
+                mController.resume();
+                mTriggerReceiver.register(this);
+            }
+            break;
+
+            case ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_STOP_SERVICE: {
+                // Stop overlay view finder.
+                mTriggerReceiver.unregister(this);
+                mController.pause();
+                mController.stop();
+                mRootView.removeFromOverlayWindow();
+
+                stopSelf();
             }
             break;
 
@@ -165,12 +174,6 @@ public class OverlayViewFinderService extends Service {
     public void onDestroy() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onDestroy() : E");
         super.onDestroy();
-
-        // Stop overlay view finder.
-        mTriggerReceiver.unregister(this);
-        mController.pause();
-        mController.stop();
-        mRootView.removeFromOverlayWindow();
 
         // Stop foreground.
         stopForeground(true);

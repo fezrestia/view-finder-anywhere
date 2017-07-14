@@ -8,6 +8,9 @@ public class ViewFinderAnywhereConstants {
     /** Request start intent. */
     public static final String INTENT_ACTION_REQUEST_START_SERVICE
             = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_REQUEST_START_SERVICE";
+    /** Request stop intent. */
+    public static final String INTENT_ACTION_REQUEST_STOP_SERVICE
+            = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_REQUEST_STOP_SERVICE";
     /** Intent constants. */
     public static final String INTENT_ACTION_REGISTER_UI_PLUG_IN
             = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_REGISTER_UI_PLUG_IN";
@@ -241,7 +244,4 @@ public class ViewFinderAnywhereConstants {
     public static String getBooleanString(boolean bool) {
         return bool ? "true" : "false";
     }
-
-    // Animation parameters.
-    public static final int STORAGE_SELECTOR_TRIGGER_DELAY_MILLIS = 1000;
 }

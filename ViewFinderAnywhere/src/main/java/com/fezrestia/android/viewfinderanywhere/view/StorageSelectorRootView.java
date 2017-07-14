@@ -324,6 +324,11 @@ public class StorageSelectorRootView extends RelativeLayout {
      * Add this view to WindowManager layer.
      */
     public void addToOverlayWindow() {
+        if (isAttachedToWindow()) {
+            // Already attached.
+            return;
+        }
+
         // Window parameters.
         updateWindowParams(true);
 
@@ -392,6 +397,11 @@ public class StorageSelectorRootView extends RelativeLayout {
      * Remove this view from WindowManager layer.
      */
     public void removeFromOverlayWindow() {
+        if (!isAttachedToWindow()) {
+            // Already detached.
+            return;
+        }
+
         // Remove from to WindowManager.
         WindowManager winMng = (WindowManager)
                 getContext().getSystemService(Context.WINDOW_SERVICE);

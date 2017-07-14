@@ -41,10 +41,6 @@ public class OverlayViewFinderController {
     // Storage.
     private StorageController mStorageController = null;
 
-    // Storage selector.
-    private StartStorageSelectorTask mStartStorageSelectorTask = null;
-    private StopStorageSelectorTask mStopStorageSelectorTask = null;
-
     /**
      * CONSTRUCTOR.
      *
@@ -102,10 +98,6 @@ public class OverlayViewFinderController {
                 throw new IllegalArgumentException("Unknown API level.");
         }
 
-        // Storage selector.
-        mStartStorageSelectorTask = new StartStorageSelectorTask(mContext);
-        mStopStorageSelectorTask = new StopStorageSelectorTask(mContext);
-
         // Storage.
         mStorageController = new StorageController(mContext, mUiWorker, this);
 
@@ -123,36 +115,11 @@ public class OverlayViewFinderController {
 
         // Storage selector.
         if (ViewFinderAnywhereApplication.isStorageSelectorEnabled()) {
-            int delayedMillis;
-            if (mRootView.isAttachedToWindow()) {
-                delayedMillis = ViewFinderAnywhereConstants.STORAGE_SELECTOR_TRIGGER_DELAY_MILLIS;
-            } else {
-                delayedMillis = ViewFinderAnywhereConstants.STORAGE_SELECTOR_TRIGGER_DELAY_MILLIS
-                        * 2;
-            }
-            mUiWorker.postDelayed(mStartStorageSelectorTask, delayedMillis);
-        }
-
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "resume() : X");
-    }
-
-    private class StartStorageSelectorTask implements Runnable {
-        private final Context mContext;
-
-        /**
-         * CONSTRUCTOR.
-         *
-         * @param context Master context.
-         */
-        StartStorageSelectorTask(Context context) {
-            mContext = context;
-        }
-
-        @Override
-        public void run() {
             // Start storage selector.
             OnOffTrigger.openStorageSelector(mContext);
         }
+
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "resume() : X");
     }
 
     /**
@@ -164,30 +131,10 @@ public class OverlayViewFinderController {
         // State.
         mCurrentState.onPause();
 
-        // Storage selector.
-        mUiWorker.removeCallbacks(mStartStorageSelectorTask);
-        mUiWorker.post(mStopStorageSelectorTask);
+        // Close storage selector.
+        OnOffTrigger.closeStorageSelector(mContext);
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "pause() : X");
-    }
-
-    private class StopStorageSelectorTask implements Runnable {
-        private final Context mContext;
-
-        /**
-         * CONSTRUCTOR.
-         *
-         * @param context Master context.
-         */
-        StopStorageSelectorTask(Context context) {
-            mContext = context;
-        }
-
-        @Override
-        public void run() {
-            // Start storage selector.
-            OnOffTrigger.closeStorageSelector(mContext);
-        }
     }
 
     /**
@@ -210,10 +157,6 @@ public class OverlayViewFinderController {
             mStorageController.release();
             mStorageController = null;
         }
-
-        // Storage selector.
-        mStartStorageSelectorTask = null;
-        mStopStorageSelectorTask = null;
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "stop() : X");
     }

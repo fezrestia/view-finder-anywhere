@@ -13,6 +13,7 @@ import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.graphics.Typeface;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.Display;
 import android.view.Gravity;
@@ -47,6 +48,8 @@ public class OverlayViewFinderRootView extends RelativeLayout {
     // Core instances.
     private OverlayViewFinderController mController = null;
     private ConfigManager mConfigManager = null;
+
+    private Handler mHandler = ViewFinderAnywhereApplication.getUiThreadHandler();
 
     // Root view.
     private RelativeLayout mRootView = null;
@@ -177,7 +180,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
             mLastDeltaY = dY;
 
             // Next.
-            OverlayViewFinderRootView.this.getHandler().postDelayed(
+            mHandler.postDelayed(
                     this,
                     WINDOW_ANIMATION_INTERVAL);
 
@@ -446,7 +449,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
 
     private void releaseWindowPositionCorrector() {
         if (mWindowPositionCorrectionTask != null) {
-            getHandler().removeCallbacks(mWindowPositionCorrectionTask);
+            mHandler.removeCallbacks(mWindowPositionCorrectionTask);
             mWindowPositionCorrectionTask = null;
         }
     }
@@ -556,7 +559,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
         winMng.removeView(this);
 
         // Release drawing cache.
-        getHandler().post(new ReleaseDrawingResourceTask());
+        mHandler.post(new ReleaseDrawingResourceTask());
     }
 
     private class ReleaseDrawingResourceTask implements Runnable {
@@ -884,15 +887,15 @@ public class OverlayViewFinderRootView extends RelativeLayout {
 
             if (mIsResumed && mViewFinder.getAlpha() == HIDDEN_ALPHA) {
                 mShowSurfaceTask.reset();
-                mRootView.getHandler().post(mShowSurfaceTask);
+                mHandler.post(mShowSurfaceTask);
             }
         }
     }
 
     private void clearSurface() {
-        mRootView.getHandler().removeCallbacks(mShowSurfaceTask);
+        mHandler.removeCallbacks(mShowSurfaceTask);
         mHideSurfaceTask.reset();
-        mRootView.getHandler().post(mHideSurfaceTask);
+        mHandler.post(mHideSurfaceTask);
     }
 
     private abstract class SurfaceVisibilityControlTask implements Runnable {
@@ -946,7 +949,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
                 //   On Android N, invalidate() is called in setAlpha().
                 //   So, this task takes 1 frame V-Sync millis (about 16[ms])
                 //   Not to delay fade in/out, post next control task immediately.
-                mRootView.getHandler().post(this);
+                mHandler.post(this);
             }
         }
     }
@@ -1008,7 +1011,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
 
             // Stop animation.
             if (mWindowPositionCorrectionTask != null) {
-                getHandler().removeCallbacks(mWindowPositionCorrectionTask);
+                mHandler.removeCallbacks(mWindowPositionCorrectionTask);
                 mWindowPositionCorrectionTask = null;
             }
 
@@ -1135,7 +1138,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
 
             // Correct position start.
             mWindowPositionCorrectionTask = new WindowPositionCorrectionTask(mTarget);
-            getHandler().postDelayed(mWindowPositionCorrectionTask, WINDOW_ANIMATION_INTERVAL);
+            mHandler.postDelayed(mWindowPositionCorrectionTask, WINDOW_ANIMATION_INTERVAL);
         }
 
         @Override
@@ -1232,7 +1235,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
         // Pause controller.
         if (mIsResumed) {
             // Kill animation.
-            getHandler().removeCallbacks(mWindowPositionCorrectionTask);
+            mHandler.removeCallbacks(mWindowPositionCorrectionTask);
 
             // Hide surface.
             clearSurface();
@@ -1426,7 +1429,7 @@ public class OverlayViewFinderRootView extends RelativeLayout {
         @Override
         public void onShutterDone() {
             mShutterFeedback.setVisibility(View.VISIBLE);
-            OverlayViewFinderRootView.this.getHandler().postDelayed(
+            mHandler.postDelayed(
                     mRecoverShutterFeedbackTask,
                     SHUTTER_FEEDBACK_DURATION_MILLIS);
         }
