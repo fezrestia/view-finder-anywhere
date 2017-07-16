@@ -649,7 +649,8 @@ public class Camera1Device implements CameraPlatformInterface {
                 final CountDownLatch latch = new CountDownLatch(1);
                 PictureCallbackImpl pictCallback = new PictureCallbackImpl(latch);
                 mCamera.takePicture(
-                        new ShutterCallbackImpl(),
+                        null,
+//                        new ShutterCallbackImpl(),
                         null,
                         pictCallback);
 
@@ -706,6 +707,9 @@ public class Camera1Device implements CameraPlatformInterface {
             @Override
             public void onPictureTaken(byte[] jpegBuffer, Camera camera) {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "onPictureTaken()");
+
+                // Notify to controller.
+                mStillCaptureCallback.onShutterDone(mRequestId);
 
                 mJpegBuffer = jpegBuffer;
 

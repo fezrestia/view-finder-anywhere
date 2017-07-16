@@ -1196,7 +1196,7 @@ public class Camera2Device implements CameraPlatformInterface {
                 RequestTag reqTag = (RequestTag) request.getTag();
 
                 // Shutter sound.
-                mShutterSound.play(MediaActionSound.SHUTTER_CLICK);
+//                mShutterSound.play(MediaActionSound.SHUTTER_CLICK);
 
                 // Notify.
                 if (reqTag != null) {
