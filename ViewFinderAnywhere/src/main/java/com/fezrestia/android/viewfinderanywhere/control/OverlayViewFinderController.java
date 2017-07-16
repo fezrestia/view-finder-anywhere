@@ -99,7 +99,10 @@ public class OverlayViewFinderController {
         }
 
         // Storage.
-        mStorageController = new StorageController(mContext, mUiWorker, this);
+        mStorageController = new StorageController(
+                mContext,
+                mUiWorker,
+                new StorageControllerCallback());
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "start() : X");
     }
@@ -201,6 +204,7 @@ public class OverlayViewFinderController {
         void onPhotoStoreReady(byte[] data);
     }
 
+    @SuppressWarnings("unused") // False positive.
     private interface FromStorageInterface {
         void onPhotoStoreDone(boolean isSuccess, Uri uri);
     }
@@ -806,6 +810,13 @@ public class OverlayViewFinderController {
             mStorageController.storePicture(data);
 
             getCurrentState().onPhotoStoreReady(data);
+        }
+    }
+
+    private class StorageControllerCallback implements StorageController.Callback {
+        @Override
+        public void onPhotoStoreDone(boolean isSuccess, Uri uri) {
+            getCurrentState().onPhotoStoreDone(isSuccess, uri);
         }
     }
 }

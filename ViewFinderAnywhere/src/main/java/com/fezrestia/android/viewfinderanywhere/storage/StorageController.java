@@ -10,7 +10,6 @@ import android.support.annotation.NonNull;
 import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
-import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -36,8 +35,8 @@ public class StorageController {
     // Callback handler.
     private Handler mCallbackHandler = null;
 
-    // Core instances.
-    private OverlayViewFinderController mController = null;
+    // Callback.
+    private Callback mCallback = null;
 
     // Constants.
     private static final String ROOT_DIR_PATH = "ViewFinderAnywhere";
@@ -61,20 +60,30 @@ public class StorageController {
         }
     }
 
+    public interface Callback {
+        /**
+         * Photo store done.
+         *
+         * @param isSuccess Photo store is completed successfully
+         * @param uri Content URI
+         */
+        void onPhotoStoreDone(boolean isSuccess, Uri uri);
+    }
+
     /**
      * CONSTRUCTOR.
      *
      * @param context Master context.
      * @param callbackHandler Callback handler thread.
-     * @param controller Master controller
+     * @param callback Callback
      */
     public StorageController(
             Context context,
             Handler callbackHandler,
-            OverlayViewFinderController controller) {
+            Callback callback) {
         mContext = context;
         mCallbackHandler = callbackHandler;
-        mController = controller;
+        mCallback = callback;
 
         createContentsRootDirectory();
 
@@ -93,7 +102,7 @@ public class StorageController {
 
         mContext = null;
         mCallbackHandler = null;
-        mController = null;
+        mCallback = null;
     }
 
     /**
@@ -160,7 +169,7 @@ public class StorageController {
 
         if (jpegBuffer == null) {
             if (Log.IS_DEBUG) Log.logError(TAG, "JPEG buffer is NULL.");
-            mController.getCurrentState().onPhotoStoreDone(false, null);
+            mCallback.onPhotoStoreDone(false, null);
             return;
         }
 
@@ -302,7 +311,7 @@ public class StorageController {
 
             @Override
             public void run() {
-                mController.getCurrentState().onPhotoStoreDone(mIsSuccess, mUri);
+                mCallback.onPhotoStoreDone(mIsSuccess, mUri);
             }
         }
     }
