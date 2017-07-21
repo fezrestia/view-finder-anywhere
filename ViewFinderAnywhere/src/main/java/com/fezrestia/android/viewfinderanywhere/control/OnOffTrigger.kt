@@ -15,7 +15,7 @@ object OnOffTrigger {
     private val TAG = "OnOffTrigger"
 
     private fun notifyToService(context: Context, action: String) {
-        val service = Intent(action);
+        val service = Intent(action)
         service.setClass(context, OverlayViewFinderService::class.java)
         val component = context.startService(service)
 
@@ -33,7 +33,7 @@ object OnOffTrigger {
      */
     @JvmStatic
     fun requestStart(context: Context) {
-        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_START_SERVICE);
+        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_START_SERVICE)
     }
 
     /**
@@ -43,7 +43,7 @@ object OnOffTrigger {
      */
     @JvmStatic
     fun requestStop(context: Context) {
-        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_STOP_SERVICE);
+        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_STOP_SERVICE)
     }
 
     /**
@@ -55,7 +55,7 @@ object OnOffTrigger {
     fun requestToggleVisibility(context: Context) {
         notifyToService(
                 context,
-                ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY);
+                ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY)
     }
 
     /**
@@ -65,7 +65,7 @@ object OnOffTrigger {
      */
     @JvmStatic
     fun openStorageSelector(context: Context) {
-        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_OPEN_STORAGE_SELECTOR);
+        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_OPEN_STORAGE_SELECTOR)
     }
 
     /**
@@ -75,7 +75,7 @@ object OnOffTrigger {
      */
     @JvmStatic
     fun closeStorageSelector(context: Context) {
-        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_CLOSE_STORAGE_SELECTOR);
+        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_CLOSE_STORAGE_SELECTOR)
     }
 
     /**
@@ -85,7 +85,7 @@ object OnOffTrigger {
      */
     @JvmStatic
     fun onScreenOn(context: Context) {
-        notifyToService(context, Intent.ACTION_SCREEN_ON);
+        notifyToService(context, Intent.ACTION_SCREEN_ON)
     }
 
     /**
@@ -95,6 +95,6 @@ object OnOffTrigger {
      */
     @JvmStatic
     fun onScreenOff(context: Context) {
-        notifyToService(context, Intent.ACTION_SCREEN_OFF);
+        notifyToService(context, Intent.ACTION_SCREEN_OFF)
     }
 }
