@@ -28,7 +28,7 @@ class StorageController constructor (
     private val TAG = "StorageController"
 
     // Worker thread.
-    private var backWorker : ExecutorService? = null
+    private val backWorker : ExecutorService
     private inner class BackWorkerThreadFactoryImpl : ThreadFactory {
         override fun newThread(r: Runnable?): Thread {
             val thread = Thread(r, TAG)
@@ -61,8 +61,7 @@ class StorageController constructor (
     }
 
     fun release() {
-        backWorker?.shutdown()
-        backWorker = null
+        backWorker.shutdown()
     }
 
     /**
@@ -124,7 +123,7 @@ class StorageController constructor (
                     eachFullPath)
 
             // Execute.
-            backWorker?.execute(task)
+            backWorker.execute(task)
         }
     }
 
