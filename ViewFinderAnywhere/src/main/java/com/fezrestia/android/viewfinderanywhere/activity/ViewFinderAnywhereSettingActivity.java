@@ -26,7 +26,7 @@ import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger;
-import com.fezrestia.android.viewfinderanywhere.storage.StorageController;
+import com.fezrestia.android.viewfinderanywhere.storage.DirFileUtil;
 import com.google.firebase.analytics.FirebaseAnalytics;
 
 import java.io.File;
@@ -39,9 +39,6 @@ import java.util.Set;
 public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
     // Log tag.
     private static final String TAG = "ViewFinderAnywhereSettingActivity";
-
-    // Notification ID.
-    private static final int OVERLAY_TRIGGER_NOTIFICATION_ID = 1000;
 
     // UI-Plug-IN.
     private List<UiPlugInPackage> mUiPlugInPackageList = new ArrayList<>();
@@ -388,7 +385,7 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
                     // Validation.
                     if (!newDir.isEmpty()) {
                         // Create new directory.
-                        boolean isSuccess = StorageController.createNewContentsDirectory(newDir);
+                        boolean isSuccess = DirFileUtil.createNewContentsDirectory(newDir);
 
                         if (isSuccess) {
                             // Update available list.
@@ -405,7 +402,7 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
                     Set<String> validDir = (Set<String>) newValue;
 
                     // Add default storage.
-                    validDir.add(StorageController.DEFAULT_STORAGE_DIR_NAME);
+                    validDir.add(DirFileUtil.DEFAULT_STORAGE_DIR_NAME);
 
                     if (Log.IS_DEBUG) {
                         for (String eachDir : validDir) {
@@ -447,10 +444,10 @@ public class ViewFinderAnywhereSettingActivity extends PreferenceActivity {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "updateStorageSelectorTargetDirectoryList() : E");
 
         // Create root dir.
-        StorageController.createContentsRootDirectory();
+        DirFileUtil.createContentsRootDirectory();
 
         // Scan directory list.
-        File contentsRoot = new File(StorageController.getApplicationStorageRootPath());
+        File contentsRoot = new File(DirFileUtil.getApplicationStorageRootPath());
         File[] fileList = contentsRoot.listFiles();
         // Scan files.
         if (Log.IS_DEBUG) Log.logDebug(TAG, "listFiles() DONE");

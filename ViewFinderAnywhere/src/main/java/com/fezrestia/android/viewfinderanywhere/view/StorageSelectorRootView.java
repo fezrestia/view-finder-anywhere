@@ -25,7 +25,7 @@ import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
 import com.fezrestia.android.viewfinderanywhere.R;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
-import com.fezrestia.android.viewfinderanywhere.storage.StorageController;
+import com.fezrestia.android.viewfinderanywhere.storage.DirFileUtil;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -125,7 +125,7 @@ public class StorageSelectorRootView extends RelativeLayout {
         if (totalSet != null) {
             for (String eachDirName : totalSet) {
 
-                String dirPath = StorageController.getApplicationStorageRootPath() + "/"
+                String dirPath = DirFileUtil.getApplicationStorageRootPath() + "/"
                         + eachDirName;
                 File dir = new File(dirPath);
                 if (dir.isDirectory() && dir.exists()) {
@@ -181,8 +181,8 @@ public class StorageSelectorRootView extends RelativeLayout {
         // Set default storage.
         mDefaultStorageItem = layoutInflater.inflate(R.layout.storage_selector_list_item, null);
         mDefaultStorageItem.setOnTouchListener(mOnStorageItemTouchListenerImpl);
-        mDefaultStorageItem.setTag(StorageController.DEFAULT_STORAGE_DIR_NAME);
-        if (mTargetStorageList.contains(StorageController.DEFAULT_STORAGE_DIR_NAME)) {
+        mDefaultStorageItem.setTag(DirFileUtil.DEFAULT_STORAGE_DIR_NAME);
+        if (mTargetStorageList.contains(DirFileUtil.DEFAULT_STORAGE_DIR_NAME)) {
             mDefaultStorageItem.setSelected(true);
         }
         TextView defaultLabel = (TextView)
@@ -196,7 +196,7 @@ public class StorageSelectorRootView extends RelativeLayout {
                     R.layout.storage_selector_list_item,
                     null);
 
-            if (StorageController.DEFAULT_STORAGE_DIR_NAME.equals(eachStorage)) {
+            if (DirFileUtil.DEFAULT_STORAGE_DIR_NAME.equals(eachStorage)) {
                 // This is default storage. Already handled.
                 continue;
             }
