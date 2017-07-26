@@ -6,7 +6,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
-import android.view.LayoutInflater;
+import android.view.View;
 
 import com.fezrestia.android.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.R;
@@ -83,17 +83,15 @@ public class OverlayViewFinderService extends Service {
         mController = new OverlayViewFinderController(this);
 
         // Root view.
-        mRootView = (OverlayViewFinderRootView) LayoutInflater.from(this).inflate(
-                R.layout.overlay_view_finder_root,
-                null);
+        mRootView = (OverlayViewFinderRootView)
+                View.inflate(this, R.layout.overlay_view_finder_root, null);
 
         // Receiver.
         mTriggerReceiver = new OverlayViewFinderTriggerReceiver();
 
         // Storage selector view.
-        mStorageView = (StorageSelectorRootView) LayoutInflater.from(this).inflate(
-                R.layout.storage_selector_root,
-                null);
+        mStorageView = (StorageSelectorRootView)
+                View.inflate(this, R.layout.storage_selector_root, null);
 
         // Set up dependency injection.
         mController.setCoreInstances(mRootView, mConfigManager);
