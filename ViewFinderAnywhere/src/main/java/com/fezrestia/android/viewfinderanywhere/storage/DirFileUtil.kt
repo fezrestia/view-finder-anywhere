@@ -3,6 +3,9 @@ package com.fezrestia.android.viewfinderanywhere.storage
 import android.os.Environment
 import com.fezrestia.android.util.log.Log
 import java.io.File
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -74,5 +77,46 @@ object DirFileUtil {
         }
 
         return isSuccess
+    }
+
+    /**
+     * Store byte array to file.
+     *
+     * @data Byte array.
+     * @fileName File name.
+     * @return Success or not.
+     */
+    @JvmStatic
+    fun byte2file(data: ByteArray, fileName: String): Boolean {
+        val fos: FileOutputStream
+
+        // Open stream.
+        try {
+            fos = FileOutputStream(fileName)
+        } catch (e: FileNotFoundException) {
+            e.printStackTrace()
+            if (Log.IS_DEBUG) Log.logError(TAG, "File not found.")
+            return false
+        }
+
+        // Write data.
+        try {
+            fos.write(data)
+            fos.close()
+        } catch (e: IOException) {
+            e.printStackTrace()
+            if (Log.IS_DEBUG) Log.logError(TAG, "File output stream I/O error.")
+
+            // Close.
+            try {
+                fos.close()
+            } catch (e: IOException) {
+                e.printStackTrace()
+                if (Log.IS_DEBUG) Log.logError(TAG, "File output stream I/O error.")
+                return false
+            }
+            return false
+        }
+        return true
     }
 }

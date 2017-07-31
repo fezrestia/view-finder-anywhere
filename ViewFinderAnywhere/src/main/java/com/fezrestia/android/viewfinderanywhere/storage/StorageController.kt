@@ -7,9 +7,6 @@ import android.os.Handler
 import com.fezrestia.android.util.log.Log
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
-import java.io.FileNotFoundException
-import java.io.FileOutputStream
-import java.io.IOException
 import java.util.Calendar
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
@@ -64,6 +61,27 @@ class StorageController constructor (
         backWorker.shutdown()
     }
 
+    class ByteBuffer(val buffer: ByteArray) {
+        override fun toString(): String {
+            return "${buffer.hashCode()}"
+        }
+    }
+
+    data class PhotoData(val fileFullPath: String, val jpeg: ByteBuffer) {
+        override fun equals(other: Any?): Boolean {
+            if (other is PhotoData && this.fileFullPath == other.fileFullPath) {
+                return true
+            }
+            return false
+        }
+
+        override fun hashCode(): Int {
+            var result = fileFullPath.hashCode()
+            result = 31 * result + jpeg.hashCode()
+            return result
+        }
+    }
+
     /**
      * Store JPEG picture data.
      *
@@ -72,82 +90,79 @@ class StorageController constructor (
     fun storePicture(jpegBuffer: ByteArray) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "storePicture() : E")
 
-        // Get target directory.
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "Load storage directory IN")
-        val targetDirSet: Set<String>? = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
-                .getStringSet(
-                ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_STORE_TARGET_DIRECTORY,
-                null)
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "Load storage directory OUT")
-
-        // File name.
-        val calendar: Calendar = Calendar.getInstance()
-        val fileName: String = DirFileUtil.FILE_NAME_SDF.format(calendar.time)
+        // Get target directory/file.
+        val targetDirSet: Set<String> = getTargetDirSet()
+        val targetFileName: String = getTargetFileName()
 
         // File full path.
-        val fileFullPathSet = mutableSetOf<String>()
-        if (targetDirSet != null) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Target dirs are available.")
+        val fullPathSet = mutableSetOf<String>()
 
-            for (eachDir in targetDirSet) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "eachDir = " + eachDir)
+        targetDirSet.forEach { eachDir ->
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "eachDir = " + eachDir)
 
-                val eachFullPath: String
-                if (DirFileUtil.DEFAULT_STORAGE_DIR_NAME == eachDir) {
-                    // Default path.
-                    eachFullPath = getDefaultFileFullPath(fileName)
-                } else {
-                    // Each dir.
-                    val rootPath: String = DirFileUtil.getApplicationStorageRootPath()
-                    eachFullPath = "$rootPath/$eachDir/$fileName${DirFileUtil.JPEG_FILE_EXT}"
-                }
-                fileFullPathSet.add(eachFullPath)
+            // Storage root.
+            val rootPath = DirFileUtil.getApplicationStorageRootPath()
 
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Content file = $eachFullPath")
+            if (eachDir == DirFileUtil.DEFAULT_STORAGE_DIR_NAME) {
+                // Default path.
+                fullPathSet.add("$rootPath/$targetFileName${DirFileUtil.JPEG_FILE_EXT}")
+            } else {
+                // Specific tag dir.
+                fullPathSet.add("$rootPath/$eachDir/$targetFileName${DirFileUtil.JPEG_FILE_EXT}")
             }
-        } else {
-            // Target is not stored. Use default.
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Target dirs are NOT available")
-
-            // Default path.
-            fileFullPathSet.add(getDefaultFileFullPath(fileName))
         }
 
         // Task.
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "Task Size = ${fileFullPathSet.size}")
-        fileFullPathSet.forEach { eachFullPath ->
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "Task Size = ${fullPathSet.size}")
+        fullPathSet.forEach { eachFullPath ->
+            // Photo data.
+            val photoData = PhotoData(eachFullPath, ByteBuffer(jpegBuffer))
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "PhotoData = $photoData")
+
+            // Task.
             val task: SavePictureTask = SavePictureTask(
                     context,
                     callbackHandler,
-                    jpegBuffer,
-                    eachFullPath)
+                    photoData)
 
             // Execute.
             backWorker.execute(task)
         }
+
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "storePicture() : X")
     }
 
-    private fun getDefaultFileFullPath(fileName: String): String {
-        val root = DirFileUtil.getApplicationStorageRootPath()
-        val ext = DirFileUtil.JPEG_FILE_EXT
-        return "$root/$fileName$ext"
+    private fun getTargetDirSet(): MutableSet<String> {
+        val targetDirSet: MutableSet<String>
+                = ViewFinderAnywhereApplication.getGlobalSharedPreferences().getStringSet(
+                        ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_STORE_TARGET_DIRECTORY,
+                        mutableSetOf<String>())
+
+        // Default dir.
+        if (targetDirSet.isEmpty()) {
+            targetDirSet.add(DirFileUtil.DEFAULT_STORAGE_DIR_NAME)
+        }
+
+        return targetDirSet
+    }
+
+    private fun getTargetFileName(): String {
+        return DirFileUtil.FILE_NAME_SDF.format(Calendar.getInstance().time)
     }
 
     private inner class SavePictureTask constructor(
             val context: Context,
             val callbackHandler: Handler,
-            val jpegBuffer: ByteArray,
-            val fileFullPath: String)
+            val photoData: PhotoData)
             : Runnable {
 
         val TAG: String = "SavePictureTask"
 
         override fun run() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E")
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Target File = $fileFullPath")
 
             // Store.
-            val isSuccess = byte2file(jpegBuffer, fileFullPath)
+            val isSuccess = DirFileUtil.byte2file(photoData.jpeg.buffer, photoData.fileFullPath)
 
             if (!isSuccess) {
                 if (Log.IS_DEBUG) Log.logError(TAG, "File can not be stored.")
@@ -159,7 +174,7 @@ class StorageController constructor (
             val latch = CountDownLatch(1)
 
             // Request update Media DB.
-            val notifier = MediaScannerNotifier(context, fileFullPath, latch)
+            val notifier = MediaScannerNotifier(context, photoData.fileFullPath, latch)
             notifier.start()
 
             try {
@@ -183,39 +198,6 @@ class StorageController constructor (
                 callback.onPhotoStoreDone(isSuccess, uri)
             }
         }
-    }
-
-    private fun byte2file(data: ByteArray, fileName: String): Boolean {
-        val fos: FileOutputStream
-
-        // Open stream.
-        try {
-            fos = FileOutputStream(fileName)
-        } catch (e: FileNotFoundException) {
-            e.printStackTrace()
-            if (Log.IS_DEBUG) Log.logError(TAG, "File not found.")
-            return false
-        }
-
-        // Write data.
-        try {
-            fos.write(data)
-            fos.close()
-        } catch (e: IOException) {
-            e.printStackTrace()
-            if (Log.IS_DEBUG) Log.logError(TAG, "File output stream I/O error.")
-
-            // Close.
-            try {
-                fos.close()
-            } catch (e: IOException) {
-                e.printStackTrace()
-                if (Log.IS_DEBUG) Log.logError(TAG, "File output stream I/O error.")
-                return false
-            }
-            return false
-        }
-        return true
     }
 
     private class MediaScannerNotifier constructor(
