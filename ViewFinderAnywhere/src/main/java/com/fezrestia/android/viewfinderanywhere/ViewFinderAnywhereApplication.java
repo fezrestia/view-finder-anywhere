@@ -8,6 +8,7 @@ import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 
 import com.fezrestia.android.lib.firebase.FirebaseAnalyticsController;
 import com.fezrestia.android.util.log.Log;
@@ -103,6 +104,7 @@ public class ViewFinderAnywhereApplication extends Application {
      *
      * @return Global custom rsource container.
      */
+    @NonNull
     public static CustomizableResourceContainer getCustomResContainer() {
         return mCustomResContainer;
     }
