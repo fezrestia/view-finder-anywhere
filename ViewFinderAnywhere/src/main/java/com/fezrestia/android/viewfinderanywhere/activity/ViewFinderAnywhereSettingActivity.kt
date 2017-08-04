@@ -48,7 +48,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
             internal val packageName: String,
             internal val plugInTitle: String)
 
-    public override fun onCreate(bundle: Bundle?) {
+    override fun onCreate(bundle: Bundle?) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onCreate()")
         super.onCreate(null)
 
@@ -56,7 +56,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
         addPreferencesFromResource(R.xml.preferences_view_finder_anywhere)
     }
 
-    public override fun onResume() {
+    override fun onResume() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume()")
         super.onResume()
 
@@ -96,13 +96,13 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
                 .done()
     }
 
-    public override fun onPause() {
+    override fun onPause() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()")
         super.onPause()
         // NOP.
     }
 
-    public override fun onDestroy() {
+    override fun onDestroy() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onDestroy()")
         super.onDestroy()
         // NOP.
@@ -136,7 +136,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
                     ViewFinderAnywhereConstants.RES_TYPE_STRING,
                     info.packageName)
 
-            // Get title resourc.
+            // Get title resource.
             val titleRes = context.resources.getString(titleResId)
 
             // Create container.
@@ -234,7 +234,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
                         }
 
                         else -> {
-                            throw UnsupportedOperationException("Unexpected ListPreference $key")
+                            firebaseValue = stringValue
                         }
                     }
 
@@ -272,8 +272,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
                         }
 
                         else -> {
-                            throw UnsupportedOperationException(
-                                    "Unexpected CheckBoxPreference $key")
+                            // NOP.
                         }
                     }
                 }
@@ -396,7 +395,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
                 }
 
                 else -> {
-                    throw UnsupportedOperationException("Unexpected StoragePreference $key")
+                    // NOP.
                 }
             }
 
@@ -540,7 +539,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onActivityResult()")
 
         if (requestCode == REQUEST_CODE_MANAGE_OVERLAY_PERMISSION) {
