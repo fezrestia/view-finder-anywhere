@@ -53,6 +53,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
         super.onCreate(null)
 
         // Add view finder anywhere preferences.
+        @Suppress("DEPRECATION")
         addPreferencesFromResource(R.xml.preferences_view_finder_anywhere)
     }
 
@@ -150,6 +151,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
     }
 
     private fun updatePreferences() {
+        @Suppress("DEPRECATION")
         val uiPlugInPref = findPreference(
                 ViewFinderAnywhereConstants.KEY_VIEW_FINDER_UI_PLUG_IN_PACKAGE)
                 as ListPreference
@@ -177,6 +179,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
         uiPlugInPref.entryValues = entryValues.toTypedArray()
     }
 
+    @Suppress("DEPRECATION")
     private fun applyCurrentPreferences() {
         // Update summary binding.
         bindPreferenceSummaryToValue(findPreference(
@@ -375,6 +378,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
                 }
 
                 ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY -> {
+                    @Suppress("UNCHECKED_CAST")
                     val validDirSet = newValue as MutableSet<String>
 
                     // Add default storage.
@@ -454,6 +458,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
         }
 
         // Apply to preferences.
+        @Suppress("DEPRECATION")
         val pref = findPreference(
                 ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY)
                 as MultiSelectListPreference
@@ -465,6 +470,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "updateStorageSelectorTargetDirectoryList() : X")
     }
 
+    @Suppress("DEPRECATION")
     private fun setEnabledStorageSelectorRelatedPreferences(isEnabled: Boolean) {
         findPreference(ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_CREATE_NEW_DIRECTORY)
                 .isEnabled = isEnabled
