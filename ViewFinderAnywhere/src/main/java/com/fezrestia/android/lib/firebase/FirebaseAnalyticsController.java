@@ -3,7 +3,7 @@ package com.fezrestia.android.lib.firebase;
 import android.content.Context;
 import android.os.Bundle;
 
-import com.fezrestia.android.util.log.Log;
+import com.fezrestia.android.lib.util.log.Log;
 import com.google.firebase.analytics.FirebaseAnalytics;
 
 @SuppressWarnings("WeakerAccess") // This is library interface.

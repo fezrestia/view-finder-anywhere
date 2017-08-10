@@ -1,4 +1,4 @@
-package com.fezrestia.android.util.log;
+package com.fezrestia.android.lib.util.log;
 
 import android.os.SystemClock;
 

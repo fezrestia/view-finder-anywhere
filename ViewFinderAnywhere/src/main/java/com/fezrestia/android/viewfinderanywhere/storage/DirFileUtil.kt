@@ -1,7 +1,7 @@
 package com.fezrestia.android.viewfinderanywhere.storage
 
 import android.os.Environment
-import com.fezrestia.android.util.log.Log
+import com.fezrestia.android.lib.util.log.Log
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream

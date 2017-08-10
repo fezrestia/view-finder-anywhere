@@ -2,7 +2,7 @@ package com.fezrestia.android.lib.firebase;
 
 import android.widget.Toast;
 
-import com.fezrestia.android.util.log.Log;
+import com.fezrestia.android.lib.util.log.Log;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 

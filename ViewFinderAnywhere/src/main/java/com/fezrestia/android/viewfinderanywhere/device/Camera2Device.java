@@ -30,7 +30,7 @@ import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.TextureView;
 
-import com.fezrestia.android.util.log.Log;
+import com.fezrestia.android.lib.util.log.Log;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

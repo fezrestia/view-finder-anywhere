@@ -20,7 +20,7 @@ import android.util.Size;
 import android.view.Surface;
 import android.view.WindowManager;
 
-import com.fezrestia.android.util.log.Log;
+import com.fezrestia.android.lib.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 
 import java.io.ByteArrayOutputStream;

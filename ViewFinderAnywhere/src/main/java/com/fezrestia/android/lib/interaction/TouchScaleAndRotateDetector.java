@@ -2,7 +2,7 @@ package com.fezrestia.android.lib.interaction;
 
 import android.graphics.PointF;
 
-import com.fezrestia.android.util.math.VectorCalculator;
+import com.fezrestia.android.lib.util.math.VectorCalculator;
 
 /**
  * This class can detect double touch events.(rotating and scaling).

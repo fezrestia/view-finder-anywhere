@@ -7,7 +7,7 @@ import android.graphics.Point;
 import android.graphics.PointF;
 import android.os.Handler;
 
-import com.fezrestia.android.util.math.VectorCalculator;
+import com.fezrestia.android.lib.util.math.VectorCalculator;
 
 /**
  * This class can detect primary touch position is moved or stopped.

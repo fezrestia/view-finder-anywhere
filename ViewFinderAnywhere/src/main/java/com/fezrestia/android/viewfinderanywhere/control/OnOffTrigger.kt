@@ -3,7 +3,7 @@ package com.fezrestia.android.viewfinderanywhere.control
 import android.content.Context
 import android.content.Intent
 
-import com.fezrestia.android.util.log.Log
+import com.fezrestia.android.lib.util.log.Log
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
 import com.fezrestia.android.viewfinderanywhere.service.OverlayViewFinderService
 

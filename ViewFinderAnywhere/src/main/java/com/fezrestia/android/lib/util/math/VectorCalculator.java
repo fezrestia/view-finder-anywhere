@@ -1,4 +1,4 @@
-package com.fezrestia.android.util.math;
+package com.fezrestia.android.lib.util.math;
 
 import android.graphics.PointF;
 

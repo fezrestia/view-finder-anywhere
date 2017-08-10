@@ -26,9 +26,9 @@ import android.widget.LinearLayout
 import android.widget.RelativeLayout
 
 import com.fezrestia.android.lib.interaction.InteractionEngine
-import com.fezrestia.android.util.log.Log
-import com.fezrestia.android.util.math.IntXY
-import com.fezrestia.android.util.math.IntWH
+import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.math.IntXY
+import com.fezrestia.android.lib.util.math.IntWH
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication.CustomizableResourceContainer
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants

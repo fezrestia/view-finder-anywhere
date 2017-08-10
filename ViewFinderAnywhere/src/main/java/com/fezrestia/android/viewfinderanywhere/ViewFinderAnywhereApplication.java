@@ -11,7 +11,7 @@ import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 
 import com.fezrestia.android.lib.firebase.FirebaseAnalyticsController;
-import com.fezrestia.android.util.log.Log;
+import com.fezrestia.android.lib.util.log.Log;
 
 public class ViewFinderAnywhereApplication extends Application {
     // Log tag.

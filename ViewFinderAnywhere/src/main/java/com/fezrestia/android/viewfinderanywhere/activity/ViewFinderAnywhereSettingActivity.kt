@@ -16,7 +16,7 @@ import android.preference.PreferenceActivity
 import android.provider.Settings
 
 import com.fezrestia.android.lib.firebase.FirebaseAnalyticsController
-import com.fezrestia.android.util.log.Log
+import com.fezrestia.android.lib.util.log.Log
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication.CustomizableResourceContainer
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
