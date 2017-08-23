@@ -8,9 +8,6 @@ import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants.Came
  * Total configuration manager.
  */
 class ConfigManager {
-    // Log tag.
-    private val TAG = "ConfigManager"
-
     var camApiLv: CameraApiLevel = CameraApiLevel.CAMERA_API_1
     var evfAspectWH: Float = ViewFinderAnywhereConstants.ASPECT_RATIO_1_1
 
@@ -30,15 +27,15 @@ class ConfigManager {
         // Target Camera API Level.
         val apiLevel = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
                 .getString(ViewFinderAnywhereConstants.KEY_CAMERA_FUNCTION_API_LEVEL, null)
-        if (apiLevel == null) {
+        camApiLv = if (apiLevel == null) {
             // Use default.
-            camApiLv = CameraApiLevel.CAMERA_API_1
+            CameraApiLevel.CAMERA_API_1
         } else when (apiLevel) {
             CameraApiLevel.CAMERA_API_1.name -> {
-                camApiLv = ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_1
+                ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_1
             }
             CameraApiLevel.CAMERA_API_2.name -> {
-                camApiLv = ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_2
+                ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_2
             }
             else -> {
                 // NOP. Unexpected.

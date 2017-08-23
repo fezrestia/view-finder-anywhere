@@ -532,13 +532,13 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
                 permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
             }
 
-            if (!permissions.isEmpty()) {
+            return if (!permissions.isEmpty()) {
                 requestPermissions(
                         permissions.toTypedArray(),
                         REQUEST_CODE_MANAGE_PERMISSIONS)
-                return true
+                true
             } else {
-                return false
+                false
             }
         } else {
             return false

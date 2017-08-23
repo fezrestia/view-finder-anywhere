@@ -29,7 +29,7 @@ data class IntWH(var w: Int, var h: Int) {
         this.h = wh.h
     }
 
-    fun longlen(): Int = maxOf(w, h)
+    fun longLen(): Int = maxOf(w, h)
 
-    fun shortlen(): Int = minOf(w, h)
+    fun shortLen(): Int = minOf(w, h)
 }

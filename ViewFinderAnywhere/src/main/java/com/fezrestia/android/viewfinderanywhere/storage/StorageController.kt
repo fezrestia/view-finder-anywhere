@@ -18,7 +18,7 @@ import java.util.concurrent.ThreadFactory
  */
 class StorageController constructor (
         val context: Context,
-        val callbackHandler: Handler,
+        private val callbackHandler: Handler,
         val callback: Callback) {
 
     // Log tag.
@@ -62,9 +62,7 @@ class StorageController constructor (
     }
 
     class ByteBuffer(val buffer: ByteArray) {
-        override fun toString(): String {
-            return "${buffer.hashCode()}"
-        }
+        override fun toString(): String = "${buffer.hashCode()}"
     }
 
     data class PhotoData(val fileFullPath: String, val jpeg: ByteBuffer) {
@@ -120,7 +118,7 @@ class StorageController constructor (
             if (Log.IS_DEBUG) Log.logDebug(TAG, "PhotoData = $photoData")
 
             // Task.
-            val task: SavePictureTask = SavePictureTask(
+            val task = SavePictureTask(
                     context,
                     callbackHandler,
                     photoData)
@@ -146,9 +144,8 @@ class StorageController constructor (
         return targetDirSet
     }
 
-    private fun getTargetFileName(): String {
-        return DirFileUtil.FILE_NAME_SDF.format(Calendar.getInstance().time)
-    }
+    private fun getTargetFileName(): String =
+            DirFileUtil.FILE_NAME_SDF.format(Calendar.getInstance().time)
 
     private inner class SavePictureTask constructor(
             val context: Context,

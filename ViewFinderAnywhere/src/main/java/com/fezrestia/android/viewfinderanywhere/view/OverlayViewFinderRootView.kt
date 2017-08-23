@@ -350,17 +350,17 @@ class OverlayViewFinderRootView : RelativeLayout {
         viewFinderGripSize = context.resources.getDimensionPixelSize(R.dimen.viewfinder_grip_size)
         // Grip size.
         val gripSizeValue = sp.getString(ViewFinderGripSize.KEY, null)
-        if (gripSizeValue != null) {
-            gripSizeSetting = ViewFinderGripSize.valueOf(gripSizeValue)
+        gripSizeSetting = if (gripSizeValue != null) {
+            ViewFinderGripSize.valueOf(gripSizeValue)
         } else {
-            gripSizeSetting = ViewFinderGripSize.getDefault()
+            ViewFinderGripSize.getDefault()
         }
         // Grip position.
         val positionSizeValue = sp.getString(ViewFinderGripPosition.KEY, null)
-        if (positionSizeValue != null) {
-            gripPositionSetting = ViewFinderGripPosition.valueOf(positionSizeValue)
+        gripPositionSetting = if (positionSizeValue != null) {
+            ViewFinderGripPosition.valueOf(positionSizeValue)
         } else {
-            gripPositionSetting = ViewFinderGripPosition.getDefault()
+            ViewFinderGripPosition.getDefault()
         }
     }
 
@@ -440,8 +440,8 @@ class OverlayViewFinderRootView : RelativeLayout {
                         windowLayoutParams.y)
 
                 // Cache.
-                val winX = displayWH.longlen() - viewfinderWH.w - windowLayoutParams.x
-                val winY = displayWH.shortlen() - viewfinderWH.h - viewFinderGripSize
+                val winX = displayWH.longLen() - viewfinderWH.w - windowLayoutParams.x
+                val winY = displayWH.shortLen() - viewfinderWH.h - viewFinderGripSize
                         - windowLayoutParams.y
                 val winW = viewfinderWH.w
                 val winH = viewfinderWH.h + viewFinderGripSize
@@ -467,9 +467,9 @@ class OverlayViewFinderRootView : RelativeLayout {
                         windowLayoutParams.y)
 
                 // Cache.
-                val winX = displayWH.shortlen() - viewfinderWH.w - viewFinderGripSize
+                val winX = displayWH.shortLen() - viewfinderWH.w - viewFinderGripSize
                         - windowLayoutParams.x
-                val winY = displayWH.longlen() - viewfinderWH.h - windowLayoutParams.y
+                val winY = displayWH.longLen() - viewfinderWH.h - windowLayoutParams.y
                 val winW = viewfinderWH.w + viewFinderGripSize
                 val winH = viewfinderWH.h
                 ViewFinderAnywhereApplication.TotalWindowConfiguration
@@ -539,10 +539,10 @@ class OverlayViewFinderRootView : RelativeLayout {
         displayWH.set(width, height)
 
         // Get display orientation.
-        if (height < width) {
-            orientation = Configuration.ORIENTATION_LANDSCAPE
+        orientation = if (height < width) {
+            Configuration.ORIENTATION_LANDSCAPE
         } else {
-            orientation = Configuration.ORIENTATION_PORTRAIT
+            Configuration.ORIENTATION_PORTRAIT
         }
     }
 
@@ -551,14 +551,14 @@ class OverlayViewFinderRootView : RelativeLayout {
         when (orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
                 viewfinderWH.w =
-                        (displayWH.longlen() * viewFinderScaleRatioAgainstToScreen).toInt()
+                        (displayWH.longLen() * viewFinderScaleRatioAgainstToScreen).toInt()
                 viewfinderWH.h =
                         (viewfinderWH.w / configManager.evfAspectWH).toInt()
             }
 
             Configuration.ORIENTATION_PORTRAIT -> {
                 viewfinderWH.h =
-                        (displayWH.longlen() * viewFinderScaleRatioAgainstToScreen).toInt()
+                        (displayWH.longLen() * viewFinderScaleRatioAgainstToScreen).toInt()
                 viewfinderWH.w =
                         (viewfinderWH.h / configManager.evfAspectWH).toInt()
             }
@@ -895,17 +895,13 @@ class OverlayViewFinderRootView : RelativeLayout {
 
     private val showSurfaceTask = ShowSurfaceTask()
     private inner class ShowSurfaceTask : SurfaceVisibilityControlTask() {
-        override fun isFadeIn(): Boolean {
-            return true
-        }
+        override fun isFadeIn(): Boolean = true
     }
 
 
     private val hideSurfaceTask = HideSurfaceTask()
     private inner class HideSurfaceTask : SurfaceVisibilityControlTask() {
-        override fun isFadeIn() : Boolean {
-            return false
-        }
+        override fun isFadeIn() : Boolean = false
     }
 
     /**
@@ -913,9 +909,7 @@ class OverlayViewFinderRootView : RelativeLayout {
      *
      * @return Finder TextureView.
      */
-    fun getViewFinderSurface(): TextureView {
-        return viewFinder
-    }
+    fun getViewFinderSurface(): TextureView = viewFinder
 
     private val onTouchListenerImpl = OnTouchListenerImpl()
     private inner class OnTouchListenerImpl : OnTouchListener {
@@ -1155,9 +1149,7 @@ class OverlayViewFinderRootView : RelativeLayout {
      *
      * @return Overlay window is shown or not
      */
-    fun isOverlayShown(): Boolean {
-        return windowLayoutParams.x != WINDOW_HIDDEN_POS_X
-    }
+    fun isOverlayShown(): Boolean = windowLayoutParams.x != WINDOW_HIDDEN_POS_X
 
     /**
      * Show overlay window.
@@ -1251,9 +1243,7 @@ class OverlayViewFinderRootView : RelativeLayout {
      *
      * @return Visual feedback trigger accessor.
      */
-    fun getVisualFeedbackTrigger(): VisualFeedbackTrigger {
-        return visualFeedbackTriggerImpl
-    }
+    fun getVisualFeedbackTrigger(): VisualFeedbackTrigger = visualFeedbackTriggerImpl
 
     private val visualFeedbackTriggerImpl = VisualFeedbackTriggerImpl()
     private inner class VisualFeedbackTriggerImpl : VisualFeedbackTrigger {
@@ -1266,10 +1256,10 @@ class OverlayViewFinderRootView : RelativeLayout {
 
         override fun onScanDone(isSuccess: Boolean) {
             val color: Int
-            if (isSuccess) {
-                color = customResContainer.colorScanSuccess
+            color = if (isSuccess) {
+                customResContainer.colorScanSuccess
             } else {
-                color = customResContainer.colorScanFailure
+                customResContainer.colorScanFailure
             }
             updateIndicatorColor(color)
             scanIndicatorContainer.visibility = View.VISIBLE

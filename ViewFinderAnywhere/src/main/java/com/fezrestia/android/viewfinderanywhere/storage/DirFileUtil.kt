@@ -17,7 +17,7 @@ object DirFileUtil {
     val TAG = "DirFileUtil"
 
     // Application directory root.
-    val ROOT_DIR_PATH = "ViewFinderAnywhere"
+    private val ROOT_DIR_PATH = "ViewFinderAnywhere"
 
     // Constants.
     val JPEG_FILE_EXT = ".JPG"
@@ -33,9 +33,8 @@ object DirFileUtil {
      * Get absolute root path used for content storage.
      */
     @JvmStatic
-    fun getApplicationStorageRootPath(): String {
-        return Environment.getExternalStorageDirectory().path + "/" + ROOT_DIR_PATH
-    }
+    fun getApplicationStorageRootPath(): String =
+            Environment.getExternalStorageDirectory().path + "/" + ROOT_DIR_PATH
 
     /**
      * Create directory including sub-directory under app root directory.
@@ -45,10 +44,7 @@ object DirFileUtil {
     @JvmStatic
     fun createNewContentsDirectory(contentsDirName: String): Boolean {
         val contentsDirPath: String = getApplicationStorageRootPath() + '/' + contentsDirName
-
-        val newDir: File = File(contentsDirPath)
-
-        return createDirectory(newDir)
+        return createDirectory(File(contentsDirPath))
     }
 
     /**
@@ -56,8 +52,7 @@ object DirFileUtil {
      */
     @JvmStatic
     fun createContentsRootDirectory() {
-        val file: File = File(getApplicationStorageRootPath())
-        createDirectory(file)
+        createDirectory(File(getApplicationStorageRootPath()))
     }
 
     @JvmStatic
