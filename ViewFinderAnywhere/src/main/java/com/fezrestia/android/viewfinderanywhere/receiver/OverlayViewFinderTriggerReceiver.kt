@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 
 import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
 import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger
 
@@ -25,6 +26,7 @@ class OverlayViewFinderTriggerReceiver : BroadcastReceiver() {
         filter.addAction(ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY)
         filter.addAction(Intent.ACTION_SCREEN_ON)
         filter.addAction(Intent.ACTION_SCREEN_OFF)
+        filter.addAction(ViewFinderAnywhereConstants.INTENT_ACTION_START_OVERLAY_VIEW_FINDER)
 
         context.registerReceiver(this, filter)
     }
@@ -47,6 +49,20 @@ class OverlayViewFinderTriggerReceiver : BroadcastReceiver() {
         when (action) {
             ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY -> {
                 OnOffTrigger.requestToggleVisibility(context)
+            }
+
+            ViewFinderAnywhereConstants.INTENT_ACTION_START_OVERLAY_VIEW_FINDER -> {
+                val sp = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
+                val isActive = sp.getBoolean(
+                        ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_SCREEN_EDGE,
+                        false)
+                if (!isActive) {
+                    sp.edit().putBoolean(
+                            ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_SCREEN_EDGE,
+                            true)
+                            .apply()
+                    OnOffTrigger.requestStart(context)
+                }
             }
 
             Intent.ACTION_SCREEN_ON -> {

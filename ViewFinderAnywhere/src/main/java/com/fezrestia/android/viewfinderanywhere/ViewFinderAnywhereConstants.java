@@ -17,6 +17,9 @@ public class ViewFinderAnywhereConstants {
     /** Intent constants. */
     public static final String INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY
             = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_TOGGLE_OVERLAY_VISIBILITY";
+    /** Intent constants. */
+    public static final String INTENT_ACTION_START_OVERLAY_VIEW_FINDER
+            = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_START_OVERLAY_VIEW_FINDER";
     /** Open storage selector. */
     public static final String INTENT_ACTION_OPEN_STORAGE_SELECTOR
             = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_OPEN_STORAGE_SELECTOR";
