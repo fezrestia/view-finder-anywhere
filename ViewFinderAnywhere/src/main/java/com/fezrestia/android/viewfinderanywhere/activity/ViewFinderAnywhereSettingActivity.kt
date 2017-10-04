@@ -545,7 +545,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onActivityResult()")
 
         if (requestCode == REQUEST_CODE_MANAGE_OVERLAY_PERMISSION) {
