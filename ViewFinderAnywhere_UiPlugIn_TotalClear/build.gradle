@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion '25.0.2'
+    buildToolsVersion '26.0.2'
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere.uiplugin.totalclear"
@@ -25,15 +25,11 @@ android {
 
     // Define APK name and replace.
     applicationVariants.all { variant ->
-        variant.outputs.each { output ->
-            if (output.outputFile != null && output.outputFile.name.endsWith('.apk')) {
-                // Rename APK.
-                output.outputFile = new File(
-                        "$project.buildDir/outputs/apk/${variant.name}/ViewFinderAnywhereUiPlugInTotalClear.apk")
-            } else {
-                // Replace.
-                output.outputFile = new File(
-                        "$project.buildDir/outputs/apk/${variant.name}/${output.outputFile.name}")
+        variant.outputs.all { output ->
+            if (variant.name == 'release') {
+                if (output.outputFile != null && output.outputFile.name.endsWith('.apk')) {
+                    outputFileName = "ViewFinderAnywhereUiPlugInTotalClear.apk"
+                }
             }
         }
     }
