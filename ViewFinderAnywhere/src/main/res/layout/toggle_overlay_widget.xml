@@ -5,10 +5,11 @@
     android:layout_margin="2dp"
 >
 
-    <Button
+    <ImageView
         android:id="@+id/widget_toggle_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
         android:src="@drawable/application_icon"
         android:contentDescription="@string/application_label"
     />
