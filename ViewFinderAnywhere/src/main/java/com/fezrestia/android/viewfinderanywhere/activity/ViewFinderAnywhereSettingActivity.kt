@@ -1,6 +1,7 @@
 package com.fezrestia.android.viewfinderanywhere.activity
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.content.Context
 import android.content.Intent
@@ -100,7 +101,12 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
     override fun onPause() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()")
         super.onPause()
-        // NOP.
+
+        // WORKAROUND
+        //   If this activity is not finished onPause(), shared preferences value updated
+        //   by other components (e.g. Receiver) will not be applied to UI after onResume().
+        //   So, forced finish this activity onPause() to ensure load latest shared preferences.
+        finish()
     }
 
     override fun onDestroy() {
