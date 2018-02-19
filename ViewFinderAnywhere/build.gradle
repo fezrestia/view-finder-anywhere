@@ -2,26 +2,30 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion '26.0.2'
+    compileSdkVersion 26
+    buildToolsVersion '27.0.3'
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere"
-        minSdkVersion 23
-        targetSdkVersion 23
-        versionCode 225
-        versionName '3.2.4'
+        minSdkVersion 26
+        targetSdkVersion 26
+        versionCode 226
+        versionName '3.3.0'
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_7
-        targetCompatibility JavaVersion.VERSION_1_7
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     buildTypes {
         release {
             minifyEnabled false
-       }
+        }
+        debug {
+            applicationIdSuffix 'debug'
+            versionNameSuffix 'debug'
+        }
     }
 
     // Define APK name and replace.
@@ -47,13 +51,13 @@ android {
 
 dependencies {
     // FireBase analytics.
-    compile 'com.google.firebase:firebase-core:9.0.0'
+    implementation "com.google.firebase:firebase-core:$firebase_version"
     // Firebase notifications.
-    compile 'com.google.firebase:firebase-messaging:9.0.0'
+    implementation "com.google.firebase:firebase-messaging:$firebase_version"
     // Firebase crash report.
-    compile 'com.google.firebase:firebase-crash:9.0.0'
+    implementation "com.google.firebase:firebase-crash:$firebase_version"
     // Kotlin support.
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
 }
 
 // Add for FireBase.

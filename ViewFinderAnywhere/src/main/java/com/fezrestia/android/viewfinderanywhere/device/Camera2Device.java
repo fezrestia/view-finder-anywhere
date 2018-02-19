@@ -23,7 +23,6 @@ import android.media.MediaActionSound;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.PowerManager;
 import android.support.annotation.NonNull;
 import android.util.Size;
 import android.view.OrientationEventListener;
@@ -101,9 +100,6 @@ public class Camera2Device implements CameraPlatformInterface {
 
     // Sounds.
     private MediaActionSound mShutterSound = null;
-
-    // Wake lock.
-    private PowerManager.WakeLock mWakeLock = null;
 
     // Camera thread handler.
     private HandlerThread mCameraHandlerThread = null;
@@ -263,12 +259,6 @@ public class Camera2Device implements CameraPlatformInterface {
         // Sound.
         mShutterSound.release();
 
-        // Wake lock/
-        if (mWakeLock != null) {
-            mWakeLock.release();
-            mWakeLock = null;
-        }
-
         // Context related.
         mContext = null;
         mClientCallbackHandler = null;
@@ -424,7 +414,7 @@ public class Camera2Device implements CameraPlatformInterface {
             if (mCamDevice == null) {
                 // Already closed.
                 if (Log.IS_DEBUG) Log.logError(TAG, "Camera is already closed.");
-                notifyCloseCallback(true);
+                notifyCloseCallback(false);
                 return;
             }
 
@@ -915,15 +905,6 @@ public class Camera2Device implements CameraPlatformInterface {
         public void onOpened(@NonNull CameraDevice camera) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onOpened()");
 
-            // Wake lock.
-            if (mWakeLock == null) {
-                PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
-                mWakeLock = pm.newWakeLock(
-                        PowerManager.PARTIAL_WAKE_LOCK,
-                        mContext.getPackageName());
-                mWakeLock.acquire();
-            }
-
             notifyOpenCallback(true);
 
             // Cache instance.
@@ -936,12 +917,6 @@ public class Camera2Device implements CameraPlatformInterface {
             super.onClosed(camera);
 
             notifyCloseCallback(true);
-
-            // Wake lock/
-            if (mWakeLock != null) {
-                mWakeLock.release();
-                mWakeLock = null;
-            }
         }
 
         @Override

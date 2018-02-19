@@ -59,6 +59,7 @@
         </receiver>
         <receiver
                 android:name=".receiver.OverlayViewFinderTriggerReceiver"
+                android:exported="false"
         >
             <intent-filter>
                 <action android:name="com.fezrestia.android.viewfinderanywhere.intent.ACTION_START_OVERLAY_VIEW_FINDER" />

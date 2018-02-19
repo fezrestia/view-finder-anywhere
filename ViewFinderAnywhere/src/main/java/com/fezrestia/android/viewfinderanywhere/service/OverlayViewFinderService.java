@@ -1,8 +1,11 @@
 package com.fezrestia.android.viewfinderanywhere.service;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
@@ -21,6 +24,9 @@ import com.fezrestia.android.viewfinderanywhere.view.StorageSelectorRootView;
 public class OverlayViewFinderService extends Service {
     // Log tag.
     private static final String TAG = "OverlayViewFinderService";
+
+    // Notification channel.
+    private static final String NOTIFICATION_CHANNEL_ONGOING = "ongoing";
 
     // On going notification ID.
     private static final int ONGOING_NOTIFICATION_ID = 100;
@@ -61,7 +67,16 @@ public class OverlayViewFinderService extends Service {
                 PendingIntent.FLAG_UPDATE_CURRENT);
 
         // Foreground notification.
-        Notification notification = new Notification.Builder(this)
+        NotificationChannel channel = new NotificationChannel(
+                NOTIFICATION_CHANNEL_ONGOING,
+                "On-Going notification",
+                NotificationManager.IMPORTANCE_MIN);
+        NotificationManager manager = (NotificationManager)
+                getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager == null) throw new RuntimeException("NotificationManager is null");
+        manager.createNotificationChannel(channel);
+
+        Notification notification = new Notification.Builder(this, NOTIFICATION_CHANNEL_ONGOING)
                 .setContentTitle(getText(R.string.overlay_view_finder_ongoing_notification))
                 .setSmallIcon(R.drawable.overlay_view_finder_ongoing)
                 .setContentIntent(notificationContent)

@@ -1,7 +1,6 @@
 package com.fezrestia.android.viewfinderanywhere.activity
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.content.Context
 import android.content.Intent
@@ -48,6 +47,9 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
     private inner class UiPlugInPackage(
             internal val packageName: String,
             internal val plugInTitle: String)
+
+    // This activity does not use fragment.
+    public override fun isValidFragment(fragmentName: String): Boolean = false
 
     override fun onCreate(bundle: Bundle?) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onCreate()")

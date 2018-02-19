@@ -6,7 +6,6 @@ import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.SensorManager;
 import android.os.Handler;
-import android.os.PowerManager;
 import android.support.annotation.NonNull;
 import android.view.OrientationEventListener;
 import android.view.Surface;
@@ -51,9 +50,6 @@ public class Camera1Device implements CameraPlatformInterface {
 
     // Snapshot request ID.
     private int mRequestId = 0;
-
-    // Wake lock.
-    private PowerManager.WakeLock mWakeLock = null;
 
     // Back worker.
     private ExecutorService mBackWorker = null;
@@ -230,15 +226,6 @@ public class Camera1Device implements CameraPlatformInterface {
                     mOrientationEventListenerImpl.enable();
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "Create OrientationListenerImpl : X");
 
-                    // Wake lock.
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "Acquire WakeLock : E");
-                    PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
-                    mWakeLock = pm.newWakeLock(
-                            PowerManager.PARTIAL_WAKE_LOCK,
-                            mContext.getPackageName());
-                    mWakeLock.acquire();
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "Acquire WakeLock : X");
-
                     // Notify.
                     mOpenCallback.onOpened(true);
                 }
@@ -302,12 +289,6 @@ public class Camera1Device implements CameraPlatformInterface {
             if (mOrientationEventListenerImpl != null) {
                 mOrientationEventListenerImpl.disable();
                 mOrientationEventListenerImpl = null;
-            }
-
-            // Wake lock/
-            if (mWakeLock != null) {
-                mWakeLock.release();
-                mWakeLock = null;
             }
 
             // Notify.
@@ -394,6 +375,7 @@ public class Camera1Device implements CameraPlatformInterface {
                     Camera.getCameraInfo(mCameraId, camInfo);
                     WindowManager winMng = (WindowManager)
                             mContext.getSystemService(Context.WINDOW_SERVICE);
+                    if (winMng == null) throw new RuntimeException("WindowManager is null.");
                     final int rotation = winMng.getDefaultDisplay().getRotation();
                     int degrees;
                     switch (rotation) {

@@ -17,7 +17,7 @@ object OnOffTrigger {
     private fun notifyToService(context: Context, action: String) {
         val service = Intent(action)
         service.setClass(context, OverlayViewFinderService::class.java)
-        val component = context.startService(service)
+        val component = context.startForegroundService(service)
 
         if (Log.IS_DEBUG) {
             if (component == null) {
