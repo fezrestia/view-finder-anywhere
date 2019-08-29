@@ -3,7 +3,10 @@ package com.fezrestia.android.viewfinderanywhere.device;
 import com.fezrestia.android.lib.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 class PlatformDependencyResolver {
@@ -41,6 +44,7 @@ class PlatformDependencyResolver {
         }
 
         @SuppressWarnings("StringBufferReplaceableByString")
+        @NotNull
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder()
@@ -121,7 +125,7 @@ class PlatformDependencyResolver {
         if (acceptableMaxSize != null) {
             ret = acceptableMaxSize;
         } else {
-            ret = (Size) supportedPreviewSizeSet.toArray()[0];
+            ret = (Size) Objects.requireNonNull(supportedPreviewSizeSet.toArray())[0];
         }
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "Result : " + ret.toString());
@@ -199,7 +203,7 @@ class PlatformDependencyResolver {
         // Check result.
         Size ret;
         if (maxSize.getWidth() == 0) {
-            ret = (Size) supportedPictureSizeSet.toArray()[0];
+            ret = (Size) Objects.requireNonNull(supportedPictureSizeSet.toArray())[0];
         } else {
             ret = maxSize;
         }

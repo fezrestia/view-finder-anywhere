@@ -8,10 +8,11 @@ import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
 
 import com.fezrestia.android.lib.firebase.FirebaseAnalyticsController;
 import com.fezrestia.android.lib.util.log.Log;
+
+import androidx.annotation.NonNull;
 
 public class ViewFinderAnywhereApplication extends Application {
     // Log tag.
@@ -102,7 +103,7 @@ public class ViewFinderAnywhereApplication extends Application {
     /**
      * Get current resource container.
      *
-     * @return Global custom rsource container.
+     * @return Global custom resource container.
      */
     @NonNull
     public static CustomizableResourceContainer getCustomResContainer() {

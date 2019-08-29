@@ -1,3 +1,5 @@
+@file:Suppress("PrivatePropertyName")
+
 package com.fezrestia.android.viewfinderanywhere.storage
 
 import android.content.Context
@@ -96,7 +98,7 @@ class StorageController constructor (
         val fullPathSet = mutableSetOf<String>()
 
         targetDirSet.forEach { eachDir ->
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "eachDir = " + eachDir)
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "eachDir = $eachDir")
 
             // Storage root.
             val rootPath = DirFileUtil.getApplicationStorageRootPath()
@@ -134,7 +136,7 @@ class StorageController constructor (
         val targetDirSet: MutableSet<String>
                 = ViewFinderAnywhereApplication.getGlobalSharedPreferences().getStringSet(
                         ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_STORE_TARGET_DIRECTORY,
-                        mutableSetOf<String>())
+                        mutableSetOf<String>()) as MutableSet<String>
 
         // Default dir.
         if (targetDirSet.isEmpty()) {
@@ -153,7 +155,7 @@ class StorageController constructor (
             val photoData: PhotoData)
             : Runnable {
 
-        val TAG: String = "SavePictureTask"
+        private val TAG: String = "SavePictureTask"
 
         override fun run() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E")
@@ -203,9 +205,10 @@ class StorageController constructor (
             val latch: CountDownLatch)
             : MediaScannerConnection.MediaScannerConnectionClient {
         // Log tag.
-        val TAG = "MediaScannerNotifier"
+        private val TAG = "MediaScannerNotifier"
 
-        val connection = MediaScannerConnection(context, this)
+        private val connection = MediaScannerConnection(context, this)
+
         var uri: Uri? = null
 
         fun start() {

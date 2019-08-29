@@ -31,7 +31,7 @@ class TouchMoveAndStopDetector {
     private TouchStopDetectorListener mListener;
 
     // Handler for listener event.
-    private Handler mCallbackHandler = null;
+    private Handler mCallbackHandler;
 
     // Position and Direction.
     private Point mDownPos = new Point(0, 0);

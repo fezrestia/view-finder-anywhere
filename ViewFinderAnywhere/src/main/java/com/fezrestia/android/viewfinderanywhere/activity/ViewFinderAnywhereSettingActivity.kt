@@ -30,11 +30,11 @@ import java.io.File
 class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
     companion object {
         // Log tag.
-        val TAG = "VFA:SettingActivity"
+        const val TAG = "VFA:SettingActivity"
 
         // Runtime permission.
-        private val REQUEST_CODE_MANAGE_OVERLAY_PERMISSION = 100
-        private val REQUEST_CODE_MANAGE_PERMISSIONS = 200
+        private const val REQUEST_CODE_MANAGE_OVERLAY_PERMISSION = 100
+        private const val REQUEST_CODE_MANAGE_PERMISSIONS = 200
     }
 
     // UI-Plug-IN.
@@ -369,7 +369,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "NewDirectory = $newDir")
 
                     // Validation.
-                    if (!newDir.isEmpty()) {
+                    if (newDir.isNotEmpty()) {
                         // Create new directory.
                         val isSuccess = DirFileUtil.createNewContentsDirectory(newDir)
 
@@ -390,7 +390,6 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
                     val validDirSet = newValue as MutableSet<String>
 
                     // Add default storage.
-                    // TODO: Strange???
                     validDirSet.add(DirFileUtil.DEFAULT_STORAGE_DIR_NAME)
 
                     if (Log.IS_DEBUG) {
@@ -457,7 +456,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
         val selectableSet: Set<String> = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
                 .getStringSet(
                         ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
-                        setOf<String>())
+                        setOf<String>()) as Set<String>
         val validValues = mutableSetOf<String>()
         selectableSet.forEach { selectable ->
             if (dirPathList.contains(selectable)) {
@@ -522,7 +521,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
                 // Start permission setting.
                 val intent = Intent(
                         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:" + packageName))
+                        Uri.parse("package:$packageName"))
                 startActivityForResult(intent, REQUEST_CODE_MANAGE_OVERLAY_PERMISSION)
 
                 return true
@@ -540,7 +539,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
                 permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
             }
 
-            return if (!permissions.isEmpty()) {
+            return if (permissions.isNotEmpty()) {
                 requestPermissions(
                         permissions.toTypedArray(),
                         REQUEST_CODE_MANAGE_PERMISSIONS)
@@ -558,7 +557,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
 
         if (requestCode == REQUEST_CODE_MANAGE_OVERLAY_PERMISSION) {
             if (!isSystemAlertWindowPermissionGranted) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "  Overlay permission is not granted yet.")
+                Log.logError(TAG, "Overlay permission is not granted yet.")
                 finish()
             }
         }
@@ -572,21 +571,15 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
 
         if (requestCode == REQUEST_CODE_MANAGE_PERMISSIONS) {
             if (!isCameraPermissionGranted) {
-                if (Log.IS_DEBUG)
-                    Log.logDebug(TAG,
-                            "  Camera permission is not granted yet.")
+                Log.logError(TAG, "Camera permission is not granted yet.")
                 finish()
             }
             if (!isWriteStoragePermissionGranted) {
-                if (Log.IS_DEBUG)
-                    Log.logDebug(TAG,
-                            "  Write storage permission is not granted yet.")
+                Log.logError(TAG,"Write storage permission is not granted yet.")
                 finish()
             }
             if (!isReadStoragePermissionGranted) {
-                if (Log.IS_DEBUG)
-                    Log.logDebug(TAG,
-                            "  Read storage permission is not granted yet.")
+                Log.logError(TAG,"  Read storage permission is not granted yet.")
                 finish()
             }
         }

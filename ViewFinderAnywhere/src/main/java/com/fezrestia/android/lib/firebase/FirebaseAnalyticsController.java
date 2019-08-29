@@ -6,7 +6,7 @@ import android.os.Bundle;
 import com.fezrestia.android.lib.util.log.Log;
 import com.google.firebase.analytics.FirebaseAnalytics;
 
-@SuppressWarnings("WeakerAccess") // This is library interface.
+// This is library interface.
 public class FirebaseAnalyticsController {
     public static final String TAG = "FirebaseAnalyticsController";
 
@@ -94,12 +94,7 @@ public class FirebaseAnalyticsController {
      */
     public static String getPkgNameValue(String packageFullName) {
         String[] segments = packageFullName.split("\\.");
-        String retVal;
-        if (1 <= segments.length) {
-            retVal = segments[segments.length - 1];
-        } else {
-            retVal = segments[0];
-        }
+        String retVal = segments[segments.length - 1];
         if (36 < retVal.length()) {
             retVal = retVal.substring(retVal.length() - 36);
         }

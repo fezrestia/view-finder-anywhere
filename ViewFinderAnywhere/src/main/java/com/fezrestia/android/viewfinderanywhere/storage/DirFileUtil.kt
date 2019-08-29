@@ -1,5 +1,6 @@
 package com.fezrestia.android.viewfinderanywhere.storage
 
+import android.annotation.SuppressLint
 import android.os.Environment
 import com.fezrestia.android.lib.util.log.Log
 import java.io.File
@@ -14,20 +15,20 @@ import java.util.Locale
  */
 object DirFileUtil {
     // Log tag.
-    val TAG = "DirFileUtil"
+    const val TAG = "DirFileUtil"
 
     // Application directory root.
-    private val ROOT_DIR_PATH = "ViewFinderAnywhere"
+    private const val ROOT_DIR_PATH = "ViewFinderAnywhere"
 
     // Constants.
-    val JPEG_FILE_EXT = ".JPG"
+    const val JPEG_FILE_EXT = ".JPG"
 
     // Date in file name format.
+    @SuppressLint("ConstantLocale")
     val FILE_NAME_SDF = SimpleDateFormat("yyyy-MM-dd_HHmmss", Locale.getDefault())
 
     // Default.
-    @JvmField
-    val DEFAULT_STORAGE_DIR_NAME = ""
+    const val DEFAULT_STORAGE_DIR_NAME = ""
 
     /**
      * Get absolute root path used for content storage.

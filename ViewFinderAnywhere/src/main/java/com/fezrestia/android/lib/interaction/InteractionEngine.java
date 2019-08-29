@@ -23,13 +23,13 @@ public class InteractionEngine
     public final static String TAG = "TouchActionTranslator";
 
     // Master Context.
-    private Context mContext = null;
+    private Context mContext;
 
     // Target view.
-    private View mTargetView = null;
+    private View mTargetView;
 
     // Callback handler.
-    private Handler mCallbackHandler = null;
+    private Handler mCallbackHandler;
 
     // Margin of target view around.
     private final int mMargin;
@@ -42,7 +42,7 @@ public class InteractionEngine
     private TouchMoveAndStopDetector mSingleTouchMoveAndStopDetector = null;
 
     // Scale and Rotate detector.
-    private TouchScaleAndRotateDetector mDoubleTouchScaleAndRotateDetector = null;
+    private TouchScaleAndRotateDetector mDoubleTouchScaleAndRotateDetector;
 
     // Android standard gesture detector.
     private GestureDetector mAndroidGestureDetector = null;
@@ -290,16 +290,11 @@ public class InteractionEngine
     private class Idle implements InteractionState {
         @Override
         public void handleMotionEvent(MotionEvent motion) {
-            switch (motion.getActionMasked()) {
-                case MotionEvent.ACTION_DOWN:
-                    mInteractionCallback.onSingleTouched(
-                            new Point((int) motion.getX(0), (int) motion.getY(0)));
-                    changeTo(new SingleDown());
-                    break;
-
-                default:
-                    // NOP.
-                    break;
+            // NOP.
+            if (motion.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                mInteractionCallback.onSingleTouched(
+                        new Point((int) motion.getX(0), (int) motion.getY(0)));
+                changeTo(new SingleDown());
             }
         }
 

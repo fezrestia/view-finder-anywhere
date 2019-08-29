@@ -2,13 +2,12 @@ package com.fezrestia.android.viewfinderanywhere.config
 
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants.CameraApiLevel
 
 /**
  * Total configuration manager.
  */
 class ConfigManager {
-    var camApiLv: CameraApiLevel = CameraApiLevel.CAMERA_API_1
+    var camApiLv = ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_1
     var evfAspectWH: Float = ViewFinderAnywhereConstants.ASPECT_RATIO_1_1
 
     // CONSTRUCTOR.
@@ -29,12 +28,12 @@ class ConfigManager {
                 .getString(ViewFinderAnywhereConstants.KEY_CAMERA_FUNCTION_API_LEVEL, null)
         camApiLv = if (apiLevel == null) {
             // Use default.
-            CameraApiLevel.CAMERA_API_1
+            ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_1
         } else when (apiLevel) {
-            CameraApiLevel.CAMERA_API_1.name -> {
+            ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_1.name -> {
                 ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_1
             }
-            CameraApiLevel.CAMERA_API_2.name -> {
+            ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_2.name -> {
                 ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_2
             }
             else -> {

@@ -8,7 +8,6 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
 import android.view.View;
 
 import com.fezrestia.android.lib.util.log.Log;
@@ -20,6 +19,8 @@ import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderControl
 import com.fezrestia.android.viewfinderanywhere.receiver.OverlayViewFinderTriggerReceiver;
 import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView;
 import com.fezrestia.android.viewfinderanywhere.view.StorageSelectorRootView;
+
+import androidx.annotation.Nullable;
 
 public class OverlayViewFinderService extends Service {
     // Log tag.

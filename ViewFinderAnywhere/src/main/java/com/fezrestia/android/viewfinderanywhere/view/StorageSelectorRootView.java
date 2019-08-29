@@ -108,8 +108,8 @@ public class StorageSelectorRootView extends RelativeLayout {
     }
 
     private void cacheInstances() {
-        mTotalContainer = (RelativeLayout) findViewById(R.id.total_container);
-        mItemList = (LinearLayout) findViewById(R.id.item_list);
+        mTotalContainer = findViewById(R.id.total_container);
+        mItemList = findViewById(R.id.item_list);
     }
 
     private void loadPreferences() {
@@ -164,7 +164,7 @@ public class StorageSelectorRootView extends RelativeLayout {
                 PixelFormat.TRANSLUCENT);
     }
 
-    @SuppressLint("InflateParams")
+    @SuppressLint({"InflateParams", "ClickableViewAccessibility"})
     private void createUiLayout() {
         // Clear.
         mItemList.removeAllViews();
@@ -185,8 +185,8 @@ public class StorageSelectorRootView extends RelativeLayout {
         if (mTargetStorageList.contains(DirFileUtil.DEFAULT_STORAGE_DIR_NAME)) {
             mDefaultStorageItem.setSelected(true);
         }
-        TextView defaultLabel = (TextView)
-                mDefaultStorageItem.findViewById(R.id.storage_selector_list_item_label);
+        TextView defaultLabel = mDefaultStorageItem.findViewById(
+                R.id.storage_selector_list_item_label);
         defaultLabel.setText(R.string.storage_selector_default_storage_label);
         mOnStorageItemTouchListenerImpl.updateStaticDrawable(mDefaultStorageItem);
         mItemList.addView(mDefaultStorageItem, params);
@@ -201,7 +201,7 @@ public class StorageSelectorRootView extends RelativeLayout {
                 continue;
             }
 
-            TextView label = (TextView) item.findViewById(R.id.storage_selector_list_item_label);
+            TextView label = item.findViewById(R.id.storage_selector_list_item_label);
             label.setText(eachStorage);
             label.setShadowLayer(10.0f, 0.0f, 0.0f, Color.BLACK);
 

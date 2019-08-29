@@ -23,7 +23,6 @@ import android.media.MediaActionSound;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.support.annotation.NonNull;
 import android.util.Size;
 import android.view.OrientationEventListener;
 import android.view.Surface;
@@ -39,6 +38,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import androidx.annotation.NonNull;
+
 /**
  * Camera functions based on Camera API 2.0.
  */
@@ -48,13 +49,13 @@ public class Camera2Device implements CameraPlatformInterface {
     private static final String TAG = "Camera2Device";
 
     // Master context.
-    private Context mContext = null;
+    private Context mContext;
 
     // Client callback handler.
-    private Handler mClientCallbackHandler = null;
+    private Handler mClientCallbackHandler;
 
     // Worker thread.
-    private ExecutorService mBackWorker = null;
+    private ExecutorService mBackWorker;
     private static class BackWorkerThreadFactory implements ThreadFactory {
         @Override
         public Thread newThread(@NonNull Runnable r) {
@@ -67,7 +68,7 @@ public class Camera2Device implements CameraPlatformInterface {
     private static final int SHUTDOWN_AWAIT_TIMEOUT_MILLIS = 2000;
 
     // Camera API 2.0 related.
-    private CameraManager mCamMng = null;
+    private CameraManager mCamMng;
     private String mCamId = null;
     private CameraCharacteristics mCamCharacteristics = null;
     private StreamConfigurationMap mStreamConfigMap = null;
@@ -93,21 +94,21 @@ public class Camera2Device implements CameraPlatformInterface {
     private StillCaptureCallback mClientStillCaptureCallback = null;
 
     // Internal callback.
-    private CameraAvailabilityCallback mCameraAvailabilityCallback = null;
+    private CameraAvailabilityCallback mCameraAvailabilityCallback;
     private CameraStateCallback mCameraStateCallback = null;
     private CaptureSessionStateCallback mCaptureSessionStateCallback = null;
     private CaptureCallback mCaptureCallback = null;
 
     // Sounds.
-    private MediaActionSound mShutterSound = null;
+    private MediaActionSound mShutterSound;
 
     // Camera thread handler.
-    private HandlerThread mCameraHandlerThread = null;
-    private Handler mCameraHandler = null;
+    private HandlerThread mCameraHandlerThread;
+    private Handler mCameraHandler;
 
     // Orientation.
     private int mOrientationDegree = OrientationEventListener.ORIENTATION_UNKNOWN;
-    private OrientationEventListenerImpl mOrientationEventListenerImpl = null;
+    private OrientationEventListenerImpl mOrientationEventListenerImpl;
     private class OrientationEventListenerImpl extends OrientationEventListener {
         /**
          * CONSTRUCTOR.

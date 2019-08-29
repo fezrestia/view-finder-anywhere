@@ -42,20 +42,13 @@ public class VectorCalculator {
     public static boolean isParallel(PointF vec0, PointF vec1) {
         float rad = getRadianFrom2Vector(vec0, vec1);
 
-        if (isNearlyEquals(
-                PARALLEL_ANGLE_INVERSE_DIRECTION, rad, PARALLEL_ANGLE_TOLERANCE)) {
-            // Inverse direction.
-            return true;
-        } else if (isNearlyEquals(
-                PARALLEL_ANGLE_FORWARD_DIRECTION, rad, PARALLEL_ANGLE_TOLERANCE)) {
-            // Forward direction.
-            return true;
-        }
+        boolean isInverseParallel = isNearlyEquals(PARALLEL_ANGLE_INVERSE_DIRECTION, rad);
+        boolean isForwardParallel = isNearlyEquals(PARALLEL_ANGLE_FORWARD_DIRECTION, rad);
 
-        return false;
+        return isInverseParallel || isForwardParallel;
     }
 
-    private static boolean isNearlyEquals(float target, float actual, float tolerance) {
-        return (Math.abs(target - actual) < tolerance);
+    private static boolean isNearlyEquals(float target, float actual) {
+        return (Math.abs(target - actual) < PARALLEL_ANGLE_TOLERANCE);
     }
 }

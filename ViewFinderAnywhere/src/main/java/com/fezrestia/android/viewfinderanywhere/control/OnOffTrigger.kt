@@ -12,7 +12,7 @@ import com.fezrestia.android.viewfinderanywhere.service.OverlayViewFinderService
  */
 object OnOffTrigger {
     // Log tag.
-    private val TAG = "OnOffTrigger"
+    private const val TAG = "OnOffTrigger"
 
     private fun notifyToService(context: Context, action: String) {
         val service = Intent(action)
@@ -21,7 +21,7 @@ object OnOffTrigger {
 
         if (Log.IS_DEBUG) {
             if (component == null) {
-                Log.logDebug(TAG, "notifyToService() : FAILED action=" + action)
+                Log.logDebug(TAG, "notifyToService() : FAILED action=$action")
             }
         }
     }

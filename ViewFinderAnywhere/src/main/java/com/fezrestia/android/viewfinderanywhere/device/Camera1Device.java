@@ -6,7 +6,6 @@ import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.SensorManager;
 import android.os.Handler;
-import android.support.annotation.NonNull;
 import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.TextureView;
@@ -24,6 +23,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import androidx.annotation.NonNull;
+
 /**
  * Camera functions based on Camera API 1.0.
  */
@@ -33,10 +34,10 @@ public class Camera1Device implements CameraPlatformInterface {
     private static final String TAG = "Camera1Device";
 
     // Master context.
-    private Context mContext = null;
+    private Context mContext;
 
     // UI thread handler.
-    private Handler mUiWorker = null;
+    private Handler mUiWorker;
 
     // Target device ID.
     private final int mCameraId = Camera.CameraInfo.CAMERA_FACING_BACK;
@@ -663,15 +664,15 @@ public class Camera1Device implements CameraPlatformInterface {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StillCaptureTask.run() : X");
         }
 
-        private class ShutterCallbackImpl implements Camera.ShutterCallback {
-            @Override
-            public void onShutter() {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "onShutter()");
-
-                // Notify to controller.
-                mStillCaptureCallback.onShutterDone(mRequestId);
-            }
-        }
+//        private class ShutterCallbackImpl implements Camera.ShutterCallback {
+//            @Override
+//            public void onShutter() {
+//                if (Log.IS_DEBUG) Log.logDebug(TAG, "onShutter()");
+//
+//                // Notify to controller.
+//                mStillCaptureCallback.onShutterDone(mRequestId);
+//            }
+//        }
 
         private class PictureCallbackImpl implements Camera.PictureCallback {
             private final CountDownLatch mLatch;

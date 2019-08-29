@@ -3,7 +3,6 @@ package com.fezrestia.android.viewfinderanywhere;
 import android.annotation.SuppressLint;
 import android.view.Gravity;
 
-@SuppressWarnings("WeakerAccess") // This is common constants.
 public class ViewFinderAnywhereConstants {
     /** Request start intent. */
     public static final String INTENT_ACTION_REQUEST_START_SERVICE
@@ -71,29 +70,29 @@ public class ViewFinderAnywhereConstants {
             = "16-9";
 
     /** View finder grip size key. */
-    public static final String KEY_VIEW_FINDER_GRIP_SIZE
+    private static final String KEY_VIEW_FINDER_GRIP_SIZE
             = "key_view_finder_grip_size";
     /** View finder grip size value. */
-    public static final String VAL_VIEW_FINDER_GRIP_SIZE_X_LARGE
+    private static final String VAL_VIEW_FINDER_GRIP_SIZE_X_LARGE
             = "x-large";
     /** View finder grip size value. */
-    public static final String VAL_VIEW_FINDER_GRIP_SIZE_LARGE
+    private static final String VAL_VIEW_FINDER_GRIP_SIZE_LARGE
             = "large";
     /** View finder grip size value. */
-    public static final String VAL_VIEW_FINDER_GRIP_SIZE_SMALL
+    private static final String VAL_VIEW_FINDER_GRIP_SIZE_SMALL
             = "small";
 
     /** View finder grip position key. */
-    public static final String KEY_VIEW_FINDER_GRIP_POSITION
+    private static final String KEY_VIEW_FINDER_GRIP_POSITION
             = "key_view_finder_grip_pos";
     /** View finder grip position value. */
-    public static final String VAL_VIEW_FINDER_GRIP_POSITION_TOP_LEFT
+    private static final String VAL_VIEW_FINDER_GRIP_POSITION_TOP_LEFT
             = "top-left";
     /** View finder grip position value. */
-    public static final String VAL_VIEW_FINDER_GRIP_POSITION_MIDDLE
+    private static final String VAL_VIEW_FINDER_GRIP_POSITION_MIDDLE
             = "middle";
     /** View finder grip position value. */
-    public static final String VAL_VIEW_FINDER_GRIP_POSITION_BOTTOM_RIGHT
+    private static final String VAL_VIEW_FINDER_GRIP_POSITION_BOTTOM_RIGHT
             = "bottom-right";
 
     /** View finder UI plug-in key. */
@@ -126,9 +125,6 @@ public class ViewFinderAnywhereConstants {
         // Preference key.
         public static final String KEY = KEY_VIEW_FINDER_GRIP_SIZE;
 
-        // Preference value.
-        private final String mValue;
-
         // Size scale rate.
         private final float mScaleRate;
 
@@ -139,7 +135,6 @@ public class ViewFinderAnywhereConstants {
          * @param scaleRate Scale rate.
          */
         private ViewFinderGripSize(String value, float scaleRate) {
-            mValue = value;
             mScaleRate = scaleRate;
         }
 
@@ -176,9 +171,6 @@ public class ViewFinderAnywhereConstants {
         // Preference key.
         public static final String KEY = KEY_VIEW_FINDER_GRIP_POSITION;
 
-        // Preference value.
-        private final String mValue;
-
         // Layout gravity.
         private final int mLayoutGravity;
 
@@ -189,7 +181,6 @@ public class ViewFinderAnywhereConstants {
          * @param layoutGravity Layout gravity.
          */
         private ViewFinderGripPosition(String value, int layoutGravity) {
-            mValue = value;
             mLayoutGravity = layoutGravity;
         }
 

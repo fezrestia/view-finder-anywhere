@@ -13,7 +13,7 @@ import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger
 class OverlayViewFinderTriggerReceiver : BroadcastReceiver() {
     companion object {
         // Log tag.
-        private val TAG = "OverlayViewFinderTriggerReceiver"
+        private const val TAG = "OverlayViewFinderTriggerReceiver"
     }
 
     /**
@@ -42,11 +42,9 @@ class OverlayViewFinderTriggerReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onReceive()")
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "ACTION = ${intent.action}")
 
-        val action: String = intent.action
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "ACTION = " + action)
-
-        when (action) {
+        when (intent.action) {
             ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY -> {
                 OnOffTrigger.requestToggleVisibility(context)
             }
@@ -75,7 +73,7 @@ class OverlayViewFinderTriggerReceiver : BroadcastReceiver() {
 
             else ->
                 // Unexpected Action.
-                throw IllegalArgumentException("Unexpected Action : " + action)
+                throw IllegalArgumentException("Unexpected Action = ${intent.action}")
         }
     }
 }

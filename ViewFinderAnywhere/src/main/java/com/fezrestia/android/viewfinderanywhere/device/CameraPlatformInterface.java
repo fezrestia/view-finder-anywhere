@@ -114,6 +114,7 @@ public interface CameraPlatformInterface {
      * @param stillCaptureCallback Callback.
      * @return Request ID
      */
+    @SuppressWarnings("UnusedReturnValue")
     int requestStillCaptureAsync(StillCaptureCallback stillCaptureCallback);
 
     /**
@@ -128,7 +129,7 @@ public interface CameraPlatformInterface {
         void onShutterDone(int requestId);
 
         /**
-         * Capturing sequence is done. After this callback, client app can requets next capture.
+         * Capturing sequence is done. After this callback, client app can requests next capture.
          *
          * @param requestId Capture request ID.
          */

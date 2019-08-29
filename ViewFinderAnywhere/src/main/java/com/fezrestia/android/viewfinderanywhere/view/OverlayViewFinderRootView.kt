@@ -1,3 +1,5 @@
+@file:Suppress("PrivatePropertyName")
+
 package com.fezrestia.android.viewfinderanywhere.view
 
 import android.annotation.SuppressLint
@@ -21,7 +23,6 @@ import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.FrameLayout
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 
@@ -29,15 +30,18 @@ import com.fezrestia.android.lib.interaction.InteractionEngine
 import com.fezrestia.android.lib.util.log.Log
 import com.fezrestia.android.lib.util.math.IntXY
 import com.fezrestia.android.lib.util.math.IntWH
+import com.fezrestia.android.viewfinderanywhere.R
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication.CustomizableResourceContainer
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants.ViewFinderGripPosition
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants.ViewFinderGripSize
-import com.fezrestia.android.viewfinderanywhere.R
+import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants.ViewFinderGripPosition
 import com.fezrestia.android.viewfinderanywhere.config.ConfigManager
 import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController
+import kotlinx.android.synthetic.main.overlay_view_finder_root.view.*
+import kotlin.math.abs
+import kotlin.math.ceil
 
 /**
  * Window root view class.
@@ -45,17 +49,17 @@ import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderControl
 class OverlayViewFinderRootView : RelativeLayout {
     companion object {
         // Log tag.
-        val TAG = "OverlayViewFinderRootView"
+        const val TAG = "OverlayViewFinderRootView"
 
         // Window position correction animation interval.
-        private val WINDOW_ANIMATION_INTERVAL = 16L
+        private const val WINDOW_ANIMATION_INTERVAL = 16L
 
         // Hidden window position.
-        private val WINDOW_HIDDEN_POS_X = -5000
+        private const val WINDOW_HIDDEN_POS_X = -5000
 
         // Alpha definitions.
-        private val SHOWN_ALPHA = 1.0f
-        private val HIDDEN_ALPHA = 0.0f
+        private const val SHOWN_ALPHA = 1.0f
+        private const val HIDDEN_ALPHA = 0.0f
     }
 
     // Core instances.
@@ -64,9 +68,6 @@ class OverlayViewFinderRootView : RelativeLayout {
 
     // UI thread handler.
     private val uiHandler = ViewFinderAnywhereApplication.getUiThreadHandler()
-
-    // Layout root view.
-    private lateinit var rootView: RelativeLayout
 
     // Display coordinates.
     private val displayWH = IntWH(0, 0)
@@ -85,30 +86,10 @@ class OverlayViewFinderRootView : RelativeLayout {
     private lateinit var windowManager: WindowManager
     private lateinit var windowLayoutParams: WindowManager.LayoutParams
 
-    // Slider.
-    private lateinit var overlaySlider: LinearLayout
-
-    // Viewfinder related.
-    private lateinit var viewFinderContainer: FrameLayout
-    private lateinit var viewFinderBackground: ImageView
-    private lateinit var viewFinder: TextureView
-    private lateinit var shutterFeedback: View
-
-    // Scan indicator.
-    private lateinit var scanIndicatorContainer: ViewGroup
-
     // UI Plug-IN.
     // Viewfinder grip.
-    private lateinit var viewFinderGripContainer: ViewGroup
-    private lateinit var viewFinderGrip: ImageView
-    private lateinit var viewFinderGripLabel: ImageView
-    private lateinit var viewFinderGripLabelLandscapeBmp: Bitmap
-    private lateinit var viewFinderGripLabelPortraitBmp: Bitmap
-    // Viewfinder frame.
-    private lateinit var viewFinderFrame: ImageView
-    // Total cover.
-    private lateinit var totalBackground: ImageView
-    private lateinit var totalForeground: ImageView
+    private lateinit var viewfinder_grip_labelLandscapeBmp: Bitmap
+    private lateinit var viewfinder_grip_labelPortraitBmp: Bitmap
 
     // Touch interaction engine.
     private lateinit var interactionEngine: InteractionEngine
@@ -127,7 +108,7 @@ class OverlayViewFinderRootView : RelativeLayout {
     private var isResumed = true
 
     // Viewfinder grip size.
-    private var viewFinderGripSize = 0
+    private var viewfinder_gripSize = 0
 
     // Resources.
     private lateinit var customResContainer: CustomizableResourceContainer
@@ -250,29 +231,19 @@ class OverlayViewFinderRootView : RelativeLayout {
         customResContainer = ViewFinderAnywhereApplication.getCustomResContainer()
         val res = context.resources
 
-        // Root.
-        rootView = findViewById(R.id.root) as RelativeLayout
-        // Slider.
-        overlaySlider = findViewById(R.id.overlay_slider) as LinearLayout
         // Viewfinder related.
-        viewFinderContainer = findViewById(R.id.viewfinder_container) as FrameLayout
-        viewFinder = findViewById(R.id.viewfinder) as TextureView
-        viewFinder.surfaceTextureListener = surfaceTextureListenerImpl
-        viewFinder.alpha = HIDDEN_ALPHA
-        viewFinderBackground = findViewById(R.id.viewfinder_background) as ImageView
-        viewFinderBackground.setBackgroundColor(customResContainer.colorVfBackground)
+        viewfinder.surfaceTextureListener = surfaceTextureListenerImpl
+        viewfinder.alpha = HIDDEN_ALPHA
+        viewfinder_background.setBackgroundColor(customResContainer.colorVfBackground)
+
         // Scan indicator.
-        scanIndicatorContainer = findViewById(R.id.scan_indicator_container) as ViewGroup
-        scanIndicatorContainer.visibility = INVISIBLE
+        scan_indicator_container.visibility = INVISIBLE
+
         // Shutter feedback.
-        shutterFeedback = findViewById(R.id.shutter_feedback)
-        shutterFeedback.visibility = View.INVISIBLE
+        shutter_feedback.visibility = View.INVISIBLE
 
         // UI-Plug-IN.
         // Viewfinder grip.
-        viewFinderGripContainer = findViewById(R.id.viewfinder_grip_container) as ViewGroup
-        viewFinderGrip = findViewById(R.id.viewfinder_grip) as ImageView
-        viewFinderGripLabel = findViewById(R.id.viewfinder_grip_label) as ImageView
         val paint = Paint()
         paint.textSize = res.getDimensionPixelSize(R.dimen.viewfinder_grip_label_font_size)
                 .toFloat()
@@ -282,32 +253,27 @@ class OverlayViewFinderRootView : RelativeLayout {
                 context.assets,
                 ViewFinderAnywhereConstants.FONT_FILENAME_CODA)
         val fontMetrics = paint.fontMetrics
-        val textHeight = Math.ceil(Math.abs(fontMetrics.ascent).toDouble()
-                + Math.abs(fontMetrics.descent)
-                + Math.abs(fontMetrics.leading)).toInt()
+        val textHeight = ceil(abs(fontMetrics.ascent).toDouble()
+                + abs(fontMetrics.descent)
+                + abs(fontMetrics.leading)).toInt()
         val textLabel = res.getString(R.string.viewfinder_grip_label)
-        val textWidth = Math.ceil(paint.measureText(textLabel).toDouble()).toInt()
-        viewFinderGripLabelLandscapeBmp = Bitmap.createBitmap(
+        val textWidth = ceil(paint.measureText(textLabel).toDouble()).toInt()
+        viewfinder_grip_labelLandscapeBmp = Bitmap.createBitmap(
                 textWidth,
                 textHeight,
                 Bitmap.Config.ARGB_8888)
-        val c = Canvas(viewFinderGripLabelLandscapeBmp)
-        c.drawText(textLabel, 0.0f, Math.abs(fontMetrics.ascent), paint)
+        val c = Canvas(viewfinder_grip_labelLandscapeBmp)
+        c.drawText(textLabel, 0.0f, abs(fontMetrics.ascent), paint)
         val matrix = Matrix()
         matrix.postRotate(-90.0f)
-        viewFinderGripLabelPortraitBmp = Bitmap.createBitmap(
-                viewFinderGripLabelLandscapeBmp,
+        viewfinder_grip_labelPortraitBmp = Bitmap.createBitmap(
+                viewfinder_grip_labelLandscapeBmp,
                 0,
                 0,
-                viewFinderGripLabelLandscapeBmp.width,
-                viewFinderGripLabelLandscapeBmp.height,
+                viewfinder_grip_labelLandscapeBmp.width,
+                viewfinder_grip_labelLandscapeBmp.height,
                 matrix,
                 true)
-        // Viewfinder frame.
-        viewFinderFrame = findViewById(R.id.viewfinder_frame) as ImageView
-        // Total cover.
-        totalBackground = findViewById(R.id.total_background) as ImageView
-        totalForeground = findViewById(R.id.total_foreground) as ImageView
     }
 
     private fun loadPreferences() {
@@ -347,7 +313,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                 false)
 
         // Grip.
-        viewFinderGripSize = context.resources.getDimensionPixelSize(R.dimen.viewfinder_grip_size)
+        viewfinder_gripSize = context.resources.getDimensionPixelSize(R.dimen.viewfinder_grip_size)
         // Grip size.
         val gripSizeValue = sp.getString(ViewFinderGripSize.KEY, null)
         gripSizeSetting = if (gripSizeValue != null) {
@@ -387,15 +353,15 @@ class OverlayViewFinderRootView : RelativeLayout {
 
         interactionEngine.setInteractionCallback(null)
         interactionEngine.release()
-        viewFinder.surfaceTextureListener = null
-        rootView.setOnTouchListener(null)
+        viewfinder.surfaceTextureListener = null
+        setOnTouchListener(null)
 
         // UI Plug-IN.
-        viewFinderGrip.setImageDrawable(null)
-        viewFinderGripLabel.setImageBitmap(null)
-        viewFinderFrame.setImageDrawable(null)
-        totalBackground.setImageDrawable(null)
-        totalForeground.setImageDrawable(null)
+        viewfinder_grip.setImageDrawable(null)
+        viewfinder_grip_label.setImageBitmap(null)
+        viewfinder_frame.setImageDrawable(null)
+        total_background.setImageDrawable(null)
+        total_foreground.setImageDrawable(null)
     }
 
     private fun releaseWindowPositionCorrector() {
@@ -441,10 +407,10 @@ class OverlayViewFinderRootView : RelativeLayout {
 
                 // Cache.
                 val winX = displayWH.longLen() - viewfinderWH.w - windowLayoutParams.x
-                val winY = displayWH.shortLen() - viewfinderWH.h - viewFinderGripSize
+                val winY = displayWH.shortLen() - viewfinderWH.h - viewfinder_gripSize
                         - windowLayoutParams.y
                 val winW = viewfinderWH.w
-                val winH = viewfinderWH.h + viewFinderGripSize
+                val winH = viewfinderWH.h + viewfinder_gripSize
                 ViewFinderAnywhereApplication.TotalWindowConfiguration
                         .OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
                 if (Log.IS_DEBUG) Log.logDebug(TAG,
@@ -467,10 +433,10 @@ class OverlayViewFinderRootView : RelativeLayout {
                         windowLayoutParams.y)
 
                 // Cache.
-                val winX = displayWH.shortLen() - viewfinderWH.w - viewFinderGripSize
+                val winX = displayWH.shortLen() - viewfinderWH.w - viewfinder_gripSize
                         - windowLayoutParams.x
                 val winY = displayWH.longLen() - viewfinderWH.h - windowLayoutParams.y
-                val winW = viewfinderWH.w + viewFinderGripSize
+                val winW = viewfinderWH.w + viewfinder_gripSize
                 val winH = viewfinderWH.h
                 ViewFinderAnywhereApplication.TotalWindowConfiguration
                         .OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
@@ -509,11 +475,11 @@ class OverlayViewFinderRootView : RelativeLayout {
 
     private inner class ReleaseDrawingResourceTask : Runnable {
         override fun run() {
-            if (!viewFinderGripLabelLandscapeBmp.isRecycled) {
-                viewFinderGripLabelLandscapeBmp.recycle()
+            if (!viewfinder_grip_labelLandscapeBmp.isRecycled) {
+                viewfinder_grip_labelLandscapeBmp.recycle()
             }
-            if (!viewFinderGripLabelPortraitBmp.isRecycled) {
-                viewFinderGripLabelPortraitBmp.recycle()
+            if (!viewfinder_grip_labelPortraitBmp.isRecycled) {
+                viewfinder_grip_labelPortraitBmp.recycle()
             }
         }
     }
@@ -573,10 +539,10 @@ class OverlayViewFinderRootView : RelativeLayout {
     private fun updateLayoutParams() {
         // Viewfinder size.
         run {
-            val params = viewFinderContainer.layoutParams
+            val params = viewfinder_container.layoutParams
             params.width = viewfinderWH.w
             params.height = viewfinderWH.h
-            viewFinderContainer.layoutParams = params
+            viewfinder_container.layoutParams = params
         }
 
         val totalWidth: Int
@@ -584,11 +550,11 @@ class OverlayViewFinderRootView : RelativeLayout {
         when (orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
                 totalWidth = viewfinderWH.w
-                totalHeight = viewfinderWH.h + viewFinderGripSize
+                totalHeight = viewfinderWH.h + viewfinder_gripSize
             }
 
             Configuration.ORIENTATION_PORTRAIT -> {
-                totalWidth = viewfinderWH.w + viewFinderGripSize
+                totalWidth = viewfinderWH.w + viewfinder_gripSize
                 totalHeight = viewfinderWH.h
             }
 
@@ -599,18 +565,18 @@ class OverlayViewFinderRootView : RelativeLayout {
         }
 
         run {
-            val params = totalBackground.layoutParams
+            val params = total_background.layoutParams
             params.width = totalWidth
             params.height = totalHeight
-            totalBackground.layoutParams = params
+            total_background.layoutParams = params
 
             when (orientation) {
                 Configuration.ORIENTATION_LANDSCAPE -> {
-                    totalBackground.setImageDrawable(customResContainer.drawableTotalBackLand)
+                    total_background.setImageDrawable(customResContainer.drawableTotalBackLand)
                 }
 
                 Configuration.ORIENTATION_PORTRAIT -> {
-                    totalBackground.setImageDrawable(customResContainer.drawableTotalBackPort)
+                    total_background.setImageDrawable(customResContainer.drawableTotalBackPort)
                 }
 
                 else -> {
@@ -621,18 +587,18 @@ class OverlayViewFinderRootView : RelativeLayout {
         }
 
         run {
-            val params = totalForeground.layoutParams
+            val params = total_foreground.layoutParams
             params.width = totalWidth
             params.height = totalHeight
-            totalForeground.layoutParams = params
+            total_foreground.layoutParams = params
 
             when (orientation) {
                 Configuration.ORIENTATION_LANDSCAPE -> {
-                    totalForeground.setImageDrawable(customResContainer.drawableTotalForeLand)
+                    total_foreground.setImageDrawable(customResContainer.drawableTotalForeLand)
                 }
 
                 Configuration.ORIENTATION_PORTRAIT -> {
-                    totalForeground.setImageDrawable(customResContainer.drawableTotalForePort)
+                    total_foreground.setImageDrawable(customResContainer.drawableTotalForePort)
                 }
 
                 else -> {
@@ -646,11 +612,11 @@ class OverlayViewFinderRootView : RelativeLayout {
         run {
             when (orientation) {
                 Configuration.ORIENTATION_LANDSCAPE -> {
-                    overlaySlider.orientation = LinearLayout.VERTICAL
+                    overlay_slider.orientation = LinearLayout.VERTICAL
                 }
 
                 Configuration.ORIENTATION_PORTRAIT -> {
-                    overlaySlider.orientation = LinearLayout.HORIZONTAL
+                    overlay_slider.orientation = LinearLayout.HORIZONTAL
                 }
 
                 else -> {
@@ -662,7 +628,7 @@ class OverlayViewFinderRootView : RelativeLayout {
 
         // Grip container.
         run {
-            val params = viewFinderGripContainer.layoutParams
+            val params = viewfinder_grip_container.layoutParams
             when (orientation) {
                 Configuration.ORIENTATION_LANDSCAPE -> {
                     params.width = viewfinderWH.w
@@ -679,23 +645,23 @@ class OverlayViewFinderRootView : RelativeLayout {
                     throw IllegalStateException("Unexpected orientation.")
                 }
             }
-            viewFinderGripContainer.layoutParams = params
+            viewfinder_grip_container.layoutParams = params
         }
 
         // Viewfinder grip.
         run {
-            val params = viewFinderGrip.layoutParams as FrameLayout.LayoutParams
+            val params = viewfinder_grip.layoutParams as FrameLayout.LayoutParams
             when (orientation) {
                 Configuration.ORIENTATION_LANDSCAPE -> {
                     params.width = (viewfinderWH.w * gripSizeSetting.scaleRate).toInt()
-                    params.height = viewFinderGripSize
-                    viewFinderGrip.setImageDrawable(customResContainer.drawableVfGripLand)
+                    params.height = viewfinder_gripSize
+                    viewfinder_grip.setImageDrawable(customResContainer.drawableVfGripLand)
                 }
 
                 Configuration.ORIENTATION_PORTRAIT -> {
-                    params.width = viewFinderGripSize
+                    params.width = viewfinder_gripSize
                     params.height = (viewfinderWH.h * gripSizeSetting.scaleRate).toInt()
-                    viewFinderGrip.setImageDrawable(customResContainer.drawableVfGripPort)
+                    viewfinder_grip.setImageDrawable(customResContainer.drawableVfGripPort)
                 }
 
                 else -> {
@@ -704,11 +670,11 @@ class OverlayViewFinderRootView : RelativeLayout {
                 }
             }
             params.gravity = gripPositionSetting.layoutGravity
-            viewFinderGrip.layoutParams = params
+            viewfinder_grip.layoutParams = params
         }
 
         run {
-            val params = viewFinderGripLabel.layoutParams as FrameLayout.LayoutParams
+            val params = viewfinder_grip_label.layoutParams as FrameLayout.LayoutParams
             val horizontalPadding = context.resources.getDimensionPixelSize(
                     R.dimen.viewfinder_grip_label_horizontal_padding)
             val verticalPadding = context.resources.getDimensionPixelSize(
@@ -716,8 +682,8 @@ class OverlayViewFinderRootView : RelativeLayout {
             var visibility = View.VISIBLE
             when (orientation) {
                 Configuration.ORIENTATION_LANDSCAPE -> {
-                    viewFinderGripLabel.setImageBitmap(viewFinderGripLabelLandscapeBmp)
-                    viewFinderGripLabel.setPadding(
+                    viewfinder_grip_label.setImageBitmap(viewfinder_grip_labelLandscapeBmp)
+                    viewfinder_grip_label.setPadding(
                             horizontalPadding,
                             verticalPadding,
                             horizontalPadding,
@@ -725,26 +691,26 @@ class OverlayViewFinderRootView : RelativeLayout {
                     params.gravity =
                             gripPositionSetting.layoutGravity or Gravity.CENTER_VERTICAL
                     params.width = ViewGroup.LayoutParams.WRAP_CONTENT
-                    params.height = viewFinderGripSize
+                    params.height = viewfinder_gripSize
                     if (viewfinderWH.w * gripSizeSetting.scaleRate
-                            < viewFinderGripLabelLandscapeBmp.width) {
+                            < viewfinder_grip_labelLandscapeBmp.width) {
                         visibility = View.INVISIBLE
                     }
                 }
 
                 Configuration.ORIENTATION_PORTRAIT -> {
-                    viewFinderGripLabel.setImageBitmap(viewFinderGripLabelPortraitBmp)
-                    viewFinderGripLabel.setPadding(
+                    viewfinder_grip_label.setImageBitmap(viewfinder_grip_labelPortraitBmp)
+                    viewfinder_grip_label.setPadding(
                             verticalPadding,
                             horizontalPadding,
                             0,
                             horizontalPadding)
                     params.gravity =
                             Gravity.CENTER_HORIZONTAL or gripPositionSetting.layoutGravity
-                    params.width = viewFinderGripSize
+                    params.width = viewfinder_gripSize
                     params.height = ViewGroup.LayoutParams.WRAP_CONTENT
                     if (viewfinderWH.h * gripSizeSetting.scaleRate
-                            < viewFinderGripLabelPortraitBmp.height) {
+                            < viewfinder_grip_labelPortraitBmp.height) {
                         visibility = View.INVISIBLE
                     }
                 }
@@ -754,19 +720,19 @@ class OverlayViewFinderRootView : RelativeLayout {
                     throw IllegalStateException("Unexpected orientation.")
                 }
             }
-            viewFinderGripLabel.visibility = visibility
-            viewFinderGripLabel.layoutParams = params
+            viewfinder_grip_label.visibility = visibility
+            viewfinder_grip_label.layoutParams = params
         }
 
         // Viewfinder frame.
         run {
             when (orientation) {
                 Configuration.ORIENTATION_LANDSCAPE -> {
-                    viewFinderFrame.setImageDrawable(customResContainer.drawableVfFrameLand)
+                    viewfinder_frame.setImageDrawable(customResContainer.drawableVfFrameLand)
                 }
 
                 Configuration.ORIENTATION_PORTRAIT -> {
-                    viewFinderFrame.setImageDrawable(customResContainer.drawableVfFramePort)
+                    viewfinder_frame.setImageDrawable(customResContainer.drawableVfFramePort)
                 }
 
                 else -> {
@@ -800,13 +766,13 @@ class OverlayViewFinderRootView : RelativeLayout {
 
                 // Set touch interceptor.
                 interactionEngine = InteractionEngine(
-                        rootView.context,
-                        rootView,
+                        this@OverlayViewFinderRootView.context,
+                        this@OverlayViewFinderRootView,
                         0,
                         0,//ViewConfiguration.get(getContext()).getScaledTouchSlop(),
                         ViewFinderAnywhereApplication.getUiThreadHandler())
                 interactionEngine.setInteractionCallback(interactionCallbackImpl)
-                rootView.setOnTouchListener(onTouchListenerImpl)
+                setOnTouchListener(onTouchListenerImpl)
 
                 // Notify to device.
                 controller.currentState.onSurfaceReady()
@@ -825,7 +791,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
 //            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceTextureUpdated()")
 
-            if (isResumed && viewFinder.alpha == HIDDEN_ALPHA) {
+            if (isResumed && viewfinder.alpha == HIDDEN_ALPHA) {
                 showSurfaceTask.reset()
                 uiHandler.post(showSurfaceTask)
             }
@@ -852,10 +818,10 @@ class OverlayViewFinderRootView : RelativeLayout {
          * Reset state.
          */
         fun reset() {
-            actualAlpha = viewFinder.alpha
+            actualAlpha = viewfinder.alpha
         }
 
-        abstract protected fun isFadeIn(): Boolean
+        protected abstract fun isFadeIn(): Boolean
 
         override fun run() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "run()")
@@ -881,7 +847,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                 }
             }
 
-            viewFinder.alpha = actualAlpha
+            viewfinder.alpha = actualAlpha
 
             if (isNextTaskRequired) {
                 // NOTICE:
@@ -909,7 +875,7 @@ class OverlayViewFinderRootView : RelativeLayout {
      *
      * @return Finder TextureView.
      */
-    fun getViewFinderSurface(): TextureView = viewFinder
+    fun getViewFinderSurface(): TextureView = viewfinder
 
     private val onTouchListenerImpl = OnTouchListenerImpl()
     private inner class OnTouchListenerImpl : OnTouchListener {
@@ -922,6 +888,12 @@ class OverlayViewFinderRootView : RelativeLayout {
             return true
         }
     }
+
+//    // For setOnTouchListener()
+//    override fun performClick(): Boolean {
+//        super.performClick()
+//        return false // Do not use onClickListener.
+//    }
 
     private val interactionCallbackImpl = InteractionCallbackImpl()
     private inner class InteractionCallbackImpl : InteractionEngine.InteractionCallback {
@@ -957,7 +929,7 @@ class OverlayViewFinderRootView : RelativeLayout {
 
             // Check moving.
             val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
-            if (touchSlop < Math.abs(diffX) || touchSlop < Math.abs(diffY)) {
+            if (touchSlop < abs(diffX) || touchSlop < abs(diffY)) {
                 controller.currentState.requestCancelScan()
             }
 
@@ -1018,13 +990,13 @@ class OverlayViewFinderRootView : RelativeLayout {
             val target: IntXY
             when (orientation) {
                 Configuration.ORIENTATION_LANDSCAPE -> {
-                    diffToEnable = Math.abs(windowEnabledXY.y - windowLayoutParams.y)
-                    diffToDisable = Math.abs(windowDisabledXY.y - windowLayoutParams.y)
+                    diffToEnable = abs(windowEnabledXY.y - windowLayoutParams.y)
+                    diffToDisable = abs(windowDisabledXY.y - windowLayoutParams.y)
                 }
 
                 Configuration.ORIENTATION_PORTRAIT -> {
-                    diffToEnable = Math.abs(windowEnabledXY.x - windowLayoutParams.x)
-                    diffToDisable = Math.abs(windowDisabledXY.x - windowLayoutParams.x)
+                    diffToEnable = abs(windowEnabledXY.x - windowLayoutParams.x)
+                    diffToDisable = abs(windowDisabledXY.x - windowLayoutParams.x)
                 }
 
                 else -> {
@@ -1039,7 +1011,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                 if (!isResumed) {
                     isResumed = true
                     controller.resume()
-                    if (viewFinder.isAvailable) {
+                    if (viewfinder.isAvailable) {
                         controller.currentState.onSurfaceReady()
                     }
                 }
@@ -1251,22 +1223,21 @@ class OverlayViewFinderRootView : RelativeLayout {
 
         override fun onScanStarted() {
             updateIndicatorColor(customResContainer.colorScanOnGoing)
-            scanIndicatorContainer.visibility = View.VISIBLE
+            scan_indicator_container.visibility = View.VISIBLE
         }
 
         override fun onScanDone(isSuccess: Boolean) {
-            val color: Int
-            color = if (isSuccess) {
+            val color: Int = if (isSuccess) {
                 customResContainer.colorScanSuccess
             } else {
                 customResContainer.colorScanFailure
             }
             updateIndicatorColor(color)
-            scanIndicatorContainer.visibility = View.VISIBLE
+            scan_indicator_container.visibility = View.VISIBLE
         }
 
         override fun onShutterDone() {
-            shutterFeedback.visibility = View.VISIBLE
+            shutter_feedback.visibility = View.VISIBLE
             uiHandler.postDelayed(
                     recoverShutterFeedbackTask,
                     SHUTTER_FEEDBACK_DURATION_MILLIS)
@@ -1275,19 +1246,19 @@ class OverlayViewFinderRootView : RelativeLayout {
         private val recoverShutterFeedbackTask = RecoverShutterFeedbackTask()
         private inner class RecoverShutterFeedbackTask : Runnable {
             override fun run() {
-                shutterFeedback.visibility = View.INVISIBLE
+                shutter_feedback.visibility = View.INVISIBLE
             }
         }
 
         override fun clear() {
-            scanIndicatorContainer.visibility = View.INVISIBLE
+            scan_indicator_container.visibility = View.INVISIBLE
         }
 
         private fun updateIndicatorColor(color: Int) {
-            (0..(scanIndicatorContainer.childCount - 1))
-                    .map { index -> scanIndicatorContainer.getChildAt(index) }
+            (0 until scan_indicator_container.childCount)
+                    .map { index -> scan_indicator_container.getChildAt(index) }
                     .forEach { view -> view.setBackgroundColor(color) }
-            scanIndicatorContainer.invalidate()
+            scan_indicator_container.invalidate()
         }
     }
 }
