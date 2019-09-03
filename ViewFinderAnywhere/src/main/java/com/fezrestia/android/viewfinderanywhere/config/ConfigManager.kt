@@ -1,16 +1,16 @@
 package com.fezrestia.android.viewfinderanywhere.config
 
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
 
 /**
  * Total configuration manager.
  */
 class ConfigManager {
-    var camApiLv = ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_1
-    var evfAspectWH: Float = ViewFinderAnywhereConstants.ASPECT_RATIO_1_1
+    // Default values.
+    var camApiLv = CameraApiLevel.API_1
+    var evfSize = ViewFinderSize.L
+    var evfAspect = ViewFinderAspect.WH_1_1
 
-    // CONSTRUCTOR.
     init {
         loadPreferences()
     }
@@ -25,43 +25,32 @@ class ConfigManager {
     private fun loadPreferences() {
         // Target Camera API Level.
         val apiLevel = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
-                .getString(ViewFinderAnywhereConstants.KEY_CAMERA_FUNCTION_API_LEVEL, null)
+                .getString(CameraApiLevel.key,null)
         camApiLv = if (apiLevel == null) {
             // Use default.
-            ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_1
-        } else when (apiLevel) {
-            ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_1.name -> {
-                ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_1
-            }
-            ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_2.name -> {
-                ViewFinderAnywhereConstants.CameraApiLevel.CAMERA_API_2
-            }
-            else -> {
-                // NOP. Unexpected.
-                throw IllegalArgumentException("Unexpected API level.")
-            }
+            CameraApiLevel.API_1
+        } else {
+            CameraApiLevel.valueOf(apiLevel)
+        }
+
+        // Size.
+        val size = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
+                .getString(ViewFinderSize.key, null)
+        evfSize = if (size == null) {
+            // Unexpected or not initialized yet. Use default.
+            ViewFinderSize.L
+        } else {
+            ViewFinderSize.valueOf(size)
         }
 
         // Aspect.
         val aspect = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
-                .getString(ViewFinderAnywhereConstants.KEY_VIEW_FINDER_ASPECT, null)
-        if (aspect == null) {
+                .getString(ViewFinderAspect.key, null)
+        evfAspect = if (aspect == null) {
             // Unexpected or not initialized yet. Use default.
-            evfAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_1_1
-        } else when (aspect) {
-            ViewFinderAnywhereConstants.VAL_VIEW_FINDER_ASPECT_16_9 -> {
-                evfAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_16_9
-            }
-            ViewFinderAnywhereConstants.VAL_VIEW_FINDER_ASPECT_4_3 -> {
-                evfAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_4_3
-            }
-            ViewFinderAnywhereConstants.VAL_VIEW_FINDER_ASPECT_1_1 -> {
-                evfAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_1_1
-            }
-            else -> {
-                // NOP. Unexpected.
-                throw IllegalArgumentException("Unexpected Aspect.")
-            }
+            ViewFinderAspect.WH_1_1
+        } else {
+            ViewFinderAspect.valueOf(aspect)
         }
     }
 }

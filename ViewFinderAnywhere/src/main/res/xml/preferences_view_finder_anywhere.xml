@@ -1,99 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<PreferenceScreen
-        xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.preference.PreferenceScreen
+    xmlns:app="http://schemas.android.com/apk/res-auto"
 >
-    <PreferenceCategory
-            android:title="@string/title_trigger_preference"
+    <androidx.preference.PreferenceCategory
+        app:title="@string/title_trigger_preference"
     >
-        <CheckBoxPreference
-            android:key="is_trigger_screen_edge"
-            android:title="@string/title_is_overlay_view_finder_enabled_from_screen_edge"
-            android:summary="@string/summary_is_overlay_view_finder_enabled_from_screen_edge"
+        <androidx.preference.SwitchPreference
+            app:key="sp-key-overlay-view-finder-enable-disable"
+            app:title="@string/overlay_view_finder_enable_disable"
+            app:persistent="false"
         />
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-    <PreferenceCategory
-            android:title="@string/title_camera_function_preference"
+    <androidx.preference.PreferenceCategory
+        app:title="@string/title_camera_preference"
     >
-        <ListPreference
-            android:key="key_camera_api_level"
-            android:title="@string/title_camera_function_api_level"
-            android:summary="Target camera API level."
-            android:entries="@array/camera_function_api_level_labels"
-            android:entryValues="@array/camera_function_api_level_values"
+        <androidx.preference.ListPreference
+            app:key="sp-key-camera-api-level"
+            app:title="@string/title_camera_api_level"
+            app:useSimpleSummaryProvider="true"
         />
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-    <PreferenceCategory
-            android:title="@string/title_ui_plugin_preference"
+    <androidx.preference.PreferenceCategory
+        app:title="@string/title_ui_plugin_preference"
     >
-        <ListPreference
-            android:key="key_ui_plugin_package"
-            android:title="@string/title_select_ui_plugin"
-            android:summary="dummy"
+        <androidx.preference.ListPreference
+            app:key="sp-key-ui-plugin-package"
+            app:title="@string/title_ui_plugin_package"
+            app:useSimpleSummaryProvider="true"
         />
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-    <PreferenceCategory
-            android:title="@string/title_view_finder_preference"
+    <androidx.preference.PreferenceCategory
+       app:title="@string/title_view_finder_preference"
     >
-        <ListPreference
-            android:key="key_view_finder_size"
-            android:title="@string/title_overlay_view_finder_size"
-            android:summary="dummy"
-            android:entries="@array/overlay_view_finder_size_entry_labels"
-            android:entryValues="@array/overlay_view_finder_size_entry_values"
+        <androidx.preference.DropDownPreference
+            app:key="sp-key-view-finder-size"
+            app:title="@string/title_view_finder_size"
+            app:useSimpleSummaryProvider="true"
         />
-        <ListPreference
-            android:key="key_view_finder_aspect"
-            android:title="@string/title_overlay_view_finder_aspect"
-            android:summary="dummy"
-            android:entries="@array/overlay_view_finder_aspect_entry_labels"
-            android:entryValues="@array/overlay_view_finder_aspect_entry_values"
-        />
-    </PreferenceCategory>
 
-    <PreferenceCategory
-            android:title="@string/title_view_finder_grip_preference"
+        <androidx.preference.ListPreference
+            app:key="sp-key-view-finder-aspect"
+            app:title="@string/title_view_finder_aspect"
+            app:useSimpleSummaryProvider="true"
+        />
+    </androidx.preference.PreferenceCategory>
+
+    <androidx.preference.PreferenceCategory
+        app:title="@string/title_storage_selector_preference"
     >
-        <ListPreference
-            android:key="key_view_finder_grip_size"
-            android:title="@string/title_view_finder_grip_size"
-            android:summary="dummy"
-            android:entries="@array/view_finder_grip_size_entry_labels"
-            android:entryValues="@array/view_finder_grip_size_entry_values"
+        <androidx.preference.SwitchPreference
+            app:key="sp-key-is-storage-selector-enabled"
+            app:title="@string/title_is_storage_selector_enabled"
+            app:summary="@string/summary_is_storage_selector_enabled"
         />
-        <ListPreference
-            android:key="key_view_finder_grip_pos"
-            android:title="@string/title_view_finder_grip_position"
-            android:summary="dummy"
-            android:entries="@array/view_finder_grip_position_entry_labels"
-            android:entryValues="@array/view_finder_grip_position_entry_values"
+        <androidx.preference.EditTextPreference
+            app:key="sp-key-storage-selector-create-new-directory"
+            app:title="@string/title_storage_selector_create_new_directory"
+            app:summary="@string/summary_storage_selector_create_new_directory"
+            app:persistent="false"
         />
-    </PreferenceCategory>
-
-    <PreferenceCategory
-            android:title="@string/title_storage_selector_preference"
-    >
-        <CheckBoxPreference
-            android:key="is_storage_selector_enabled"
-            android:title="@string/title_is_storage_selector_enabled"
-            android:summary="@string/summary_is_storage_selector_enabled"
-        />
-        <EditTextPreference
-            android:persistent="false"
-            android:key="key_storage_create_new_dir"
-            android:title="@string/title_storage_selector_create_new_directory"
-            android:summary="@string/summary_storage_selector_create_new_directory"
-        />
-        <MultiSelectListPreference
-            android:persistent="false"
-            android:key="key_storage_selectable_dir"
-            android:title="@string/title_storage_selector_target_directory"
-            android:summary="@string/summary_storage_selector_target_directory"
+        <androidx.preference.MultiSelectListPreference
+            app:key="sp-key-storage-selector-selectable-directory"
+            app:title="@string/title_storage_selector_selectable_directory"
+            app:summary="@string/summary_storage_selector_selectable_directory"
+            app:persistent="false"
         />
 
-    </PreferenceCategory>
+    </androidx.preference.PreferenceCategory>
 
-</PreferenceScreen>
+</androidx.preference.PreferenceScreen>

@@ -1,53 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:id="@+id/root"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
 >
     <ImageView
-            android:id="@+id/total_background"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="fitXY"
-            tools:ignore="ContentDescription"
+        android:id="@+id/total_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        tools:ignore="ContentDescription"
     />
 
     <LinearLayout
-            android:id="@+id/overlay_slider"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
+        android:id="@+id/overlay_slider"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
     >
         <!-- View finder grip. -->
         <FrameLayout
-                android:id="@+id/viewfinder_grip_container"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+            android:id="@+id/viewfinder_grip_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
         >
             <ImageView
-                    android:id="@+id/viewfinder_grip"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:scaleType="fitXY"
-                    tools:ignore="ContentDescription"
+                android:id="@+id/viewfinder_grip"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY"
+                tools:ignore="ContentDescription"
             />
 
             <ImageView
-                    android:id="@+id/viewfinder_grip_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    tools:ignore="ContentDescription"
+                android:id="@+id/viewfinder_grip_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="ContentDescription"
             />
         </FrameLayout>
 
         <!-- View finder area. -->
         <FrameLayout
-                android:id="@+id/viewfinder_container"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+            android:id="@+id/viewfinder_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
         >
             <!-- Background. Immediate feedback. -->
             <ImageView
@@ -123,11 +122,11 @@
     </LinearLayout>
 
     <ImageView
-            android:id="@+id/total_foreground"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="fitXY"
-            tools:ignore="ContentDescription"
+        android:id="@+id/total_foreground"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        tools:ignore="ContentDescription"
     />
 
 </com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView>

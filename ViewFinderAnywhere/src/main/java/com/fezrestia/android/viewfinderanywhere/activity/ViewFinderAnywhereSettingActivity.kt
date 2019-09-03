@@ -1,3 +1,5 @@
+@file:Suppress("PrivatePropertyName")
+
 package com.fezrestia.android.viewfinderanywhere.activity
 
 import android.Manifest
@@ -8,26 +10,25 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.preference.CheckBoxPreference
-import android.preference.ListPreference
-import android.preference.MultiSelectListPreference
-import android.preference.Preference
-import android.preference.PreferenceActivity
 import android.provider.Settings
+import androidx.appcompat.app.AppCompatActivity
+import androidx.preference.*
 
 import com.fezrestia.android.lib.firebase.FirebaseAnalyticsController
 import com.fezrestia.android.lib.util.log.Log
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication.CustomizableResourceContainer
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
 import com.fezrestia.android.viewfinderanywhere.R
+import com.fezrestia.android.viewfinderanywhere.config.CameraApiLevel
+import com.fezrestia.android.viewfinderanywhere.config.ViewFinderAspect
+import com.fezrestia.android.viewfinderanywhere.config.ViewFinderSize
 import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger
 import com.fezrestia.android.viewfinderanywhere.storage.DirFileUtil
 import com.google.firebase.analytics.FirebaseAnalytics
 
 import java.io.File
 
-class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
+class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
     companion object {
         // Log tag.
         const val TAG = "VFA:SettingActivity"
@@ -37,27 +38,344 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
         private const val REQUEST_CODE_MANAGE_PERMISSIONS = 200
     }
 
-    // UI-Plug-IN.
-    private val mUiPlugInPackageList = mutableListOf<UiPlugInPackage>()
+    /**
+     * Fragment for Settings.
+     */
+    class SettingFragment : PreferenceFragmentCompat() {
+        private val TAG = "SettingFragment"
 
-    // Customized resources.
-    private lateinit var mCustomResContainer: CustomizableResourceContainer
+        private val SP_KEY_OVERLAY_VIEW_FINDER_ENABLE_DISABLE = "sp-key-overlay-view-finder-enable-disable"
+        private val SP_KEY_IS_STORAGE_SELECTOR_ENABLED = "sp-key-is-storage-selector-enabled"
+        private val SP_KEY_STORAGE_SELECTOR_CREATE_NEW_DIRECTORY = "sp-key-storage-selector-create-new-directory"
 
-    // UI Plug-IN container class.
-    private inner class UiPlugInPackage(
-            internal val packageName: String,
-            internal val plugInTitle: String)
+        private val RES_ID_STRING_PLUG_IN_TITLE = "plug_in_title"
 
-    // This activity does not use fragment.
-    public override fun isValidFragment(fragmentName: String): Boolean = false
+        // UI Plug-IN container class.
+        private inner class UiPlugInPackage(
+                internal val packageName: String,
+                internal val plugInTitle: String)
+
+        override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+            setPreferencesFromResource(R.xml.preferences_view_finder_anywhere, rootKey)
+
+            val onChangeListenerImpl = OnChangeListenerImpl()
+
+            // Setup static preference options.
+
+            // En/Disable.
+            val enDisPref: SwitchPreference = findPreference(SP_KEY_OVERLAY_VIEW_FINDER_ENABLE_DISABLE)!!
+            enDisPref.isChecked = ViewFinderAnywhereApplication.isOverlayViewFinderEnabled
+            enDisPref.onPreferenceChangeListener = onChangeListenerImpl
+
+            // API Level.
+            val apiLevelPref: ListPreference = findPreference(CameraApiLevel.key)!!
+            val apiLevels: Array<String> = CameraApiLevel.values()
+                    .map { it.toString() }.toTypedArray()
+            apiLevelPref.entries = apiLevels
+            apiLevelPref.entryValues = apiLevels
+            apiLevelPref.onPreferenceChangeListener = onChangeListenerImpl
+
+            // View finder size.
+            val vfSizePref: ListPreference = findPreference(ViewFinderSize.key)!!
+            val sizes: Array<String> = ViewFinderSize.values()
+                    .map { it.toString() }.toTypedArray()
+            vfSizePref.entries = sizes
+            vfSizePref.entryValues = sizes
+            vfSizePref.onPreferenceChangeListener = onChangeListenerImpl
+
+            // View finder aspect.
+            val vfAspectPref: ListPreference = findPreference(ViewFinderAspect.key)!!
+            val aspects: Array<String> = ViewFinderAspect.values()
+                    .map { it.toString() }.toTypedArray()
+            vfAspectPref.entries = aspects
+            vfAspectPref.entryValues = aspects
+            vfAspectPref.onPreferenceChangeListener = onChangeListenerImpl
+
+            val storagePref: SwitchPreference = findPreference(SP_KEY_IS_STORAGE_SELECTOR_ENABLED)!!
+            storagePref.onPreferenceChangeListener = onChangeListenerImpl
+
+        }
+
+        override fun onStart() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onStart()")
+            super.onStart()
+
+            // Setup dynamic preference options.
+
+            // UI PlugIN Packages.
+            val pluginPref: ListPreference = findPreference(
+                    ViewFinderAnywhereConstants.SP_KEY_UI_PLUGIN_PACKAGE)!!
+            val plugins = queryUiPlugInPackages()
+            val pluginEntries = plugins.map { it.plugInTitle }.toTypedArray()
+            val pluginValues = plugins.map { it.packageName }.toTypedArray()
+            pluginPref.entries = pluginEntries
+            pluginPref.entryValues = pluginValues
+            pluginPref.onPreferenceChangeListener = OnChangeListenerImpl()
+
+            // Storage selector selectables.
+            updateStorageSelectorSelectableDirectoryList()
+
+        }
+
+        override fun onStop() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onStop()")
+            super.onStop()
+
+            // NOP.
+
+        }
+
+        private inner class OnChangeListenerImpl : Preference.OnPreferenceChangeListener {
+            override fun onPreferenceChange(preference: Preference?, newValue: Any?): Boolean {
+                var firebaseValue: String? = null
+
+                when (preference?.key) {
+                    SP_KEY_OVERLAY_VIEW_FINDER_ENABLE_DISABLE -> {
+                        val isChecked: Boolean = newValue as Boolean
+
+                        if (isChecked) {
+                            OnOffTrigger.requestStart(requireContext())
+                        } else {
+                            OnOffTrigger.requestStop(requireContext())
+                        }
+
+                        firebaseValue = ViewFinderAnywhereConstants.getBooleanString(isChecked)
+                    }
+
+                    CameraApiLevel.key -> {
+                        firebaseValue = newValue as String
+                    }
+
+                    ViewFinderAnywhereConstants.SP_KEY_UI_PLUGIN_PACKAGE -> {
+                        val customPackage: String = newValue as String
+
+                        // Reload resources.
+                        ViewFinderAnywhereApplication.loadCustomizedUiResources(
+                                requireContext(),
+                                customPackage)
+
+                        // For Firebase.
+                        firebaseValue = FirebaseAnalyticsController.getPkgNameValue(customPackage)
+                    }
+
+                    ViewFinderSize.key -> {
+                        firebaseValue = newValue as String
+                    }
+
+                    ViewFinderAspect.key -> {
+                        firebaseValue = newValue as String
+                    }
+
+                    SP_KEY_IS_STORAGE_SELECTOR_ENABLED -> {
+                        val isEnabled: Boolean = newValue as Boolean
+
+                        if (!isEnabled) {
+                            // Reset all storage settings.
+                            ViewFinderAnywhereApplication.getGlobalSharedPreferences().edit()
+                                    .putStringSet(
+                                            ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
+                                            null)
+                                    .apply()
+                            ViewFinderAnywhereApplication.getGlobalSharedPreferences().edit()
+                                    .putStringSet(
+                                            ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_TARGET_DIRECTORY,
+                                            null)
+                                    .apply()
+
+                            setEnabledStorageSelectorRelatedPreferences(false)
+                        } else {
+                            setEnabledStorageSelectorRelatedPreferences(true)
+                        }
+                    }
+
+                    SP_KEY_STORAGE_SELECTOR_CREATE_NEW_DIRECTORY -> {
+                        val newDir: String = newValue as String
+
+                        if (Log.IS_DEBUG) Log.logDebug(TAG, "NewDirectory = $newDir")
+
+                        // Validation.
+                        if (newDir.isNotEmpty()) {
+                            // Create new directory.
+                            val isSuccess = DirFileUtil.createNewContentsDirectory(
+                                    requireContext(),
+                                    newDir)
+
+                            if (isSuccess) {
+                                // Update available list.
+                                updateStorageSelectorSelectableDirectoryList()
+                            } else {
+                                if (Log.IS_DEBUG) Log.logDebug(TAG, "New dir creation FAILED")
+                            }
+                        }
+                    }
+
+                    ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY -> {
+                        @Suppress("UNCHECKED_CAST")
+                        val validDirSet: MutableSet<String> = newValue as MutableSet<String>
+
+                        // Add default storage.
+                        validDirSet.add(DirFileUtil.DEFAULT_STORAGE_DIR_NAME)
+
+                        if (Log.IS_DEBUG) validDirSet.forEach { dir -> Log.logDebug(TAG, "ValidDir = $dir") }
+
+                        // Store.
+                        ViewFinderAnywhereApplication.getGlobalSharedPreferences().edit()
+                                .putStringSet(
+                                        ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
+                                        validDirSet)
+                                .apply()
+                    }
+
+                    else -> {
+                        throw RuntimeException("UnSupported Preference : key=${preference?.key}")
+                    }
+                }
+
+                if (firebaseValue != null) {
+                    // Firebase analytics.
+                    ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
+                            .createNewLogRequest()
+                            .setEvent(FirebaseAnalytics.Event.SELECT_CONTENT)
+                            .setParam(FirebaseAnalytics.Param.ITEM_ID, preference.key)
+                            .setParam(FirebaseAnalytics.Param.ITEM_NAME, firebaseValue)
+                            .done()
+                }
+
+                return true
+            }
+        }
+
+        private fun setEnabledStorageSelectorRelatedPreferences(isEnabled: Boolean) {
+            val createPref: EditTextPreference = findPreference(
+                    SP_KEY_STORAGE_SELECTOR_CREATE_NEW_DIRECTORY)!!
+            createPref.isEnabled = isEnabled
+
+            val selectablePref: MultiSelectListPreference = findPreference(
+                    ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY)!!
+            selectablePref.isEnabled = isEnabled
+        }
+
+        private fun queryUiPlugInPackages(): MutableList<UiPlugInPackage> {
+            val pm = this.requireContext().packageManager
+
+            val plugins: MutableList<UiPlugInPackage> = mutableListOf()
+
+            val intent = Intent(ViewFinderAnywhereConstants.INTENT_ACTION_REGISTER_UI_PLUG_IN)
+            val results = pm.queryIntentActivities(intent, 0)
+            results.forEach { result ->
+                // Create plug-in package context.
+                val info = result.activityInfo.applicationInfo
+                val context: Context
+                try {
+                    context = this.requireContext().createPackageContext(
+                            info.packageName,
+                            Context.CONTEXT_RESTRICTED)
+                } catch (e: PackageManager.NameNotFoundException) {
+                    e.printStackTrace()
+                    return@forEach
+                }
+
+                // Get plug-in title resource ID.
+                val titleResId = context.resources.getIdentifier(
+                        RES_ID_STRING_PLUG_IN_TITLE,
+                        "string",
+                        info.packageName)
+
+                // Get title resource.
+                val titleRes = context.resources.getString(titleResId)
+
+                // Create container.
+                val plugIn = UiPlugInPackage(info.packageName, titleRes)
+
+                plugins.add(plugIn)
+
+                if (Log.IS_DEBUG) {
+                    Log.logDebug(TAG, "UI-PLUG-IN Package = " + plugIn.packageName)
+                    Log.logDebug(TAG, "UI-PLUG-IN Title   = " + plugIn.plugInTitle)
+                }
+            }
+
+            return plugins.toMutableList()
+        }
+
+        //TODO:This function takes much time.
+        fun updateStorageSelectorSelectableDirectoryList() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "updateStorageSelectorSelectableDirectoryList() : E")
+
+            // Create root dir.
+            DirFileUtil.createContentsRootDirectory(requireContext())
+
+            // Scan directory list.
+            val contentsRoot = File(DirFileUtil.getApplicationStorageRootPath(requireContext()))
+            val fileList: Array<out File>? = contentsRoot.listFiles()
+
+            if (fileList == null) {
+                // If before runtime permission process done, fileList is null.
+                // In that case, return here and retry after onActivityResults.
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "contentsRoot.listFiles() == null")
+                return
+            }
+
+            if (Log.IS_DEBUG) {
+                Log.logDebug(TAG, "contentsRoot = ${contentsRoot.path}")
+                Log.logDebug(TAG, "listFiles() DONE")
+                fileList.forEach { file -> Log.logDebug(TAG, "path = ${file.path}") }
+            }
+
+            // Scan directories.
+            val dirPathList = mutableListOf<String>()
+            fileList.forEach { file ->
+                if (file.isDirectory) {
+                    dirPathList.add(file.name)
+                }
+            }
+            if (Log.IS_DEBUG) {
+                Log.logDebug(TAG, "dirList  DONE")
+                dirPathList.forEach { dirPath -> Log.logDebug(TAG, "dir = $dirPath") }
+            }
+
+            // Existing path is valid for selected values.
+            val selectableSet: Set<String> = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
+                    .getStringSet(
+                            ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
+                            setOf<String>()) as Set<String>
+            val validValues = mutableSetOf<String>()
+            selectableSet.forEach { selectable ->
+                if (dirPathList.contains(selectable)) {
+                    validValues.add(selectable)
+                }
+            }
+
+            // Apply to preferences.
+            val pref: MultiSelectListPreference = findPreference(
+                    ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY)!!
+            val entries = dirPathList.toTypedArray()
+            pref.entries = entries
+            pref.entryValues = entries
+            pref.values = validValues
+            pref.onPreferenceChangeListener = OnChangeListenerImpl()
+
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "updateStorageSelectorSelectableDirectoryList() : X")
+        }
+
+    }
+
+    //// MAIN ACTIVITY
+
+    private lateinit var settingFragment: SettingFragment
 
     override fun onCreate(bundle: Bundle?) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onCreate()")
         super.onCreate(null)
 
-        // Add view finder anywhere preferences.
-        @Suppress("DEPRECATION")
-        addPreferencesFromResource(R.xml.preferences_view_finder_anywhere)
+        setContentView(R.layout.setting_activity)
+
+        settingFragment = SettingFragment()
+
+        supportFragmentManager
+                .beginTransaction()
+                .replace(R.id.preference_fragment_container, settingFragment)
+                .commit()
     }
 
     override fun onResume() {
@@ -74,25 +392,6 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
             return
         }
 
-        // Reset.
-        mUiPlugInPackageList.clear()
-
-        // Custom resource container.
-        mCustomResContainer = ViewFinderAnywhereApplication.getCustomResContainer()
-
-        // Query package manager.
-        queryPackageManager()
-
-        // Load current selected resources.
-        ViewFinderAnywhereApplication.loadCustomizedUiResources(this)
-
-        // Update preferences.
-        updatePreferences()
-        applyCurrentPreferences()
-
-        // Update StorageSelector preferences.
-        updateStorageSelectorRelatedPreferences()
-
         // Firebase analytics.
         ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController().createNewLogRequest()
                 .setEvent(FirebaseAnalytics.Event.APP_OPEN)
@@ -103,12 +402,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
     override fun onPause() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()")
         super.onPause()
-
-        // WORKAROUND
-        //   If this activity is not finished onPause(), shared preferences value updated
-        //   by other components (e.g. Receiver) will not be applied to UI after onResume().
-        //   So, forced finish this activity onPause() to ensure load latest shared preferences.
-        finish()
+        // NOP.
     }
 
     override fun onDestroy() {
@@ -117,373 +411,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
         // NOP.
     }
 
-    private fun queryPackageManager() {
-        val pm = packageManager
-
-        // UI Plug-IN list.
-        val intent = Intent(ViewFinderAnywhereConstants.INTENT_ACTION_REGISTER_UI_PLUG_IN)
-        val results = pm.queryIntentActivities(intent, 0)
-
-
-        // Get plug-in.
-        results.forEach { result ->
-            // Create plug-in package context.
-            val info = result.activityInfo.applicationInfo
-            val context: Context
-            try {
-                context = createPackageContext(
-                        info.packageName,
-                        Context.CONTEXT_RESTRICTED)
-            } catch (e: PackageManager.NameNotFoundException) {
-                e.printStackTrace()
-                return@forEach
-            }
-
-            // Get plug-in title resource ID.
-            val titleResId = context.resources.getIdentifier(
-                    ViewFinderAnywhereConstants.RES_ID_STRING_PLUG_IN_TITLE,
-                    ViewFinderAnywhereConstants.RES_TYPE_STRING,
-                    info.packageName)
-
-            // Get title resource.
-            val titleRes = context.resources.getString(titleResId)
-
-            // Create container.
-            val plugIn = UiPlugInPackage(info.packageName, titleRes)
-
-            mUiPlugInPackageList.add(plugIn)
-
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "UI-PLUG-IN Package = " + plugIn.packageName)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "UI-PLUG-IN Title   = " + plugIn.plugInTitle)
-        }
-    }
-
-    private fun updatePreferences() {
-        @Suppress("DEPRECATION")
-        val uiPlugInPref = findPreference(
-                ViewFinderAnywhereConstants.KEY_VIEW_FINDER_UI_PLUG_IN_PACKAGE)
-                as ListPreference
-
-        // UI Plug-IN.
-        var currentUiPlugInTitle: String? = null
-
-        // Values.
-        val entries = mutableListOf<String>()
-        val entryValues = mutableListOf<String>()
-
-        mUiPlugInPackageList.forEach { plugin ->
-            entries.add(plugin.plugInTitle)
-            entryValues.add(plugin.packageName)
-
-            if (plugin.packageName == mCustomResContainer.customPackage) {
-                // Current plug-in.
-                currentUiPlugInTitle = plugin.plugInTitle
-            }
-        }
-
-        // Update.
-        uiPlugInPref.summary = currentUiPlugInTitle
-        uiPlugInPref.entries = entries.toTypedArray()
-        uiPlugInPref.entryValues = entryValues.toTypedArray()
-    }
-
-    @Suppress("DEPRECATION")
-    private fun applyCurrentPreferences() {
-        // Update summary binding.
-        bindPreferenceSummaryToValue(findPreference(
-                ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_SCREEN_EDGE))
-        bindPreferenceSummaryToValue(findPreference(
-                ViewFinderAnywhereConstants.KEY_VIEW_FINDER_SIZE))
-        bindPreferenceSummaryToValue(findPreference(
-                ViewFinderAnywhereConstants.KEY_VIEW_FINDER_ASPECT))
-        bindPreferenceSummaryToValue(findPreference(
-                ViewFinderAnywhereConstants.KEY_VIEW_FINDER_UI_PLUG_IN_PACKAGE))
-        bindPreferenceSummaryToValue(findPreference(
-                ViewFinderAnywhereConstants.ViewFinderGripSize.KEY))
-        bindPreferenceSummaryToValue(findPreference(
-                ViewFinderAnywhereConstants.ViewFinderGripPosition.KEY))
-        bindPreferenceSummaryToValue(findPreference(
-                ViewFinderAnywhereConstants.KEY_CAMERA_FUNCTION_API_LEVEL))
-
-        val storagePrefListener = OnStorageSelectorPreferenceChangedListener()
-        findPreference(ViewFinderAnywhereConstants.KEY_IS_STORAGE_SELECTOR_ENABLED)
-                .onPreferenceChangeListener = storagePrefListener
-        findPreference(ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_CREATE_NEW_DIRECTORY)
-                .onPreferenceChangeListener = storagePrefListener
-        findPreference(ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY)
-                .onPreferenceChangeListener = storagePrefListener
-    }
-
-    private inner class OnPreferenceChangeListenerImpl : Preference.OnPreferenceChangeListener {
-        override fun onPreferenceChange(preference: Preference, value: Any): Boolean {
-            val key = preference.key
-            val stringValue = value.toString()
-            val firebaseValue: String
-
-            when (preference) {
-                is ListPreference -> {
-                    val index = preference.findIndexOfValue(stringValue)
-
-                    // Set the summary to reflect the new value.
-                    if (0 <= index) {
-                        preference.setSummary(preference.entries[index])
-                    } else {
-                        preference.setSummary(null)
-                    }
-
-                    // Ui Plug-IN.
-                    when (key) {
-                        ViewFinderAnywhereConstants.KEY_VIEW_FINDER_UI_PLUG_IN_PACKAGE -> {
-                            mCustomResContainer.customPackage = value as String
-
-                            // Reload resources.
-                            ViewFinderAnywhereApplication.loadCustomizedUiResources(
-                                    this@ViewFinderAnywhereSettingActivity)
-
-                            // For Firebase.
-                            firebaseValue = FirebaseAnalyticsController.getPkgNameValue(value)
-                        }
-
-                        else -> {
-                            firebaseValue = stringValue
-                        }
-                    }
-
-                    // Firebase analytics.
-                    ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
-                            .createNewLogRequest()
-                            .setEvent(FirebaseAnalytics.Event.SELECT_CONTENT)
-                            .setParam(FirebaseAnalytics.Param.ITEM_ID, preference.getKey())
-                            .setParam(FirebaseAnalytics.Param.ITEM_NAME, firebaseValue)
-                            .done()
-                }
-
-                is CheckBoxPreference -> {
-                    val isChecked = value as Boolean
-
-                    when (key) {
-                        ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_SCREEN_EDGE -> {
-                            if (isChecked) {
-                                // Start.
-                                OnOffTrigger.requestStart(applicationContext)
-                            } else {
-                                // Remove.
-                                OnOffTrigger.requestStop(applicationContext)
-                            }
-
-                            // Firebase analytics.
-                            ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
-                                    .createNewLogRequest()
-                                    .setEvent(FirebaseAnalytics.Event.SELECT_CONTENT)
-                                    .setParam(FirebaseAnalytics.Param.ITEM_ID, key)
-                                    .setParam(
-                                            FirebaseAnalytics.Param.ITEM_NAME,
-                                            ViewFinderAnywhereConstants.getBooleanString(isChecked))
-                                    .done()
-                        }
-
-                        else -> {
-                            // NOP.
-                        }
-                    }
-                }
-
-                else -> {
-                    // For all other preferences, set the summary to the value's
-                    // simple string representation.
-                    preference.summary = stringValue
-                    firebaseValue = value as String
-
-                    // Firebase analytics.
-                    ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
-                            .createNewLogRequest()
-                            .setEvent(FirebaseAnalytics.Event.SELECT_CONTENT)
-                            .setParam(FirebaseAnalytics.Param.ITEM_ID, key)
-                            .setParam(FirebaseAnalytics.Param.ITEM_NAME, firebaseValue)
-                            .done()
-                }
-            }
-
-            return true
-        }
-    }
-
-    private fun bindPreferenceSummaryToValue(preference: Preference) {
-        // Set the listener to watch for value changes.
-        preference.onPreferenceChangeListener = OnPreferenceChangeListenerImpl()
-
-        if (preference is ListPreference) {
-            val value: String? = preference.value
-
-            var index = -1
-            if (value != null) {
-                index = preference.findIndexOfValue(value)
-            }
-
-            // Set the summary to reflect the new value.
-            if (0 <= index) {
-                preference.setSummary(preference.entries[index])
-            } else {
-                preference.setSummary(null)
-            }
-        }
-    }
-
-    private inner class OnStorageSelectorPreferenceChangedListener
-            : Preference.OnPreferenceChangeListener {
-        override fun onPreferenceChange(preference: Preference, newValue: Any): Boolean {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "StorageSelector.onPreferenceChange() : E")
-
-            val key = preference.key
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "key = $key")
-
-            when (key) {
-                ViewFinderAnywhereConstants.KEY_IS_STORAGE_SELECTOR_ENABLED -> {
-                    val isEnabled = newValue as Boolean
-
-                    if (!isEnabled) {
-                        // Reset all storage settings.
-                        ViewFinderAnywhereApplication.getGlobalSharedPreferences().edit()
-                                .putStringSet(
-                                        ViewFinderAnywhereConstants
-                                                .KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
-                                        null)
-                                .apply()
-                        ViewFinderAnywhereApplication.getGlobalSharedPreferences().edit()
-                                .putStringSet(
-                                        ViewFinderAnywhereConstants
-                                                .KEY_STORAGE_SELECTOR_STORE_TARGET_DIRECTORY,
-                                        null)
-                                .apply()
-
-                        // Disable.
-                        setEnabledStorageSelectorRelatedPreferences(false)
-                    } else {
-                        // Enable.
-                        setEnabledStorageSelectorRelatedPreferences(true)
-                    }
-                }
-
-                ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_CREATE_NEW_DIRECTORY -> {
-                    val newDir = newValue as String
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "NewDirectory = $newDir")
-
-                    // Validation.
-                    if (newDir.isNotEmpty()) {
-                        // Create new directory.
-                        val isSuccess = DirFileUtil.createNewContentsDirectory(newDir)
-
-                        if (isSuccess) {
-                            // Update available list.
-                            updateStorageSelectorTargetDirectoryList()
-                        } else {
-                            if (Log.IS_DEBUG) Log.logDebug(TAG, "New dir creation FAILED")
-                        }
-                    }
-
-                    // Do not update setting.
-                    return false
-                }
-
-                ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY -> {
-                    @Suppress("UNCHECKED_CAST")
-                    val validDirSet = newValue as MutableSet<String>
-
-                    // Add default storage.
-                    validDirSet.add(DirFileUtil.DEFAULT_STORAGE_DIR_NAME)
-
-                    if (Log.IS_DEBUG) {
-                        validDirSet.forEach { dir -> Log.logDebug(TAG, "ValidDir = $dir") }
-                    }
-
-                    // Store.
-                    ViewFinderAnywhereApplication.getGlobalSharedPreferences().edit()
-                            .putStringSet(
-                                    ViewFinderAnywhereConstants
-                                            .KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
-                                    validDirSet)
-                            .apply()
-                }
-
-                else -> {
-                    // NOP.
-                }
-            }
-
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "StorageSelector.onPreferenceChange() : X")
-            return true
-        }
-    }
-
-    private fun updateStorageSelectorRelatedPreferences() {
-        // Check enabled.
-        val isEnabled = ViewFinderAnywhereApplication.getGlobalSharedPreferences().getBoolean(
-                ViewFinderAnywhereConstants.KEY_IS_STORAGE_SELECTOR_ENABLED,
-                false)
-        setEnabledStorageSelectorRelatedPreferences(isEnabled)
-
-        updateStorageSelectorTargetDirectoryList()
-    }
-
-    //TODO:This function takes much time.
-    private fun updateStorageSelectorTargetDirectoryList() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "updateStorageSelectorTargetDirectoryList() : E")
-
-        // Create root dir.
-        DirFileUtil.createContentsRootDirectory()
-
-        // Scan directory list.
-        val contentsRoot = File(DirFileUtil.getApplicationStorageRootPath())
-        val fileList: Array<File> = contentsRoot.listFiles()
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "listFiles() DONE")
-        if (Log.IS_DEBUG) fileList.forEach { file -> Log.logDebug(TAG, "path = " + file.path) }
-
-        // Scan directories.
-        val dirList = mutableListOf<File>()
-        fileList.forEach { file ->
-            if (file.isDirectory) {
-                dirList.add(file)
-            }
-        }
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "dirList  DONE")
-        if (Log.IS_DEBUG) dirList.forEach { dir -> Log.logDebug(TAG, "dir = " + dir.path) }
-
-        // Dir path list.
-        val dirPathList = mutableListOf<String>()
-        dirList.forEach { dir -> dirPathList.add(dir.name) }
-
-        // Checked list.
-        val selectableSet: Set<String> = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
-                .getStringSet(
-                        ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
-                        setOf<String>()) as Set<String>
-        val validValues = mutableSetOf<String>()
-        selectableSet.forEach { selectable ->
-            if (dirPathList.contains(selectable)) {
-                validValues.add(selectable)
-            }
-        }
-
-        // Apply to preferences.
-        @Suppress("DEPRECATION")
-        val pref = findPreference(
-                ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY)
-                as MultiSelectListPreference
-        val entries = dirPathList.toTypedArray()
-        pref.entries = entries
-        pref.entryValues = entries
-        pref.values = validValues
-
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "updateStorageSelectorTargetDirectoryList() : X")
-    }
-
-    @Suppress("DEPRECATION")
-    private fun setEnabledStorageSelectorRelatedPreferences(isEnabled: Boolean) {
-        findPreference(ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_CREATE_NEW_DIRECTORY)
-                .isEnabled = isEnabled
-        findPreference(ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY)
-                .isEnabled = isEnabled
-    }
+    //// RUNTIME PERMISSION RELATED
 
     private val isRuntimePermissionRequired: Boolean
         get() = Build.VERSION_CODES.M <= Build.VERSION.SDK_INT
@@ -554,6 +482,7 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onActivityResult()")
+        super.onActivityResult(requestCode, resultCode, intent)
 
         if (requestCode == REQUEST_CODE_MANAGE_OVERLAY_PERMISSION) {
             if (!isSystemAlertWindowPermissionGranted) {
@@ -582,6 +511,10 @@ class ViewFinderAnywhereSettingActivity : PreferenceActivity() {
                 Log.logError(TAG,"  Read storage permission is not granted yet.")
                 finish()
             }
+
+            // After WRITE_EXTERNAL_STORAGE permission is granted,
+            // retry to update selectable directories here.
+            settingFragment.updateStorageSelectorSelectableDirectoryList()
         }
     }
 }

@@ -21,7 +21,7 @@ import android.view.Surface;
 import android.view.WindowManager;
 
 import com.fezrestia.android.lib.util.log.Log;
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
+import com.fezrestia.android.viewfinderanywhere.config.ViewFinderAspect;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -465,15 +465,15 @@ class PDR2 {
 
         // Estimate full aspect.
         final float diffTo43 = Math.abs(
-                ViewFinderAnywhereConstants.ASPECT_RATIO_4_3 - fullAspectWH);
+                ViewFinderAspect.WH_4_3.getRatioWH() - fullAspectWH);
         final float diffTo169 = Math.abs(
-                ViewFinderAnywhereConstants.ASPECT_RATIO_16_9 - fullAspectWH);
+                ViewFinderAspect.WH_16_9.getRatioWH() - fullAspectWH);
         if (diffTo43 < diffTo169) {
             // Near to 4:3.
-            fullAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_4_3;
+            fullAspectWH = ViewFinderAspect.WH_4_3.getRatioWH();
         } else {
             // Near to 16:9.
-            fullAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_16_9;
+            fullAspectWH = ViewFinderAspect.WH_16_9.getRatioWH();
         }
         if (Log.IS_DEBUG) Log.logDebug(TAG, "###### Estimated full Size Aspect = " + fullAspectWH);
 

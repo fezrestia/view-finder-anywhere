@@ -1,6 +1,5 @@
 package com.fezrestia.android.viewfinderanywhere.control;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
@@ -77,7 +76,6 @@ public class OverlayViewFinderController {
     /**
      * Start overlay view finder.
      */
-    @SuppressLint("InflateParams")
     public void start() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "start() : E");
 
@@ -86,11 +84,11 @@ public class OverlayViewFinderController {
 
         // Camera.
         switch (mConfigManager.getCamApiLv()) {
-            case CAMERA_API_1:
+            case API_1:
                 mCamera = new Camera1Device(mContext);
                 break;
 
-            case CAMERA_API_2:
+            case API_2:
                 mCamera = new Camera2Device(mContext, mUiWorker);
                 break;
 
@@ -164,26 +162,22 @@ public class OverlayViewFinderController {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "stop() : X");
     }
 
-    @SuppressWarnings("unused") // False positive.
     private interface StateInternalInterface {
         void entry();
         void exit();
         boolean isActive();
     }
 
-    @SuppressWarnings("unused") // False positive.
     private interface LifeCycleInterface {
         void onResume();
         void onPause();
         void onToggleShowHideRequired();
     }
 
-    @SuppressWarnings("unused") // False positive.
     private interface FromExternalEnvironment {
         void requestForceStop();
     }
 
-    @SuppressWarnings("unused") // False positive.
     private interface FromViewInterface {
         void onPreOpenRequested();
         void onPreOpenCanceled();
@@ -193,7 +187,6 @@ public class OverlayViewFinderController {
         void requestStillCapture();
     }
 
-    @SuppressWarnings("unused") // False positive.
     private interface FromDeviceInterface {
         void onCameraReady();
         void onCameraBusy();
@@ -204,12 +197,10 @@ public class OverlayViewFinderController {
         void onPhotoStoreReady(byte[] data);
     }
 
-    @SuppressWarnings("unused") // False positive.
     private interface FromStorageInterface {
         void onPhotoStoreDone(boolean isSuccess, Uri uri);
     }
 
-    @SuppressWarnings("WeakerAccess") // False positive.
     public abstract class State
             implements
                     StateInternalInterface,
@@ -383,7 +374,7 @@ public class OverlayViewFinderController {
         public void onPreOpenRequested() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenRequested()");
 
-            mCamera.openAsync(mConfigManager.getEvfAspectWH(), new OpenCallbackImpl());
+            mCamera.openAsync(mConfigManager.getEvfAspect().getRatioWH(), new OpenCallbackImpl());
 
             mIsPreOpenCanceled = false;
         }
@@ -434,7 +425,7 @@ public class OverlayViewFinderController {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "entry()");
 
             // Camera.
-            mCamera.openAsync(mConfigManager.getEvfAspectWH(), new OpenCallbackImpl());
+            mCamera.openAsync(mConfigManager.getEvfAspect().getRatioWH(), new OpenCallbackImpl());
         }
 
         @Override

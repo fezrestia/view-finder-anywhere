@@ -120,12 +120,12 @@ public class StorageSelectorRootView extends RelativeLayout {
 
         //TODO:Directory existence check.
         Set<String> totalSet = sp.getStringSet(
-                ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
+                ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
                 null);
         if (totalSet != null) {
             for (String eachDirName : totalSet) {
 
-                String dirPath = DirFileUtil.getApplicationStorageRootPath() + "/"
+                String dirPath = DirFileUtil.getApplicationStorageRootPath(getContext()) + "/"
                         + eachDirName;
                 File dir = new File(dirPath);
                 if (dir.isDirectory() && dir.exists()) {
@@ -137,7 +137,7 @@ public class StorageSelectorRootView extends RelativeLayout {
             Collections.sort(mAvailableStorageList);
         }
         Set<String> targetSet = sp.getStringSet(
-                ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_STORE_TARGET_DIRECTORY,
+                ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_TARGET_DIRECTORY,
                 null);
         if (targetSet != null) {
             for (String eachDirName : targetSet) {
@@ -234,7 +234,7 @@ public class StorageSelectorRootView extends RelativeLayout {
         public boolean onTouch(View v, MotionEvent event) {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                    v.setBackground(ViewFinderAnywhereApplication.getCustomResContainer()
+                    v.setBackground(ViewFinderAnywhereApplication.customResContainer
                         .drawableStorageItemBgPressed);
                     break;
 
@@ -264,10 +264,10 @@ public class StorageSelectorRootView extends RelativeLayout {
 
         private void updateStaticDrawable(View v) {
             if (v.isSelected()) {
-                v.setBackground(ViewFinderAnywhereApplication.getCustomResContainer()
+                v.setBackground(ViewFinderAnywhereApplication.customResContainer
                         .drawableStorageItemBgSelected);
             } else {
-                v.setBackground(ViewFinderAnywhereApplication.getCustomResContainer()
+                v.setBackground(ViewFinderAnywhereApplication.customResContainer
                         .drawableStorageItemBgNormal);
             }
         }
@@ -291,7 +291,7 @@ public class StorageSelectorRootView extends RelativeLayout {
             // Store preferences.
             ViewFinderAnywhereApplication.getGlobalSharedPreferences().edit()
                     .putStringSet(
-                    ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_STORE_TARGET_DIRECTORY,
+                    ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_TARGET_DIRECTORY,
                     mTargetStorageList)
                     .apply();
 

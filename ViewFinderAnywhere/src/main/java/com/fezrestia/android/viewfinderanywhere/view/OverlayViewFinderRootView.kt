@@ -34,10 +34,7 @@ import com.fezrestia.android.viewfinderanywhere.R
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication.CustomizableResourceContainer
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants.ViewFinderGripSize
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants.ViewFinderGripPosition
 import com.fezrestia.android.viewfinderanywhere.config.ConfigManager
-import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController
 import kotlinx.android.synthetic.main.overlay_view_finder_root.view.*
 import kotlin.math.abs
@@ -47,6 +44,11 @@ import kotlin.math.ceil
  * Window root view class.
  */
 class OverlayViewFinderRootView : RelativeLayout {
+
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(context, attrs, defStyle)
+
     companion object {
         // Log tag.
         const val TAG = "OverlayViewFinderRootView"
@@ -78,10 +80,6 @@ class OverlayViewFinderRootView : RelativeLayout {
     // View finder target size.
     private val viewfinderWH = IntWH(0, 0)
 
-    // Pre-loaded preferences
-    private var viewFinderScaleRatioAgainstToScreen
-            = ViewFinderAnywhereConstants.VIEW_FINDER_SCALE_SMALL
-
     // Window.
     private lateinit var windowManager: WindowManager
     private lateinit var windowLayoutParams: WindowManager.LayoutParams
@@ -94,9 +92,6 @@ class OverlayViewFinderRootView : RelativeLayout {
     // Touch interaction engine.
     private lateinit var interactionEngine: InteractionEngine
 
-    // Resident flag. Always on overlay window.
-    private var isResidence = false
-
     // Last window position.
     private val lastWindowXY = IntXY(0, 0)
 
@@ -107,15 +102,11 @@ class OverlayViewFinderRootView : RelativeLayout {
     // Already resumed or not.
     private var isResumed = true
 
-    // Viewfinder grip size.
-    private var viewfinder_gripSize = 0
-
     // Resources.
     private lateinit var customResContainer: CustomizableResourceContainer
 
-    // Grip preferences.
-    private lateinit var gripSizeSetting: ViewFinderGripSize
-    private lateinit var gripPositionSetting: ViewFinderGripPosition
+    // Grip size ratio. Grip size is view finder size x ratio.
+    private val GRIP_SIZE_RATIO = 0.5f
 
     // Current window position correction task
     private var windowPositionCorrectionTask: Runnable? = null
@@ -152,19 +143,14 @@ class OverlayViewFinderRootView : RelativeLayout {
                 // Correction is already convergent.
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "Already position fixed.")
 
-                // Remove or fix position.
-                if (!isResidence && (targetWindowXY == windowDisabledXY)) {
-                    // Remove.
-                    OnOffTrigger.requestStop(context)
-                } else {
-                    // Fix position.
-                    windowLayoutParams.x = targetWindowXY.x
-                    windowLayoutParams.y = targetWindowXY.y
+                // Fix position.
+                windowLayoutParams.x = targetWindowXY.x
+                windowLayoutParams.y = targetWindowXY.y
 
-                    windowManager.updateViewLayout(
-                            this@OverlayViewFinderRootView,
-                            windowLayoutParams)
-                }
+                windowManager.updateViewLayout(
+                        this@OverlayViewFinderRootView,
+                        windowLayoutParams)
+
                 return
             }
             lastDelta.set(dXY)
@@ -176,21 +162,6 @@ class OverlayViewFinderRootView : RelativeLayout {
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "WindowPositionCorrectionTask.run() : X")
         }
-    }
-
-    constructor(context: Context)
-            : super(context) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR 1")
-    }
-
-    constructor(context: Context, attrs: AttributeSet)
-            : super(context, attrs) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR 2")
-    }
-
-    constructor(context: Context, attrs: AttributeSet, defStyle: Int)
-            : super(context, attrs, defStyle) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR 3")
     }
 
     /**
@@ -215,9 +186,6 @@ class OverlayViewFinderRootView : RelativeLayout {
         // Cache instance references.
         cacheInstances()
 
-        // Load setting.
-        loadPreferences()
-
         // Window related.
         createWindowParameters()
 
@@ -228,7 +196,7 @@ class OverlayViewFinderRootView : RelativeLayout {
     }
 
     private fun cacheInstances() {
-        customResContainer = ViewFinderAnywhereApplication.getCustomResContainer()
+        customResContainer = ViewFinderAnywhereApplication.customResContainer
         val res = context.resources
 
         // Viewfinder related.
@@ -274,60 +242,6 @@ class OverlayViewFinderRootView : RelativeLayout {
                 viewfinder_grip_labelLandscapeBmp.height,
                 matrix,
                 true)
-    }
-
-    private fun loadPreferences() {
-        val sp = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
-
-        // Size.
-        val size = sp.getString(ViewFinderAnywhereConstants.KEY_VIEW_FINDER_SIZE, null)
-        if (size == null) {
-            // Unexpected or not initialized yet. Use default.
-            viewFinderScaleRatioAgainstToScreen =
-                    ViewFinderAnywhereConstants.VIEW_FINDER_SCALE_LARGE
-        } else when (size) {
-            ViewFinderAnywhereConstants.VAL_VIEW_FINDER_SIZE_XLARGE -> {
-                viewFinderScaleRatioAgainstToScreen =
-                        ViewFinderAnywhereConstants.VIEW_FINDER_SCALE_XLARGE
-            }
-
-            ViewFinderAnywhereConstants.VAL_VIEW_FINDER_SIZE_LARGE -> {
-                viewFinderScaleRatioAgainstToScreen =
-                        ViewFinderAnywhereConstants.VIEW_FINDER_SCALE_LARGE
-            }
-
-            ViewFinderAnywhereConstants.VAL_VIEW_FINDER_SIZE_SMALL -> {
-                viewFinderScaleRatioAgainstToScreen =
-                        ViewFinderAnywhereConstants.VIEW_FINDER_SCALE_SMALL
-            }
-
-            else -> {
-                // NOP. Unexpected.
-                throw IllegalArgumentException("Unexpected Size.")
-            }
-        }
-
-        // Residence flag.
-        isResidence = sp.getBoolean(
-                ViewFinderAnywhereConstants.KEY_OVERLAY_TRIGGER_FROM_SCREEN_EDGE,
-                false)
-
-        // Grip.
-        viewfinder_gripSize = context.resources.getDimensionPixelSize(R.dimen.viewfinder_grip_size)
-        // Grip size.
-        val gripSizeValue = sp.getString(ViewFinderGripSize.KEY, null)
-        gripSizeSetting = if (gripSizeValue != null) {
-            ViewFinderGripSize.valueOf(gripSizeValue)
-        } else {
-            ViewFinderGripSize.getDefault()
-        }
-        // Grip position.
-        val positionSizeValue = sp.getString(ViewFinderGripPosition.KEY, null)
-        gripPositionSetting = if (positionSizeValue != null) {
-            ViewFinderGripPosition.valueOf(positionSizeValue)
-        } else {
-            ViewFinderGripPosition.getDefault()
-        }
     }
 
     private fun createWindowParameters() {
@@ -388,6 +302,8 @@ class OverlayViewFinderRootView : RelativeLayout {
         releaseWindowPositionCorrector()
         val edgeClearance = context.resources.getDimensionPixelSize(
                 R.dimen.viewfinder_edge_clearance)
+        val gripSize = context.resources.getDimensionPixelSize(
+                R.dimen.viewfinder_grip_size)
 
         when (orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
@@ -407,10 +323,10 @@ class OverlayViewFinderRootView : RelativeLayout {
 
                 // Cache.
                 val winX = displayWH.longLen() - viewfinderWH.w - windowLayoutParams.x
-                val winY = displayWH.shortLen() - viewfinderWH.h - viewfinder_gripSize
+                val winY = displayWH.shortLen() - viewfinderWH.h - gripSize
                         - windowLayoutParams.y
                 val winW = viewfinderWH.w
-                val winH = viewfinderWH.h + viewfinder_gripSize
+                val winH = viewfinderWH.h + gripSize
                 ViewFinderAnywhereApplication.TotalWindowConfiguration
                         .OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
                 if (Log.IS_DEBUG) Log.logDebug(TAG,
@@ -433,10 +349,10 @@ class OverlayViewFinderRootView : RelativeLayout {
                         windowLayoutParams.y)
 
                 // Cache.
-                val winX = displayWH.shortLen() - viewfinderWH.w - viewfinder_gripSize
+                val winX = displayWH.shortLen() - viewfinderWH.w - gripSize
                         - windowLayoutParams.x
                 val winY = displayWH.longLen() - viewfinderWH.h - windowLayoutParams.y
-                val winW = viewfinderWH.w + viewfinder_gripSize
+                val winW = viewfinderWH.w + gripSize
                 val winH = viewfinderWH.h
                 ViewFinderAnywhereApplication.TotalWindowConfiguration
                         .OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
@@ -451,7 +367,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         }
 
         // Check active.
-        if (isResidence && !isInitialSetup && !controller.currentState.isActive) {
+        if (!isInitialSetup && !controller.currentState.isActive) {
             windowLayoutParams.x = windowDisabledXY.x
             windowLayoutParams.y = windowDisabledXY.y
         }
@@ -517,16 +433,16 @@ class OverlayViewFinderRootView : RelativeLayout {
         when (orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
                 viewfinderWH.w =
-                        (displayWH.longLen() * viewFinderScaleRatioAgainstToScreen).toInt()
+                        (displayWH.longLen() * configManager.evfSize.scaleRate).toInt()
                 viewfinderWH.h =
-                        (viewfinderWH.w / configManager.evfAspectWH).toInt()
+                        (viewfinderWH.w / configManager.evfAspect.ratioWH).toInt()
             }
 
             Configuration.ORIENTATION_PORTRAIT -> {
                 viewfinderWH.h =
-                        (displayWH.longLen() * viewFinderScaleRatioAgainstToScreen).toInt()
+                        (displayWH.longLen() * configManager.evfSize.scaleRate).toInt()
                 viewfinderWH.w =
-                        (viewfinderWH.h / configManager.evfAspectWH).toInt()
+                        (viewfinderWH.h / configManager.evfAspect.ratioWH).toInt()
             }
 
             else -> {
@@ -536,7 +452,11 @@ class OverlayViewFinderRootView : RelativeLayout {
         }
     }
 
+    @SuppressLint("RtlHardcoded")
     private fun updateLayoutParams() {
+        val gripSize = context.resources.getDimensionPixelSize(
+                R.dimen.viewfinder_grip_size)
+
         // Viewfinder size.
         run {
             val params = viewfinder_container.layoutParams
@@ -550,11 +470,11 @@ class OverlayViewFinderRootView : RelativeLayout {
         when (orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
                 totalWidth = viewfinderWH.w
-                totalHeight = viewfinderWH.h + viewfinder_gripSize
+                totalHeight = viewfinderWH.h + gripSize
             }
 
             Configuration.ORIENTATION_PORTRAIT -> {
-                totalWidth = viewfinderWH.w + viewfinder_gripSize
+                totalWidth = viewfinderWH.w + gripSize
                 totalHeight = viewfinderWH.h
             }
 
@@ -653,14 +573,14 @@ class OverlayViewFinderRootView : RelativeLayout {
             val params = viewfinder_grip.layoutParams as FrameLayout.LayoutParams
             when (orientation) {
                 Configuration.ORIENTATION_LANDSCAPE -> {
-                    params.width = (viewfinderWH.w * gripSizeSetting.scaleRate).toInt()
-                    params.height = viewfinder_gripSize
+                    params.width = (viewfinderWH.w * GRIP_SIZE_RATIO).toInt()
+                    params.height = gripSize
                     viewfinder_grip.setImageDrawable(customResContainer.drawableVfGripLand)
                 }
 
                 Configuration.ORIENTATION_PORTRAIT -> {
-                    params.width = viewfinder_gripSize
-                    params.height = (viewfinderWH.h * gripSizeSetting.scaleRate).toInt()
+                    params.width = gripSize
+                    params.height = (viewfinderWH.h * GRIP_SIZE_RATIO).toInt()
                     viewfinder_grip.setImageDrawable(customResContainer.drawableVfGripPort)
                 }
 
@@ -669,7 +589,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                     throw IllegalStateException("Unexpected orientation.")
                 }
             }
-            params.gravity = gripPositionSetting.layoutGravity
+            params.gravity = Gravity.TOP or Gravity.LEFT
             viewfinder_grip.layoutParams = params
         }
 
@@ -689,11 +609,10 @@ class OverlayViewFinderRootView : RelativeLayout {
                             horizontalPadding,
                             0)
                     params.gravity =
-                            gripPositionSetting.layoutGravity or Gravity.CENTER_VERTICAL
+                            Gravity.TOP or Gravity.LEFT or Gravity.CENTER_VERTICAL
                     params.width = ViewGroup.LayoutParams.WRAP_CONTENT
-                    params.height = viewfinder_gripSize
-                    if (viewfinderWH.w * gripSizeSetting.scaleRate
-                            < viewfinder_grip_labelLandscapeBmp.width) {
+                    params.height = gripSize
+                    if (viewfinderWH.w * GRIP_SIZE_RATIO < viewfinder_grip_labelLandscapeBmp.width) {
                         visibility = View.INVISIBLE
                     }
                 }
@@ -706,11 +625,10 @@ class OverlayViewFinderRootView : RelativeLayout {
                             0,
                             horizontalPadding)
                     params.gravity =
-                            Gravity.CENTER_HORIZONTAL or gripPositionSetting.layoutGravity
-                    params.width = viewfinder_gripSize
+                            Gravity.CENTER_HORIZONTAL or Gravity.TOP or Gravity.LEFT
+                    params.width = gripSize
                     params.height = ViewGroup.LayoutParams.WRAP_CONTENT
-                    if (viewfinderWH.h * gripSizeSetting.scaleRate
-                            < viewfinder_grip_labelPortraitBmp.height) {
+                    if (viewfinderWH.h * GRIP_SIZE_RATIO < viewfinder_grip_labelPortraitBmp.height) {
                         visibility = View.INVISIBLE
                     }
                 }
@@ -771,8 +689,8 @@ class OverlayViewFinderRootView : RelativeLayout {
                         0,
                         0,//ViewConfiguration.get(getContext()).getScaledTouchSlop(),
                         ViewFinderAnywhereApplication.getUiThreadHandler())
-                interactionEngine.setInteractionCallback(interactionCallbackImpl)
-                setOnTouchListener(onTouchListenerImpl)
+                interactionEngine.setInteractionCallback(InteractionCallbackImpl())
+                setOnTouchListener(OnTouchListenerImpl())
 
                 // Notify to device.
                 controller.currentState.onSurfaceReady()
@@ -877,7 +795,6 @@ class OverlayViewFinderRootView : RelativeLayout {
      */
     fun getViewFinderSurface(): TextureView = viewfinder
 
-    private val onTouchListenerImpl = OnTouchListenerImpl()
     private inner class OnTouchListenerImpl : OnTouchListener {
         @SuppressLint("ClickableViewAccessibility")
         override fun onTouch(v: View, event: MotionEvent): Boolean {
@@ -889,13 +806,6 @@ class OverlayViewFinderRootView : RelativeLayout {
         }
     }
 
-//    // For setOnTouchListener()
-//    override fun performClick(): Boolean {
-//        super.performClick()
-//        return false // Do not use onClickListener.
-//    }
-
-    private val interactionCallbackImpl = InteractionCallbackImpl()
     private inner class InteractionCallbackImpl : InteractionEngine.InteractionCallback {
         override fun onSingleTouched(point: Point) {
             if (Log.IS_DEBUG) Log.logDebug(TAG,

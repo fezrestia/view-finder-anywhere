@@ -3,42 +3,24 @@
 <resources>
     <string name="application_label">View Finder Anywhere</string>
 
+    <string name="overlay_view_finder_enable_disable">Overlay View Finder En/Disable</string>
+
     <string name="overlay_view_finder_ongoing_notification">Overlay ViewFinder On-Going</string>
 
     <string name="preference_app_label">ViewFinderAnywhere Preferences</string>
 
     <string name="title_trigger_preference">Overlay Trigger</string>
 
-
-
-    <string name="title_is_overlay_view_finder_enabled_from_screen_edge">Screen Edge</string>
-    <string name="summary_is_overlay_view_finder_enabled_from_screen_edge">Camera will be triggered by screen edge swipe.</string>
-
-
-
     <string name="title_view_finder_preference">View Finder</string>
 
-    <string name="title_overlay_view_finder_size">Size</string>
-    <string name="title_overlay_view_finder_aspect">Aspect Ratio</string>
-
-
+    <string name="title_view_finder_size">Size</string>
+    <string name="title_view_finder_aspect">Aspect Ratio</string>
 
     <string name="title_ui_plugin_preference">UI Plug-IN</string>
+    <string name="title_ui_plugin_package">Select Plug-IN</string>
 
-    <string name="title_select_ui_plugin">Select Plug-IN</string>
-
-
-
-    <string name="title_view_finder_grip_preference">View Finder Grip</string>
-    <string name="title_view_finder_grip_size">Size</string>
-    <string name="title_view_finder_grip_position">Position</string>
-
-
-
-    <string name="title_camera_function_preference">Camera Functionality</string>
-    <string name="title_camera_function_api_level">Target API Level</string>
-
-
+    <string name="title_camera_preference">Camera Functionality</string>
+    <string name="title_camera_api_level">Camera API Level</string>
 
     <string name="viewfinder_grip_label">VIEW FINDER ANYWHERE</string>
 

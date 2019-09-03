@@ -1,8 +1,10 @@
 package com.fezrestia.android.viewfinderanywhere.storage
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Environment
 import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
@@ -32,28 +34,43 @@ object DirFileUtil {
 
     /**
      * Get absolute root path used for content storage.
+     *
+     * @param context Master context.
      */
     @JvmStatic
-    fun getApplicationStorageRootPath(): String =
-            Environment.getExternalStorageDirectory().path + "/" + ROOT_DIR_PATH
+    fun getApplicationStorageRootPath(context: Context): String {
+        val root = Environment.getExternalStorageDirectory().path
+
+        if (Log.IS_DEBUG) {
+            Log.logDebug(TAG, "## Environment.getExternalStorageDirectory() = $root")
+            Log.logDebug(TAG, "## ExtFilesDifs")
+            val dirs = context.getExternalFilesDirs(null)
+            dirs.forEach { Log.logDebug(TAG, "dir = $it") }
+        }
+
+        return "$root/$ROOT_DIR_PATH"
+    }
 
     /**
      * Create directory including sub-directory under app root directory.
      *
+     * @param context Master context.
      * @param contentsDirName Absolute dir path.
      */
     @JvmStatic
-    fun createNewContentsDirectory(contentsDirName: String): Boolean {
-        val contentsDirPath: String = getApplicationStorageRootPath() + '/' + contentsDirName
+    fun createNewContentsDirectory(context: Context, contentsDirName: String): Boolean {
+        val contentsDirPath: String = getApplicationStorageRootPath(context) + '/' + contentsDirName
         return createDirectory(File(contentsDirPath))
     }
 
     /**
      * Create app root directory.
+     *
+     * @param context Master context.
      */
     @JvmStatic
-    fun createContentsRootDirectory() {
-        createDirectory(File(getApplicationStorageRootPath()))
+    fun createContentsRootDirectory(context: Context) {
+        createDirectory(File(getApplicationStorageRootPath(context)))
     }
 
     @JvmStatic

@@ -52,7 +52,9 @@ public class OverlayViewFinderService extends Service {
 
         // If service is restarted after process is killed by LMK for instance,
         // load current selected resources here.
-        ViewFinderAnywhereApplication.loadCustomizedUiResources(this);
+        String customPackage = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
+                .getString(ViewFinderAnywhereConstants.SP_KEY_UI_PLUGIN_PACKAGE, null);
+        ViewFinderAnywhereApplication.loadCustomizedUiResources(this, customPackage);
 
         // Create and dependency injection.
         setupCoreInstances();
@@ -126,6 +128,8 @@ public class OverlayViewFinderService extends Service {
             Log.logError(TAG, "ACTION = NULL");
         } else switch (action) {
             case ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_START_SERVICE: {
+                ViewFinderAnywhereApplication.isOverlayViewFinderEnabled = true;
+
                 // Start overlay view finder.
                 mRootView.initialize();
                 mRootView.addToOverlayWindow();
@@ -143,6 +147,8 @@ public class OverlayViewFinderService extends Service {
                 mRootView.removeFromOverlayWindow();
 
                 stopSelf();
+
+                ViewFinderAnywhereApplication.isOverlayViewFinderEnabled = false;
             }
             break;
 

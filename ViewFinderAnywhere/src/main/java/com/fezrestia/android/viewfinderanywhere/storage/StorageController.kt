@@ -53,7 +53,7 @@ class StorageController constructor (
     init {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR : E")
 
-        DirFileUtil.createContentsRootDirectory()
+        DirFileUtil.createContentsRootDirectory(context)
         backWorker = Executors.newSingleThreadExecutor(BackWorkerThreadFactoryImpl())
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR : X")
@@ -101,7 +101,7 @@ class StorageController constructor (
             if (Log.IS_DEBUG) Log.logDebug(TAG, "eachDir = $eachDir")
 
             // Storage root.
-            val rootPath = DirFileUtil.getApplicationStorageRootPath()
+            val rootPath = DirFileUtil.getApplicationStorageRootPath(context)
 
             if (eachDir == DirFileUtil.DEFAULT_STORAGE_DIR_NAME) {
                 // Default path.
@@ -135,7 +135,7 @@ class StorageController constructor (
     private fun getTargetDirSet(): MutableSet<String> {
         val targetDirSet: MutableSet<String>
                 = ViewFinderAnywhereApplication.getGlobalSharedPreferences().getStringSet(
-                        ViewFinderAnywhereConstants.KEY_STORAGE_SELECTOR_STORE_TARGET_DIRECTORY,
+                        ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_TARGET_DIRECTORY,
                         mutableSetOf<String>()) as MutableSet<String>
 
         // Default dir.

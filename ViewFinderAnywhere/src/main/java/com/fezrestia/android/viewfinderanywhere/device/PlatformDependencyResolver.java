@@ -1,7 +1,7 @@
 package com.fezrestia.android.viewfinderanywhere.device;
 
 import com.fezrestia.android.lib.util.log.Log;
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants;
+import com.fezrestia.android.viewfinderanywhere.config.ViewFinderAspect;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -76,15 +76,15 @@ class PlatformDependencyResolver {
         // Estimate aspect.
         final float estimatedAspectWH;
         final float diffTo43 = Math.abs(
-                ViewFinderAnywhereConstants.ASPECT_RATIO_4_3 - requiredAspectRatioWH);
+                ViewFinderAspect.WH_4_3.getRatioWH() - requiredAspectRatioWH);
         final float diffTo169 = Math.abs(
-                ViewFinderAnywhereConstants.ASPECT_RATIO_16_9 - requiredAspectRatioWH);
+                ViewFinderAspect.WH_16_9.getRatioWH() - requiredAspectRatioWH);
         if (diffTo43 < diffTo169) {
             // Near to 4:3.
-            estimatedAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_4_3;
+            estimatedAspectWH = ViewFinderAspect.WH_4_3.getRatioWH();
         } else {
             // Near to 16:9.
-            estimatedAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_16_9;
+            estimatedAspectWH = ViewFinderAspect.WH_16_9.getRatioWH();
         }
         if (Log.IS_DEBUG) Log.logDebug(TAG, "###### Estimated aspect = " + estimatedAspectWH);
 
@@ -154,15 +154,15 @@ class PlatformDependencyResolver {
         // Estimate aspect.
         final float estimatedAspectWH;
         final float diffTo43 = Math.abs(
-                ViewFinderAnywhereConstants.ASPECT_RATIO_4_3 - requiredAspectRatioWH);
+                ViewFinderAspect.WH_4_3.getRatioWH() - requiredAspectRatioWH);
         final float diffTo169 = Math.abs(
-                ViewFinderAnywhereConstants.ASPECT_RATIO_16_9 - requiredAspectRatioWH);
+                ViewFinderAspect.WH_16_9.getRatioWH() - requiredAspectRatioWH);
         if (diffTo43 < diffTo169) {
             // Near to 4:3.
-            estimatedAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_4_3;
+            estimatedAspectWH = ViewFinderAspect.WH_4_3.getRatioWH();
         } else {
             // Near to 16:9.
-            estimatedAspectWH = ViewFinderAnywhereConstants.ASPECT_RATIO_16_9;
+            estimatedAspectWH = ViewFinderAspect.WH_16_9.getRatioWH();
         }
         if (Log.IS_DEBUG) Log.logDebug(TAG, "###### Estimated aspect = " + estimatedAspectWH);
 
