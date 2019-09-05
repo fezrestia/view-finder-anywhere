@@ -33,6 +33,8 @@ import com.fezrestia.android.lib.util.log.Log;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -65,7 +67,7 @@ public class Camera2Device implements CameraPlatformInterface {
             return thread;
         }
     }
-    private static final int SHUTDOWN_AWAIT_TIMEOUT_MILLIS = 2000;
+    private static final int SHUTDOWN_AWAIT_TIMEOUT_MILLIS = 5000;
 
     // Camera API 2.0 related.
     private CameraManager mCamMng;
@@ -85,14 +87,6 @@ public class Camera2Device implements CameraPlatformInterface {
     private Rect mCropRegionRect = null;
     private static final int JPEG_QUALITY = 95;
 
-    // Client callback.
-    private OpenCallback mClientOpenCallback = null;
-    private CloseCallback mClientCloseCallback = null;
-    private BindSurfaceCallback mClientBindSurfaceCallback = null;
-    private ScanCallback mClientScanCallback = null;
-    private CancelScanCallback mClientCancelScanCallback = null;
-    private StillCaptureCallback mClientStillCaptureCallback = null;
-
     // Internal callback.
     private CameraAvailabilityCallback mCameraAvailabilityCallback;
     private CameraStateCallback mCameraStateCallback = null;
@@ -103,8 +97,10 @@ public class Camera2Device implements CameraPlatformInterface {
     private MediaActionSound mShutterSound;
 
     // Camera thread handler.
-    private HandlerThread mCameraHandlerThread;
-    private Handler mCameraHandler;
+    private HandlerThread mCallbackHandlerThread;
+    private Handler mCallbackHandler;
+    private HandlerThread mRequestHandlerThread;
+    private Handler mRequestHandler;
 
     // Orientation.
     private int mOrientationDegree = OrientationEventListener.ORIENTATION_UNKNOWN;
@@ -153,9 +149,6 @@ public class Camera2Device implements CameraPlatformInterface {
         }
     }
 
-    // Invalid request ID.
-    private static final int INVALID_REQUEST_ID = -1;
-
     /**
      * CONSTRUCTOR.
      *
@@ -164,68 +157,64 @@ public class Camera2Device implements CameraPlatformInterface {
      */
     //TODO: Consider facing.
     public Camera2Device(Context context, Handler callbackHandler) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR : E");
-
         mContext = context;
         mClientCallbackHandler = callbackHandler;
+    }
+
+    @Override
+    public void prepare() {
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "prepare() : E");
 
         // Camera manager.
         mCamMng = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
 
         // Camera thread.
-        mCameraHandlerThread = new HandlerThread(TAG, Thread.NORM_PRIORITY);
-        mCameraHandlerThread.start();
-        mCameraHandler = new Handler(mCameraHandlerThread.getLooper());
+        mCallbackHandlerThread = new HandlerThread("camera-callback", Thread.NORM_PRIORITY);
+        mCallbackHandlerThread.start();
+        mCallbackHandler = new Handler(mCallbackHandlerThread.getLooper());
+
+        // API request handler.
+        mRequestHandlerThread = new HandlerThread("request", Thread.NORM_PRIORITY);
+        mRequestHandlerThread.start();
+        mRequestHandler = new Handler(mRequestHandlerThread.getLooper());
+
+        // Worker thread.
+        mBackWorker = Executors.newSingleThreadExecutor(new BackWorkerThreadFactory());
 
         // Internal callback.
         mCameraAvailabilityCallback = new CameraAvailabilityCallback();
         mCamMng.registerAvailabilityCallback(
                 mCameraAvailabilityCallback,
-                mCameraHandler);
+                mCallbackHandler);
 
         // Orientation.
         mOrientationEventListenerImpl = new OrientationEventListenerImpl(
                 mContext,
                 SensorManager.SENSOR_DELAY_NORMAL);
 
-        // Worker thread.
-        mBackWorker = Executors.newSingleThreadExecutor(new BackWorkerThreadFactory());
-
         // Sound.
         mShutterSound = new MediaActionSound();
         mShutterSound.load(MediaActionSound.SHUTTER_CLICK);
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR : X");
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "prepare() : X");
     }
 
     @Override
     public void release() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "release() : E");
 
-        // Internal callback.
-        if (mCamMng != null && mCameraAvailabilityCallback != null) {
-            mCamMng.unregisterAvailabilityCallback(mCameraAvailabilityCallback);
-            mCameraAvailabilityCallback = null;
+        // API request handler.
+        mRequestHandlerThread.quitSafely();
+        try {
+            mRequestHandlerThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
-        // Client callback.
-        mClientOpenCallback = null;
-        mClientCloseCallback = null;
-        mClientBindSurfaceCallback = null;
-        mClientScanCallback = null;
-        mClientCancelScanCallback = null;
-        mClientStillCaptureCallback = null;
-
-        // Internal callback.
-        mCameraAvailabilityCallback = null;
-        mCameraStateCallback = null;
-        mCaptureSessionStateCallback = null;
-        mCaptureCallback = null;
-
         // Camera thread.
-        mCameraHandlerThread.quitSafely();
+        mCallbackHandlerThread.quitSafely();
         try {
-            mCameraHandlerThread.join();
+            mCallbackHandlerThread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -237,6 +226,18 @@ public class Camera2Device implements CameraPlatformInterface {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        // Internal callback.
+        if (mCamMng != null && mCameraAvailabilityCallback != null) {
+            mCamMng.unregisterAvailabilityCallback(mCameraAvailabilityCallback);
+            mCameraAvailabilityCallback = null;
+        }
+
+        // Internal callback.
+        mCameraAvailabilityCallback = null;
+        mCameraStateCallback = null;
+        mCaptureSessionStateCallback = null;
+        mCaptureCallback = null;
 
         // Orientation.
         mOrientationEventListenerImpl.disable();
@@ -263,8 +264,10 @@ public class Camera2Device implements CameraPlatformInterface {
         // Context related.
         mContext = null;
         mClientCallbackHandler = null;
-        mCameraHandlerThread = null;
-        mCameraHandler = null;
+        mCallbackHandlerThread = null;
+        mCallbackHandler = null;
+        mRequestHandlerThread = null;
+        mRequestHandler = null;
         mBackWorker = null;
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "release() : X");
@@ -274,36 +277,33 @@ public class Camera2Device implements CameraPlatformInterface {
     public void openAsync(float evfAspectWH, OpenCallback openCallback) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "openAsync()");
 
-        // Check.
-        if (openCallback == null) throw new NullPointerException("callback == null");
-
-        // Cache.
-        mClientOpenCallback = openCallback;
-
-        mCameraHandler.post(new OpenTask(evfAspectWH));
+        mRequestHandler.post(new OpenTask(evfAspectWH, openCallback));
     }
 
     private class OpenTask implements Runnable {
+        final String TAG = "OpenTask";
+
         private final float mViewFinderAspectRatioWH;
+        private final OpenCallback mCallback;
 
         /**
          * CONSTRUCTOR.
          *
          * @param aspectRatioWH Frame aspect ratio.
+         * @param callback OpenCallback.
          */
-        OpenTask(float aspectRatioWH) {
+        OpenTask(float aspectRatioWH, OpenCallback callback) {
             mViewFinderAspectRatioWH = aspectRatioWH;
+            mCallback = callback;
         }
 
         @Override
         public void run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "OpenTask.run() : E");
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E");
 
-            // Check.
             if (mCamDevice != null) {
-                // Already opened.
-                if (Log.IS_DEBUG) Log.logError(TAG, "Camera is already opened.");
-                notifyOpenCallback(true);
+                Log.logError(TAG, "Early Return : Camera is already opened.");
+                mClientCallbackHandler.post( () -> mCallback.onOpened(true) );
                 return;
             }
 
@@ -313,10 +313,8 @@ public class Camera2Device implements CameraPlatformInterface {
                 mCamId = PDR2.getBackCameraId(mCamMng);
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "get Camera ID : DONE");
                 if (mCamId == null) {
-                    if (Log.IS_DEBUG) Log.logError(TAG, "Back camera is not available.");
-                    throw new CameraAccessException(
-                            CameraAccessException.CAMERA_ERROR,
-                            "Back facing camera is not available.");
+                    Log.logError(TAG, "Back camera is not available.");
+                    mClientCallbackHandler.post( () -> mCallback.onOpened(false) );
                 }
 
                 // Characteristics.
@@ -324,21 +322,17 @@ public class Camera2Device implements CameraPlatformInterface {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "get Camera Characteristics : DONE");
 
                 // Stream configurations.
-                mStreamConfigMap = mCamCharacteristics.get(
-                        CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+                mStreamConfigMap = mCamCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "get Camera stream config map : DONE");
 
-                // Log.
                 if (Log.IS_DEBUG) {
                     PDR2.logOutputImageFormat(mStreamConfigMap);
                     PDR2.logSurfaceTextureOutputSizes(mStreamConfigMap);
                 }
 
             } catch (CameraAccessException e) {
-                if (Log.IS_DEBUG) Log.logError(TAG, "Failed to get back facing camera ID.");
-                e.printStackTrace();
-                notifyOpenCallback(false);
-                return;
+                Log.logError(TAG, "Failed to get back facing camera ID.");
+                mClientCallbackHandler.post( () -> mCallback.onOpened(false) );
             }
 
             // Parameters.
@@ -352,16 +346,16 @@ public class Camera2Device implements CameraPlatformInterface {
             // Open.
             mCameraStateCallback = new CameraStateCallback();
             try {
-                mCamMng.openCamera(mCamId, mCameraStateCallback, mCameraHandler);
+                mCamMng.openCamera(mCamId, mCameraStateCallback, mCallbackHandler);
             } catch (CameraAccessException e) {
                 e.printStackTrace();
-                if (Log.IS_DEBUG) Log.logError(TAG, "Failed to request open camera.");
-                notifyOpenCallback(false);
+                Log.logError(TAG, "Failed to request open camera.");
+                mClientCallbackHandler.post( () -> mCallback.onOpened(false) );
                 return;
             } catch (SecurityException e) {
                 e.printStackTrace();
-                if (Log.IS_DEBUG) Log.logError(TAG, "Open camera is not permitted.");
-                notifyOpenCallback(false);
+                Log.logError(TAG, "Open camera is not permitted.");
+                mClientCallbackHandler.post( () -> mCallback.onOpened(false) );
                 return;
             }
             if (Log.IS_DEBUG) Log.logDebug(TAG, "Open request : DONE");
@@ -380,7 +374,7 @@ public class Camera2Device implements CameraPlatformInterface {
                         2);
                 mStillImgReader.setOnImageAvailableListener(
                         new OnImageAvailableListenerImpl(),
-                        mCameraHandler);
+                        mCallbackHandler);
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "Still ImageReader : DONE");
             }
 
@@ -388,7 +382,11 @@ public class Camera2Device implements CameraPlatformInterface {
             mOrientationEventListenerImpl.enable();
             if (Log.IS_DEBUG) Log.logDebug(TAG, "Orientation : DONE");
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "OpenTask.run() : X");
+            boolean isSucceeded = mCameraStateCallback.waitForOpened();
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "Camera open " + (isSucceeded ? "SUCCEEDED" : "FAILED"));
+            mClientCallbackHandler.post( () -> mCallback.onOpened(isSucceeded) );
+
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X");
         }
     }
 
@@ -396,37 +394,46 @@ public class Camera2Device implements CameraPlatformInterface {
     public void closeAsync(CloseCallback closeCallback) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "closeAsync()");
 
-        // Check.
-        if (closeCallback == null) throw new NullPointerException("callback == null");
-
-        // Cache.
-        mClientCloseCallback = closeCallback;
-
-        mCameraHandler.post(new UnbindSurfaceTask());
-        mCameraHandler.post(new CloseTask());
+        mRequestHandler.post(new UnbindSurfaceTask());
+        mRequestHandler.post(new CloseTask(closeCallback));
     }
 
     private class CloseTask implements Runnable {
+        final String TAG = "CloseTask";
+
+        private final CloseCallback mCallback;
+
+        /**
+         * CONSTRUCTOR.
+         *
+         * @param callback CloseCallback.
+         */
+        CloseTask(CloseCallback callback) {
+            mCallback = callback;
+        }
+
         @Override
         public void run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "CloseTask.run() : E");
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E");
 
-            // Check.
             if (mCamDevice == null) {
-                // Already closed.
-                if (Log.IS_DEBUG) Log.logError(TAG, "Camera is already closed.");
-                notifyCloseCallback(false);
+                Log.logError(TAG, "Early Return : Camera is already closed.");
+                mClientCallbackHandler.post( () -> mCallback.onClosed(true) );
                 return;
             }
 
-            // Close.
+            // Camera.
             mCamDevice.close();
             mCamDevice = null;
 
             // Orientation.
             mOrientationEventListenerImpl.disable();
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "CloseTask.run() : X");
+            boolean isSucceeded = mCameraStateCallback.waitForClosed();
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "Camera close " + (isSucceeded ? "SUCCEEDED" : "FAILED"));
+            mClientCallbackHandler.post( () -> mCallback.onClosed(isSucceeded) );
+
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X");
         }
     }
 
@@ -436,87 +443,108 @@ public class Camera2Device implements CameraPlatformInterface {
             BindSurfaceCallback bindSurfaceCallback) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "bindPreviewSurfaceAsync()");
 
-        // Check.
-        if (bindSurfaceCallback == null) throw new NullPointerException("callback == null");
-
-        int previewWidth = mPreviewStreamFrameSize.getWidth();
-        int previewHeight = mPreviewStreamFrameSize.getHeight();
-        int finderWidth = textureView.getWidth();
-        int finderHeight = textureView.getHeight();
-
-        if (Log.IS_DEBUG) {
-            Log.logDebug(TAG, "  Preview Frame Size = " + previewWidth + "x" + previewHeight);
-            Log.logDebug(TAG, "  Finder Size = " + finderWidth + "x" + finderHeight);
-        }
-
-        // Transform matrix.
-        Matrix matrix = PDR2.getTextureViewTransformMatrix(
-                mContext,
-                previewWidth,
-                previewHeight,
-                finderWidth,
-                finderHeight);
-        textureView.setTransform(matrix);
-
-        SurfaceTexture surfaceTexture = textureView.getSurfaceTexture();
-
-        // Cache.
-        surfaceTexture.setDefaultBufferSize(
-                mPreviewStreamFrameSize.getWidth(),
-                mPreviewStreamFrameSize.getHeight());
-        mEvfSurface = new Surface(surfaceTexture);
-        mClientBindSurfaceCallback = bindSurfaceCallback;
-
-        mCameraHandler.post(new UnbindSurfaceTask());
-        mCameraHandler.post(new BindSurfaceTask());
+        mRequestHandler.post(new BindSurfaceTask(textureView, bindSurfaceCallback));
     }
 
     private class BindSurfaceTask implements Runnable {
+        final String TAG = "BindSurfaceTask";
+
+        private final TextureView mTextureView;
+        private final BindSurfaceCallback mCallback;
+
+        /**
+         * CONSTRUCTOR.
+         *
+         * @param textureView TextureView for EVF.
+         * @param callback BindSurfaceCallback.
+         */
+        BindSurfaceTask(TextureView textureView, BindSurfaceCallback callback) {
+            mTextureView = textureView;
+            mCallback = callback;
+        }
+
         @Override
         public void run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "BindSurfaceTask.run() : E");
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E");
 
-            if (mCamDevice != null) {
-                // Outputs.
-                List<Surface> outputs = new ArrayList<>();
-                outputs.add(mEvfSurface);
-                outputs.add(mStillImgReader.getSurface());
-
-                // Internal callback.
-                mCaptureSessionStateCallback = new CaptureSessionStateCallback();
-
-                try {
-                    mCamDevice.createCaptureSession(
-                            outputs,
-                            mCaptureSessionStateCallback,
-                            mCameraHandler);
-                } catch (CameraAccessException e) {
-                    e.printStackTrace();
-                    if (Log.IS_DEBUG) Log.logError(TAG, "Failed to configure outputs.");
-                }
-            } else {
-                if (Log.IS_DEBUG) Log.logError(TAG, "Camera is already released.");
+            if (mCamSession != null) {
+                Log.logError(TAG, "Early Return : mCamSession != null");
+                mClientCallbackHandler.post( () -> mCallback.onSurfaceBound(true) );
+                return;
             }
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "BindSurfaceTask.run() : X");
+            int previewWidth = mPreviewStreamFrameSize.getWidth();
+            int previewHeight = mPreviewStreamFrameSize.getHeight();
+            int finderWidth = mTextureView.getWidth();
+            int finderHeight = mTextureView.getHeight();
+
+            if (Log.IS_DEBUG) {
+                Log.logDebug(TAG, "  Preview Frame Size = " + previewWidth + "x" + previewHeight);
+                Log.logDebug(TAG, "  Finder Size = " + finderWidth + "x" + finderHeight);
+            }
+
+            // Transform matrix.
+            Matrix matrix = PDR2.getTextureViewTransformMatrix(
+                    mContext,
+                    previewWidth,
+                    previewHeight,
+                    finderWidth,
+                    finderHeight);
+            mTextureView.setTransform(matrix);
+
+            SurfaceTexture surfaceTexture = mTextureView.getSurfaceTexture();
+            surfaceTexture.setDefaultBufferSize(
+                    mPreviewStreamFrameSize.getWidth(),
+                    mPreviewStreamFrameSize.getHeight());
+            mEvfSurface = new Surface(surfaceTexture);
+
+            // Outputs.
+            List<Surface> outputs = new ArrayList<>();
+            outputs.add(mEvfSurface);
+            outputs.add(mStillImgReader.getSurface());
+
+            mCaptureSessionStateCallback = new CaptureSessionStateCallback();
+            try {
+                mCamDevice.createCaptureSession(
+                        outputs,
+                        mCaptureSessionStateCallback,
+                        mCallbackHandler);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+                Log.logError(TAG, "Failed to configure outputs.");
+                mClientCallbackHandler.post( () -> mCallback.onSurfaceBound(false) );
+            }
+
+            boolean isSucceeded = mCaptureSessionStateCallback.waitForOpened();
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "Bind surface " + (isSucceeded ? "SUCCEEDED" : "FAILED"));
+            mClientCallbackHandler.post( () -> mCallback.onSurfaceBound(isSucceeded) );
+
+            startEvfStream();
+
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X");
         }
     }
 
     private class UnbindSurfaceTask implements Runnable {
+        final String TAG = "UnbindSurfaceTask";
+
         @Override
         public void run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "UnbindSurfaceTask.run() : E");
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E");
 
-            if (mCamDevice != null && mCamSession != null) {
-                // Stop previous streaming.
-                stopEvfStream();
-
-                // Close.
-                mCamSession.close();
-                mCamSession = null;
+            if (mCamSession == null) {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "Early Return : mCamSession == null");
+                return;
             }
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "UnbindSurfaceTask.run() : X");
+            stopEvfStream();
+
+            mCamSession.close();
+
+            boolean isSucceeded = mCaptureSessionStateCallback.waitForClosed();
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "Unbind surface " + (isSucceeded ? "SUCCEEDED" : "FAILED"));
+
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X");
         }
     }
 
@@ -565,14 +593,13 @@ public class Camera2Device implements CameraPlatformInterface {
 
             // Request.
             try {
-                mCamSession.setRepeatingRequest(evfReq, mCaptureCallback, mCameraHandler);
+                mCamSession.setRepeatingRequest(evfReq, mCaptureCallback, mCallbackHandler);
             } catch (CameraAccessException e) {
                 e.printStackTrace();
             }
         } else {
-            if (Log.IS_DEBUG) Log.logError(TAG, "Camera/Session is already released.");
+            Log.logError(TAG, "Camera/Session is already released.");
         }
-
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "startEvfStream() : X");
     }
@@ -587,7 +614,7 @@ public class Camera2Device implements CameraPlatformInterface {
                 e.printStackTrace();
             }
         } else {
-            if (Log.IS_DEBUG) Log.logError(TAG, "Camera/Session is already released.");
+            Log.logError(TAG, "Camera/Session is already released.");
         }
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "stopEvfStream() : X");
@@ -597,17 +624,26 @@ public class Camera2Device implements CameraPlatformInterface {
     public void requestScanAsync(ScanCallback scanCallback) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "requestScanAsync()");
 
-        // Check.
-        if (scanCallback == null) throw new NullPointerException("callback == null");
-
-        mClientScanCallback = scanCallback;
-        mCameraHandler.post(new ScanTask());
+        mRequestHandler.post(new ScanTask(scanCallback));
     }
 
     private class ScanTask implements Runnable {
+        final String TAG = "ScanTask";
+
+        private final ScanCallback mCallback;
+
+        /**
+         * CONSTRUCTOR.
+         *
+         * @param callback ScanCallback.
+         */
+        ScanTask(ScanCallback callback) {
+            mCallback = callback;
+        }
+
         @Override
         public void run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "ScanTask.run() : E");
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E");
 
             // Control trigger.
             // Setup.
@@ -637,14 +673,19 @@ public class Camera2Device implements CameraPlatformInterface {
             // Reset.
             mEvfReqBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
 
+            mCaptureCallback.requestDetectScanDone();
             try {
-                mCamSession.capture(controlTriggerReq, mCaptureCallback, mCameraHandler);
-                mCamSession.setRepeatingRequest(repeatingReq, mCaptureCallback, mCameraHandler);
+                mCamSession.capture(controlTriggerReq, mCaptureCallback, mCallbackHandler);
+                mCamSession.setRepeatingRequest(repeatingReq, mCaptureCallback, mCallbackHandler);
             } catch (CameraAccessException e) {
                 e.printStackTrace();
             }
+            boolean isSucceeded = mCaptureCallback.waitForScanDone();
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "ScanTask.run() : X");
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "Request scan " + (isSucceeded ? "SUCCEEDED" : "FAILED"));
+            mClientCallbackHandler.post( () -> mCallback.onScanDone(isSucceeded) );
+
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X");
         }
     }
 
@@ -652,17 +693,26 @@ public class Camera2Device implements CameraPlatformInterface {
     public void requestCancelScanAsync(CancelScanCallback cancelScanCallback) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "requestCancelScanAsync()");
 
-        // Check.
-        if (cancelScanCallback == null) throw new NullPointerException("callback == null");
-
-        mClientCancelScanCallback = cancelScanCallback;
-        mCameraHandler.post(new CancelScanTask());
+        mRequestHandler.post(new CancelScanTask(cancelScanCallback));
     }
 
     private class CancelScanTask implements Runnable {
+        final String TAG = "CancelScanTask";
+
+        private final CancelScanCallback mCallback;
+
+        /**
+         * CONSTRUCTOR.
+         *
+         * @param callback CancelScanCallback
+         */
+        CancelScanTask(CancelScanCallback callback) {
+            mCallback = callback;
+        }
+
         @Override
         public void run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "CancelScanTask.run() : E");
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E");
 
             // Control trigger.
             // Setup.
@@ -692,14 +742,18 @@ public class Camera2Device implements CameraPlatformInterface {
             // Reset.
             mEvfReqBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
 
+            mCaptureCallback.requestDetectCancelScanDone();
             try {
-                mCamSession.capture(controlTriggerReq, mCaptureCallback, mCameraHandler);
-                mCamSession.setRepeatingRequest(repeatingReq, mCaptureCallback, mCameraHandler);
+                mCamSession.capture(controlTriggerReq, mCaptureCallback, mCallbackHandler);
+                mCamSession.setRepeatingRequest(repeatingReq, mCaptureCallback, mCallbackHandler);
             } catch (CameraAccessException e) {
                 e.printStackTrace();
             }
+            mCaptureCallback.waitForCancelScanDone();
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "CancelScanTask.run() : X");
+            mClientCallbackHandler.post( mCallback::onCancelScanDone );
+
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X");
         }
     }
 
@@ -707,32 +761,32 @@ public class Camera2Device implements CameraPlatformInterface {
     public int requestStillCaptureAsync(StillCaptureCallback stillCaptureCallback) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStillCaptureAsync()");
 
-        // Check.
-        if (stillCaptureCallback == null) throw new NullPointerException("callback == null");
-
-        mClientStillCaptureCallback = stillCaptureCallback;
-
         ++mRequestId;
 
-        mCameraHandler.post(new StillCaptureTask(mRequestId));
+        mRequestHandler.post(new StillCaptureTask(mRequestId, stillCaptureCallback));
+
         return mRequestId;
     }
 
     private class StillCaptureTask implements Runnable {
+        final String TAG = "StillCaptureTask";
+
         private final int mFixedReqId;
+        private StillCaptureCallback mCallback;
 
         /**
          * CONSTRUCTOR.
          *
          * @param requestId Capture request ID.
          */
-        StillCaptureTask(int requestId) {
+        StillCaptureTask(int requestId, StillCaptureCallback callback) {
             mFixedReqId = requestId;
+            mCallback = callback;
         }
 
         @Override
         public void run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "StillCaptureTask.run() : E");
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E");
             if (Log.IS_DEBUG) Log.logDebug(TAG, "  mFixedReqId = " + mFixedReqId);
 
             // Create picture request.
@@ -765,14 +819,14 @@ public class Camera2Device implements CameraPlatformInterface {
                             CaptureRequest.JPEG_QUALITY,
                             (byte) JPEG_QUALITY);
                 } catch (CameraAccessException e) {
-                    if (Log.IS_DEBUG) Log.logError(TAG, "Failed to create capture request.");
+                    if (Log.IS_DEBUG) Log.logError(TAG, "Early Return : Failed to create capture request.");
                     e.printStackTrace();
 
                     // Notify.
-                    StillCaptureCallback callback = mClientStillCaptureCallback;
-                    notifyShutterDoneCallback(mFixedReqId);
-                    notifyCaptureDoneCallback(mFixedReqId);
-                    notifyPhotoStoreReadyCallback(callback, mFixedReqId, null);
+                    mClientCallbackHandler.post( () -> mCallback.onShutterDone(mFixedReqId) );
+                    mClientCallbackHandler.post( () -> mCallback.onCaptureDone(mFixedReqId) );
+                    mClientCallbackHandler.post( () -> mCallback.onPhotoStoreReady(mFixedReqId, null) );
+
                     return;
                 }
             }
@@ -796,23 +850,29 @@ public class Camera2Device implements CameraPlatformInterface {
             // Stop preview.
             stopEvfStream();
 
+            mCaptureCallback.requestDetectShutterDone();
+            mCaptureCallback.requestDetectCaptureDone();
+            mCaptureCallback.requestHandlePhotoStoreReadyCallback(mCallback);
             try {
-                mCamSession.capture(jpegReq, mCaptureCallback, mCameraHandler);
+                mCamSession.capture(jpegReq, mCaptureCallback, mCallbackHandler);
             } catch (CameraAccessException e) {
-                if (Log.IS_DEBUG) Log.logError(TAG, "Failed to capture.");
+                Log.logError(TAG, "Early Return : Failed to capture.");
                 e.printStackTrace();
 
                 // Notify.
-                StillCaptureCallback callback = mClientStillCaptureCallback;
-                notifyShutterDoneCallback(mFixedReqId);
-                notifyCaptureDoneCallback(mFixedReqId);
-                notifyPhotoStoreReadyCallback(callback, mFixedReqId, null);
+                mClientCallbackHandler.post( () -> mCallback.onShutterDone(mFixedReqId) );
+                mClientCallbackHandler.post( () -> mCallback.onCaptureDone(mFixedReqId) );
+                mClientCallbackHandler.post( () -> mCallback.onPhotoStoreReady(mFixedReqId, null) );
+
                 return;
             }
+            final int onShutterRequestId = mCaptureCallback.waitForShutterDone();
+            mClientCallbackHandler.post( () -> mCallback.onShutterDone(onShutterRequestId) );
+            final int onCaptureRequestId = mCaptureCallback.waitForCaptureDone();
+            mClientCallbackHandler.post( () -> mCallback.onCaptureDone(onCaptureRequestId) );
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "StillCaptureTask.run() : X");
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X");
         }
-
     }
 
     private class HandleStillCaptureResultTask implements Runnable {
@@ -837,8 +897,10 @@ public class Camera2Device implements CameraPlatformInterface {
         @Override
         public void run() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E");
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "  Request ID = " + mReqTag.getRequestId());
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "  Rotation = " + mReqTag.getRotation());
+            if (Log.IS_DEBUG) {
+                Log.logDebug(TAG, "  Request ID = " + mReqTag.getRequestId());
+                Log.logDebug(TAG, "  Rotation = " + mReqTag.getRotation());
+            }
 
             // Get image.
             Image img = mStillImgReader.acquireNextImage();
@@ -848,11 +910,13 @@ public class Camera2Device implements CameraPlatformInterface {
                 Log.logDebug(TAG, "    HEIGHT = " + img.getHeight());
                 Log.logDebug(TAG, "    CROP   = " + img.getCropRect().toShortString());
             }
+
             Image.Plane[] planes = img.getPlanes();
             if (Log.IS_DEBUG) Log.logDebug(TAG, "    getPlanes() : DONE");
             if (Log.IS_DEBUG) {
                 Log.logDebug(TAG, "    Plane x" + planes.length);
             }
+
             ByteBuffer buffer = planes[0].getBuffer();
             byte[] data = new byte[buffer.remaining()];
             buffer.get(data);
@@ -868,14 +932,11 @@ public class Camera2Device implements CameraPlatformInterface {
                     (float) mCropRegionRect.width() / (float) mCropRegionRect.height(),
                     JPEG_QUALITY);
 
-            // Notify.
-            notifyPhotoStoreReadyCallback(mCallback, mReqTag.getRequestId(), resultJpeg);
+            mClientCallbackHandler.post( () -> mCallback.onPhotoStoreReady(mReqTag.getRequestId(), resultJpeg) );
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X");
         }
     }
-
-
 
     ////// INTERNAL CALLBACKS /////////////////////////////////////////////////////////////////////
 
@@ -902,41 +963,63 @@ public class Camera2Device implements CameraPlatformInterface {
     private class CameraStateCallback extends CameraDevice.StateCallback {
         public final String TAG = "CameraStateCallback";
 
+        private final CountDownLatch mOpenLatch = new CountDownLatch(1);
+        private final CountDownLatch mCloseLatch = new CountDownLatch(1);
+
         @Override
         public void onOpened(@NonNull CameraDevice camera) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onOpened()");
 
-            notifyOpenCallback(true);
-
-            // Cache instance.
             mCamDevice = camera;
+
+            mOpenLatch.countDown();
+        }
+
+        boolean waitForOpened() {
+            return waitForLatch(mOpenLatch);
         }
 
         @Override
         public void onClosed(@NonNull CameraDevice camera) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onClosed()");
-            super.onClosed(camera);
 
-            notifyCloseCallback(true);
+            mCamDevice = null;
+
+            mCloseLatch.countDown();
+        }
+
+        boolean waitForClosed() {
+            return waitForLatch(mCloseLatch);
         }
 
         @Override
         public void onDisconnected(@NonNull CameraDevice camera) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onDisconnected()");
+            Log.logError(TAG, "onDisconnected()");
 
-            notifyOpenCallback(false);
+            // Already closed.
+            mCloseLatch.countDown();
+
+            // TODO: Handle disconnected error.
+
         }
 
         @Override
         public void onError(@NonNull CameraDevice camera, int error) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onError()");
+            Log.logError(TAG, "onError() : error=" + error);
 
-            notifyOpenCallback(false);
+            // Already closed.
+            mCloseLatch.countDown();
+
+            // TODO: Handle error.
+
         }
     }
 
     private class CaptureSessionStateCallback extends CameraCaptureSession.StateCallback {
         public final String TAG = "CaptureSessionStateCallback";
+
+        private final CountDownLatch mOpenLatch = new CountDownLatch(1);
+        private final CountDownLatch mCloseLatch = new CountDownLatch(1);
 
         @Override
         public void onActive(@NonNull CameraCaptureSession session) {
@@ -950,36 +1033,35 @@ public class Camera2Device implements CameraPlatformInterface {
             super.onClosed(session);
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onClosed()");
 
-            // Stop EVF.
-            stopEvfStream();
-
-            // Release.
             mCamSession = null;
+
+            mCloseLatch.countDown();
+        }
+
+        boolean waitForClosed() {
+            return waitForLatch(mCloseLatch);
         }
 
         @Override
         public void onConfigured(@NonNull CameraCaptureSession session) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onConfigured()");
 
-            // Cache.
             mCamSession = session;
 
-            // Notify.
-            notifyBindSurfaceCallback(true);
+            mOpenLatch.countDown();
+        }
 
-            // Start EVF.
-            startEvfStream();
+        boolean waitForOpened() {
+            return waitForLatch(mOpenLatch);
         }
 
         @Override
         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onConfigureFailed()");
 
-            // Cache.
             mCamSession = null;
 
-            // Notify.
-            notifyBindSurfaceCallback(false);
+            mOpenLatch.countDown();
         }
 
         @Override
@@ -1000,7 +1082,43 @@ public class Camera2Device implements CameraPlatformInterface {
     }
 
     private class CaptureCallback extends CameraCaptureSession.CaptureCallback {
-        public final String TAG = "CaptureCallback";
+        final String TAG = "CaptureCallback";
+
+        private CaptureRequest mLatestRequest;
+        private TotalCaptureResult mLatestResult;
+
+        private CountDownLatch mScanDoneLatch = null;
+        private CountDownLatch mCancelScanDoneLatch = null;
+
+        private CountDownLatch mShutterDoneLatch = null;
+        private CountDownLatch mCaptureDoneLatch = null;
+
+        private StillCaptureCallback mCallback = null;
+
+        @Override
+        public void onCaptureStarted(
+                @NonNull CameraCaptureSession session,
+                @NonNull CaptureRequest request,
+                long timestamp,
+                long frameNumber) {
+            super.onCaptureStarted(session, request, timestamp, frameNumber);
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureStarted()");
+
+            mLatestRequest = request;
+
+            Integer intent = request.get(CaptureRequest.CONTROL_CAPTURE_INTENT);
+
+            if (intent == null) {
+                if (Log.IS_DEBUG) Log.logError(TAG, "CaptureIntent is null.");
+            } else if (intent == CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE) {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_STILL_CAPTURE");
+
+                // Shutter sound.
+//                mShutterSound.play(MediaActionSound.SHUTTER_CLICK);
+
+                mShutterDoneLatch.countDown();
+            }
+        }
 
         @Override
         public void onCaptureCompleted(
@@ -1010,10 +1128,12 @@ public class Camera2Device implements CameraPlatformInterface {
             super.onCaptureCompleted(session, request, result);
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureCompleted()");
 
+            mLatestResult = result;
+
             Integer intent = request.get(CaptureRequest.CONTROL_CAPTURE_INTENT);
 
             if (intent == null) {
-                if (Log.IS_DEBUG) Log.logError(TAG, "CaptureIntent is null.");
+                Log.logError(TAG, "CaptureIntent is null.");
             } else switch (intent) {
                 case CaptureRequest.CONTROL_CAPTURE_INTENT_PREVIEW:
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_PREVIEW");
@@ -1022,33 +1142,11 @@ public class Camera2Device implements CameraPlatformInterface {
 
                 case CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE:
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_STILL_CAPTURE");
-
-                    RequestTag reqTag = (RequestTag) request.getTag();
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "    getTag() : DONE");
-
-                    // Release scan lock.
-                    mCameraHandler.post(new CancelScanTask());
-
-                    // Restart preview.
-                    startEvfStream();
-
-                    // Handle result in background.
-                    HandleStillCaptureResultTask task = new HandleStillCaptureResultTask(
-                            mClientStillCaptureCallback,
-                            reqTag);
-                    mBackWorker.execute(task);
-
-                    // Notify capture done, client may request next capture.
-                    if (reqTag != null) {
-                        notifyCaptureDoneCallback(reqTag.getRequestId());
-                    } else {
-                        if (Log.IS_DEBUG) Log.logError(TAG, "RequestID is null.");
-                        notifyCaptureDoneCallback(INVALID_REQUEST_ID);
-                    }
+                    handleStillIntentCaptureCompleted(request);
                     break;
 
                 default:
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle unexpected INTENT");
+                    Log.logError(TAG, "  handle unexpected INTENT");
                     break;
             }
         }
@@ -1066,51 +1164,95 @@ public class Camera2Device implements CameraPlatformInterface {
                 PDR2.logAeState(aeState);
             }
 
+            // AF.
+            boolean isAfAvailable = PDR2.isAfAvailable(result);
+            boolean isAfLocked = PDR2.isAfLocked(result);
+            // AE.
+            boolean isAeAvailable = PDR2.isAeAvailable(result);
+            boolean isAeLocked = PDR2.isAeLocked(result);
+
             // Scan.
-            if (isScanRequired()) {
+            if (mScanDoneLatch != null) {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "  Scan required.");
 
-                // AF.
-                boolean isAfLocked = false;
-                boolean isAfSucceeded = false;
-                if (PDR2.isAfAvailable(result)) {
-                    isAfLocked = PDR2.isAfLocked(result);
-                    isAfSucceeded = PDR2.isAfSucceeded(result);
-                }
-
-                // AE.
-                boolean isAeLocked = false;
-                if (PDR2.isAeAvailable(result)) {
-                    isAeLocked = PDR2.isAeLocked(result);
-                }
-
-                // Notify.
-                if (isAfLocked && isAeLocked) {
-                    notifyScanDoneCallback(isAfSucceeded);
+                if ((isAfLocked || !isAfAvailable) && (isAeLocked || !isAeAvailable)) {
+                    mScanDoneLatch.countDown();
                 }
             }
 
             // Cancel scan.
-            if (isCancelScanRequired()) {
+            if (mCancelScanDoneLatch != null) {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "  Cancel scan required.");
 
-                // AF.
-                boolean isAfLocked = false;
-                if (PDR2.isAfAvailable(result)) {
-                    isAfLocked = PDR2.isAfLocked(result);
-                }
-
-                // AE.
-                boolean isAeLocked = false;
-                if (PDR2.isAeAvailable(result)) {
-                    isAeLocked = PDR2.isAeLocked(result);
-                }
-
-                // Notify.
-                if (!isAfLocked && !isAeLocked) {
-                    notifyCancelScanDoneCallback();
+                if ((!isAfLocked || !isAfAvailable) && (!isAeLocked || !isAeAvailable)) {
+                    mCancelScanDoneLatch.countDown();
                 }
             }
+        }
+
+        void requestDetectScanDone() {
+            mScanDoneLatch = new CountDownLatch(1);
+        }
+
+        boolean waitForScanDone() {
+            waitForLatch(mScanDoneLatch);
+            mScanDoneLatch = null;
+            return PDR2.isAfSucceeded(mLatestResult);
+        }
+
+        void requestDetectCancelScanDone() {
+            mCancelScanDoneLatch = new CountDownLatch(1);
+        }
+
+        void waitForCancelScanDone() {
+            waitForLatch(mCancelScanDoneLatch);
+            mCancelScanDoneLatch = null;
+        }
+
+        private void handleStillIntentCaptureCompleted(CaptureRequest request) {
+            RequestTag reqTag = (RequestTag) request.getTag();
+
+            // Release scan lock.
+            mRequestHandler.post(new CancelScanTask( () -> {} ));
+
+            // Restart preview.
+            startEvfStream();
+
+            // Handle result in background.
+            HandleStillCaptureResultTask task = new HandleStillCaptureResultTask(
+                    mCallback,
+                    reqTag);
+            mBackWorker.execute(task);
+
+            mCaptureDoneLatch.countDown();
+        }
+
+        void requestDetectShutterDone() {
+            mShutterDoneLatch = new CountDownLatch(1);
+        }
+
+        int waitForShutterDone() {
+            waitForLatch(mShutterDoneLatch);
+            mShutterDoneLatch = null;
+
+            RequestTag reqTag = (RequestTag) Objects.requireNonNull(mLatestRequest.getTag());
+            return reqTag.getRequestId();
+        }
+
+        void requestDetectCaptureDone() {
+            mCaptureDoneLatch = new CountDownLatch(1);
+        }
+
+        int waitForCaptureDone() {
+            waitForLatch(mCaptureDoneLatch);
+            mCaptureDoneLatch = null;
+
+            RequestTag reqTag = (RequestTag) Objects.requireNonNull(mLatestRequest.getTag());
+            return reqTag.getRequestId();
+        }
+
+        void requestHandlePhotoStoreReadyCallback(StillCaptureCallback callback) {
+            mCallback = callback;
         }
 
         @Override
@@ -1120,7 +1262,9 @@ public class Camera2Device implements CameraPlatformInterface {
                 @NonNull CaptureFailure failure) {
             super.onCaptureFailed(session, request, failure);
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureFailed()");
-            // NOP.
+
+            // TODO: Handle capture error.
+
         }
 
         @Override
@@ -1151,38 +1295,6 @@ public class Camera2Device implements CameraPlatformInterface {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureSequenceAborted()");
             // NOP.
         }
-
-        @Override
-        public void onCaptureStarted(
-                @NonNull CameraCaptureSession session,
-                @NonNull CaptureRequest request,
-                long timestamp,
-                long frameNumber) {
-            super.onCaptureStarted(session, request, timestamp, frameNumber);
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureStarted()");
-
-            Integer intent = request.get(CaptureRequest.CONTROL_CAPTURE_INTENT);
-
-            if (intent == null) {
-                if (Log.IS_DEBUG) Log.logError(TAG, "CaptureIntent is null.");
-            } else if (intent == CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_STILL_CAPTURE");
-
-                // TAG.
-                RequestTag reqTag = (RequestTag) request.getTag();
-
-                // Shutter sound.
-//                mShutterSound.play(MediaActionSound.SHUTTER_CLICK);
-
-                // Notify.
-                if (reqTag != null) {
-                    notifyShutterDoneCallback(reqTag.getRequestId());
-                } else {
-                    if (Log.IS_DEBUG) Log.logError(TAG, "RequestID is null.");
-                    notifyShutterDoneCallback(INVALID_REQUEST_ID);
-                }
-            }
-        }
     }
 
     private class OnImageAvailableListenerImpl implements ImageReader.OnImageAvailableListener {
@@ -1195,253 +1307,17 @@ public class Camera2Device implements CameraPlatformInterface {
         }
     }
 
-
-
-    ////// CLIENT CALLBACK ////////////////////////////////////////////////////////////////////////
-
-    private void notifyOpenCallback(boolean isSuccess) {
-        if (mClientOpenCallback != null) {
-            mClientCallbackHandler.post(new NotifyOpenCallback(mClientOpenCallback, isSuccess));
-            mClientOpenCallback = null;
+    private boolean waitForLatch(CountDownLatch latch) {
+        try {
+            boolean isOk = latch.await(SHUTDOWN_AWAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+            if (!isOk) {
+                Log.logError(TAG, "waitForLatch() : TIMEOUT");
+            }
+            return isOk;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+        return false;
     }
 
-    private static class NotifyOpenCallback implements Runnable {
-        private final OpenCallback mOpenCallback;
-        private final boolean mIsSuccess;
-
-        /**
-         * CONSTRUCTOR.
-         *
-         * @param openCallback Callback.
-         * @param isSuccess Open is success or not.
-         */
-        NotifyOpenCallback(OpenCallback openCallback, boolean isSuccess) {
-            mOpenCallback = openCallback;
-            mIsSuccess = isSuccess;
-        }
-
-        @Override
-        public void run (){
-            mOpenCallback.onOpened(mIsSuccess);
-        }
-    }
-
-    private void notifyCloseCallback(boolean isSuccess) {
-        if (mClientCloseCallback != null) {
-            mClientCallbackHandler.post(new NotifyCloseCallback(mClientCloseCallback, isSuccess));
-            mClientCloseCallback = null;
-        }
-    }
-
-    private static class NotifyCloseCallback implements Runnable {
-        private final CloseCallback mCloseCallback;
-        private final boolean mIsSuccess;
-
-        /**
-         * CONSTRUCTOR.
-         *
-         * @param closeCallback Callback.
-         * @param isSuccess Close is success or not.
-         *
-         */
-        NotifyCloseCallback(CloseCallback closeCallback, boolean isSuccess) {
-            mCloseCallback = closeCallback;
-            mIsSuccess = isSuccess;
-        }
-
-        @Override
-        public void run (){
-            mCloseCallback.onClosed(mIsSuccess);
-        }
-    }
-
-    private void notifyBindSurfaceCallback(boolean isSuccess) {
-        if (mClientBindSurfaceCallback != null) {
-            mClientCallbackHandler.post(
-                    new NotifyBindSurfaceCallback(mClientBindSurfaceCallback, isSuccess));
-            mClientBindSurfaceCallback = null;
-        }
-    }
-
-    private static class NotifyBindSurfaceCallback implements Runnable {
-        private final BindSurfaceCallback mBindSurfaceCallback;
-        private final boolean mIsSuccess;
-
-        /**
-         * CONSTRUCTOR.
-         *
-         * @param bindSurfaceCallback Callback.
-         * @param isSuccess Bind surface is success or not.
-         */
-        NotifyBindSurfaceCallback(
-                BindSurfaceCallback bindSurfaceCallback,
-                boolean isSuccess) {
-            mBindSurfaceCallback = bindSurfaceCallback;
-            mIsSuccess = isSuccess;
-        }
-
-        @Override
-        public void run (){
-            mBindSurfaceCallback.onSurfaceBound(mIsSuccess);
-        }
-    }
-
-    private boolean isScanRequired() {
-        return mClientScanCallback != null;
-    }
-
-    private void notifyScanDoneCallback(boolean isSuccess) {
-        if (mClientScanCallback != null) {
-            mClientCallbackHandler.post(
-                    new NotifyScanDoneCallback(mClientScanCallback, isSuccess));
-            mClientScanCallback = null;
-        }
-    }
-
-    private static class NotifyScanDoneCallback implements Runnable {
-        private final ScanCallback mScanCallback;
-        private final boolean mIsSuccess;
-
-        /**
-         * CONSTRUCTOR.
-         *
-         * @param scanCallback Callback.
-         * @param isSuccess Scan is success or not.
-         */
-        NotifyScanDoneCallback(ScanCallback scanCallback, boolean isSuccess) {
-            mScanCallback = scanCallback;
-            mIsSuccess = isSuccess;
-        }
-
-        @Override
-        public void run() {
-            mScanCallback.onScanDone(mIsSuccess);
-        }
-    }
-
-    private boolean isCancelScanRequired() {
-        return mClientCancelScanCallback != null;
-    }
-
-    private void notifyCancelScanDoneCallback() {
-        if (mClientCancelScanCallback != null) {
-            mClientCallbackHandler.post(
-                    new NotifyCancelScanDoneCallback(mClientCancelScanCallback));
-            mClientCancelScanCallback = null;
-        }
-    }
-
-    private static class NotifyCancelScanDoneCallback implements Runnable {
-        private final CancelScanCallback mCancelScanCallback;
-
-        /**
-         * CONSTRUCTOR.
-         *
-         * @param cancelScanCallback Callback.
-         */
-        NotifyCancelScanDoneCallback(CancelScanCallback cancelScanCallback) {
-            mCancelScanCallback = cancelScanCallback;
-        }
-
-        @Override
-        public void run() {
-            mCancelScanCallback.onCancelScanDone();
-        }
-    }
-
-    private void notifyShutterDoneCallback(int requestId) {
-        if (mClientStillCaptureCallback != null) {
-            mClientCallbackHandler.post(
-                    new NotifyShutterDoneCallback(mClientStillCaptureCallback, requestId));
-
-            // Do not set null to mClientStillCaptureCallback. Wait for capture done.
-        }
-    }
-
-    private static class NotifyShutterDoneCallback implements Runnable {
-        private final StillCaptureCallback mStillCaptureCallback;
-        private final int mRequestId;
-
-        /**
-         * CONSTRUCTOR.
-         *
-         * @param stillCaptureCallback Callback.
-         * @param requestId Capture request ID.
-         */
-        NotifyShutterDoneCallback(
-                StillCaptureCallback stillCaptureCallback,
-                int requestId) {
-            mStillCaptureCallback = stillCaptureCallback;
-            mRequestId = requestId;
-        }
-
-        @Override
-        public void run() {
-            mStillCaptureCallback.onShutterDone(mRequestId);
-        }
-    }
-
-    private void notifyCaptureDoneCallback(int requestId) {
-        if (mClientStillCaptureCallback != null) {
-            mClientCallbackHandler.post(
-                    new NotifyCaptureDoneCallback(mClientStillCaptureCallback, requestId));
-            mClientStillCaptureCallback = null;
-        }
-    }
-
-    private static class NotifyCaptureDoneCallback implements Runnable {
-        private final StillCaptureCallback mStillCaptureCallback;
-        private final int mRequestId;
-
-        NotifyCaptureDoneCallback(
-                StillCaptureCallback stillCaptureCallback,
-                int requestId) {
-            mStillCaptureCallback = stillCaptureCallback;
-            mRequestId = requestId;
-        }
-
-        @Override
-        public void run() {
-            mStillCaptureCallback.onCaptureDone(mRequestId);
-        }
-    }
-
-    private void notifyPhotoStoreReadyCallback(
-            StillCaptureCallback callback,
-            int requestId,
-            byte[] data) {
-        mClientCallbackHandler.post(
-                new NotifyPhotoStoreReadyCallback(
-                        callback,
-                        requestId,
-                        data));
-    }
-
-    private static class NotifyPhotoStoreReadyCallback implements Runnable {
-        private final StillCaptureCallback mStillCaptureCallback;
-        private final int mRequestId;
-        private final byte[] mData;
-
-        /**
-         * CONSTRUCTOR.
-         *
-         * @param stillCaptureCallback Callback.
-         * @param requestId Capture request ID.
-         * @param data JPEG frame data.
-         */
-        NotifyPhotoStoreReadyCallback(
-                StillCaptureCallback stillCaptureCallback,
-                int requestId,
-                byte[] data) {
-            mStillCaptureCallback = stillCaptureCallback;
-            mRequestId = requestId;
-            mData = data;
-        }
-
-        @Override
-        public void run() {
-            mStillCaptureCallback.onPhotoStoreReady(mRequestId, mData);
-        }
-    }
 }

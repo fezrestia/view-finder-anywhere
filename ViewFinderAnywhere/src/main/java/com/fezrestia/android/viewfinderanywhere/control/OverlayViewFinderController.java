@@ -3,6 +3,7 @@ package com.fezrestia.android.viewfinderanywhere.control;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
+import android.view.TextureView;
 
 import com.fezrestia.android.lib.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
@@ -95,6 +96,7 @@ public class OverlayViewFinderController {
             default:
                 throw new IllegalArgumentException("Unknown API level.");
         }
+        mCamera.prepare();
 
         // Storage.
         mStorageController = new StorageController(
@@ -353,7 +355,7 @@ public class OverlayViewFinderController {
     private class StateFinalized extends StateAllFallback {
         public final String TAG = "StateFinalized";
 
-        private boolean mIsPreOpenCanceled = true;
+        private boolean mIsPreOpenRequested = false;
 
         @Override
         public void entry() {
@@ -375,29 +377,28 @@ public class OverlayViewFinderController {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenRequested()");
 
             mCamera.openAsync(mConfigManager.getEvfAspect().getRatioWH(), new OpenCallbackImpl());
-
-            mIsPreOpenCanceled = false;
+            mIsPreOpenRequested = true;
         }
 
         @Override
         public void onPreOpenCanceled() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenCanceled()");
 
-            mIsPreOpenCanceled = true;
-
-            mCamera.closeAsync(new CloseCallbackImpl());
+            if (mIsPreOpenRequested) {
+                mCamera.closeAsync(new CloseCallbackImpl());
+                mIsPreOpenRequested = false;
+            }
         }
 
         @Override
         public void onCameraReady() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraReady()");
 
-            if (!mIsPreOpenCanceled) {
+            if (mIsPreOpenRequested) {
                 // Bind surface in advance.
-                if (mRootView.getViewFinderSurface() != null) {
-                    mCamera.bindPreviewSurfaceAsync(
-                            mRootView.getViewFinderSurface(),
-                            new BindSurfaceCallbackImpl());
+                TextureView surface = mRootView.getViewFinderSurface();
+                if (surface != null) {
+                    mCamera.bindPreviewSurfaceAsync(surface, new BindSurfaceCallbackImpl());
                 }
             }
         }
@@ -424,7 +425,6 @@ public class OverlayViewFinderController {
         public void entry() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "entry()");
 
-            // Camera.
             mCamera.openAsync(mConfigManager.getEvfAspect().getRatioWH(), new OpenCallbackImpl());
         }
 
@@ -506,12 +506,12 @@ public class OverlayViewFinderController {
 
             mCamera.requestScanAsync(new ScanCallbackImpl());
 
-            changeStateTo(new StateScanning());
+            changeStateTo(new StateDoingScan());
         }
     }
 
-    private class StateScanning extends StateAllFallback {
-        public final String TAG = "StateScanning";
+    private class StateDoingScan extends StateAllFallback {
+        public final String TAG = "StateDoingScan";
 
         private boolean mIsStillCaptureAlreadyRequested = false;
 
@@ -539,6 +539,7 @@ public class OverlayViewFinderController {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "requestCancelScan()");
 
             mCamera.requestCancelScanAsync(new CancelScanCallbackImpl());
+            changeStateTo(new StateCancellingScan());
         }
 
         public void onScanDone(boolean isSuccess) {
@@ -554,17 +555,38 @@ public class OverlayViewFinderController {
         }
 
         @Override
-        public void onCancelScanDone() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCancelScanDone()");
-
-            changeStateTo(new StateIdle());
-        }
-
-        @Override
         public void requestStillCapture() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStillCapture()");
 
             mIsStillCaptureAlreadyRequested = true;
+        }
+    }
+
+    private class StateCancellingScan extends StateAllFallback {
+        public final String TAG = "StateCancellingScan";
+
+        @Override
+        public void entry() {
+            // NOP.
+        }
+
+        @Override
+        public boolean isActive() {
+            return true;
+        }
+
+        @Override
+        public void onPause() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()");
+
+            changeStateTo(new StateFinalized());
+        }
+
+        @Override
+        public void onCancelScanDone() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCancelScanDone()");
+
+            changeStateTo(new StateIdle());
         }
     }
 
@@ -630,7 +652,6 @@ public class OverlayViewFinderController {
         public final String TAG = "StateStillCapturing";
 
         private boolean mIsPauseRequired = false;
-        private boolean mIsResumeRequired = false;
 
         @Override
         public boolean isActive() {
@@ -641,9 +662,9 @@ public class OverlayViewFinderController {
         public void onResume() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume()");
 
-            // Resume state without camera release after still capture is done.
+            // Pause request is canceled.
 
-            mIsResumeRequired = true;
+            mIsPauseRequired = false;
         }
 
         @Override
@@ -668,9 +689,7 @@ public class OverlayViewFinderController {
         public void onStillCaptureDone() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onStillCaptureDone()");
 
-            if (mIsResumeRequired) {
-                changeStateTo(new StateInitialized());
-            } else if (mIsPauseRequired) {
+            if (mIsPauseRequired) {
                 changeStateTo(new StateFinalized());
             } else {
                 // Normal sequence.

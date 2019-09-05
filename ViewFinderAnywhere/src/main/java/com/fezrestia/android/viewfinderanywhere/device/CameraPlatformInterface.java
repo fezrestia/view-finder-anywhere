@@ -7,6 +7,12 @@ import android.view.TextureView;
  */
 public interface CameraPlatformInterface {
     /**
+     * Prepare all of the binders, references, and resources.
+     * This may block calling thread much time.
+     */
+    void prepare();
+
+    /**
      * Release all of the binders, references, and resources.
      * This may block calling thread much time.
      */

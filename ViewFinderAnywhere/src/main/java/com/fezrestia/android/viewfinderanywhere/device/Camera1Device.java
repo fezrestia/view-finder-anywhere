@@ -91,9 +91,6 @@ public class Camera1Device implements CameraPlatformInterface {
      */
     public Camera1Device(Context context) {
         mContext = context;
-        mUiWorker = ViewFinderAnywhereApplication.getUiThreadHandler();
-
-        generateBackWorker();
     }
 
     private void generateBackWorker() {
@@ -113,11 +110,17 @@ public class Camera1Device implements CameraPlatformInterface {
     }
 
     @Override
+    public void prepare() {
+        mUiWorker = ViewFinderAnywhereApplication.getUiThreadHandler();
+
+        generateBackWorker();
+    }
+
+    @Override
     public void release() {
         shutdownBackWorker();
 
-        mContext = null;
-        mBackWorker = null;
+        mUiWorker = null;
     }
 
     @Override
