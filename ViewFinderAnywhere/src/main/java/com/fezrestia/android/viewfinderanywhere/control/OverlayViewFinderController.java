@@ -778,7 +778,7 @@ public class OverlayViewFinderController {
     private class BindSurfaceCallbackImpl implements CameraPlatformInterface.BindSurfaceCallback {
         @Override
         public void onSurfaceBound(boolean isSuccess) {
-            // NOP.
+            if (!isSuccess) throw new RuntimeException("Failed to bind surface.");
         }
     }
 
