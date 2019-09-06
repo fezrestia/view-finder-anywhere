@@ -3,6 +3,8 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
+import java.util.regex.Pattern
+
 android {
     compileSdkVersion 28
     buildToolsVersion '29.0.2'
@@ -11,8 +13,6 @@ android {
         applicationId "com.fezrestia.android.viewfinderanywhere"
         minSdkVersion 26
         targetSdkVersion 28
-        versionCode 230
-        versionName '4.0.2'
     }
 
     compileOptions {
@@ -27,6 +27,37 @@ android {
         debug {
             applicationIdSuffix '.debug'
             versionNameSuffix '-debug'
+        }
+    }
+
+    task incrementVersionCode {
+        def file = file("src/main/AndroidManifest.xml")
+        def text = file.getText()
+
+        // Update version code.
+        def codePattern = Pattern.compile("android:versionCode=\"(\\d+)\"")
+        def codeMatcher = codePattern.matcher(text)
+        codeMatcher.find()
+        def code = Integer.parseInt(codeMatcher.group(1))
+        def newCode = code + 1
+        def codeUpdatedText = codeMatcher.replaceAll("android:versionCode=\"" + newCode + "\"")
+
+        // Update version name.
+        def namePattern = Pattern.compile("android:versionName=\"(\\d+)\\.(\\d+)\\.(\\d+)-\\d+\"")
+        def nameMatcher = namePattern.matcher(codeUpdatedText)
+        nameMatcher.find()
+        def major = Integer.parseInt(nameMatcher.group(1))
+        def minor = Integer.parseInt(nameMatcher.group(2))
+        def patch = Integer.parseInt(nameMatcher.group(3))
+        def newName = "android:versionName=\"" + major + "." + minor + "." + patch + "-" + newCode + "\""
+        def nameUpdatedText = nameMatcher.replaceAll(newName)
+
+        file.write(nameUpdatedText)
+    }
+
+    tasks.whenTaskAdded { task ->
+        if (task.name == "generateReleaseBuildConfig" || task.name == "generateDebugBuildConfig") {
+            task.dependsOn("incrementVersionCode")
         }
     }
 

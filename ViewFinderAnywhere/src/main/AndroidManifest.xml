@@ -3,7 +3,11 @@
 <manifest
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
+
         package="com.fezrestia.android.viewfinderanywhere"
+
+        android:versionCode="275"
+        android:versionName="4.0.3-275"
 >
 
     <!-- Permissions. -->
