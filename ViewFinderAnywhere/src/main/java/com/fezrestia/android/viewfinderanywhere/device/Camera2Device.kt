@@ -287,7 +287,8 @@ class Camera2DeviceDelegated(
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "get Camera stream config map : DONE")
 
                 if (Log.IS_DEBUG) {
-                    PDR2.logOutputImageFormat(streamConfigMap)
+                    Log.logDebug(TAG, "## Output Image Formats")
+                    PDR2.logImageFormats(streamConfigMap)
                     PDR2.logSurfaceTextureOutputSizes(streamConfigMap)
                 }
 
@@ -1090,11 +1091,15 @@ class Camera2DeviceDelegated(
             cancelScanDoneLatch = null
         }
 
+        private inner class DummyCancelScanCallback : CameraPlatformInterface.CancelScanCallback {
+            override fun onCancelScanDone() { }
+        }
+
         private fun handleStillIntentCaptureCompleted(request: CaptureRequest) {
             val reqTag = request.tag as RequestTag
 
             // Release scan lock.
-            requestHandler.post(CancelScanTask( CameraPlatformInterface.CancelScanCallback { } ))
+            requestHandler.post(CancelScanTask(DummyCancelScanCallback()))
 
             // Restart preview.
             startEvfStream()

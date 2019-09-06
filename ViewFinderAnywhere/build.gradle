@@ -92,6 +92,7 @@ dependencies {
     // Kotlin support.
     implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.50'
     implementation 'androidx.preference:preference-ktx:1.1.0-rc01'
+    implementation "org.jetbrains.kotlin:kotlin-reflect:1.3.50"
 }
 
 // Add for FireBase.

@@ -1,22 +1,22 @@
-package com.fezrestia.android.viewfinderanywhere.device;
+package com.fezrestia.android.viewfinderanywhere.device
 
-import android.view.TextureView;
+import android.view.TextureView
 
 /**
- * Abstracted interface for all of the camera function enabler.
+ * Interface for all of the camera function enabler.
  */
-public interface CameraPlatformInterface {
+interface CameraPlatformInterface {
     /**
      * Prepare all of the binders, references, and resources.
      * This may block calling thread much time.
      */
-    void prepare();
+    fun prepare()
 
     /**
      * Release all of the binders, references, and resources.
      * This may block calling thread much time.
      */
-    void release();
+    fun release()
 
     /**
      * Open camera in asynchronized.
@@ -25,7 +25,7 @@ public interface CameraPlatformInterface {
      * @param openCallback Callback.
      */
     //TODO: consider set aspect timing.
-    void openAsync(float evfAspectWH, OpenCallback openCallback);
+    fun openAsync(evfAspectWH: Float, openCallback: OpenCallback)
 
     /**
      * Camera open callback.
@@ -36,7 +36,7 @@ public interface CameraPlatformInterface {
          *
          * @param isSuccess Open is success or not.
          */
-        void onOpened(boolean isSuccess);
+        fun onOpened(isSuccess: Boolean)
     }
 
     /**
@@ -44,7 +44,7 @@ public interface CameraPlatformInterface {
      *
      * @param closeCallback Callback.
      */
-    void closeAsync(CloseCallback closeCallback);
+    fun closeAsync(closeCallback: CloseCallback)
 
     /**
      * Camera close callback.
@@ -55,7 +55,7 @@ public interface CameraPlatformInterface {
          *
          * @param isSuccess Close is success or not.
          */
-        void onClosed(boolean isSuccess);
+        fun onClosed(isSuccess: Boolean)
     }
 
     /**
@@ -64,7 +64,7 @@ public interface CameraPlatformInterface {
      * @param textureView Finder texture.
      * @param bindSurfaceCallback Callback.
      */
-    void bindPreviewSurfaceAsync(TextureView textureView, BindSurfaceCallback bindSurfaceCallback);
+    fun bindPreviewSurfaceAsync(textureView: TextureView, bindSurfaceCallback: BindSurfaceCallback)
 
     /**
      * Callback for camera and surface binding.
@@ -75,7 +75,7 @@ public interface CameraPlatformInterface {
          *
          * @param isSuccess Bind surface is success or not.
          */
-        void onSurfaceBound(boolean isSuccess);
+        fun onSurfaceBound(isSuccess: Boolean)
     }
 
     /**
@@ -83,7 +83,7 @@ public interface CameraPlatformInterface {
      *
      * @param scanCallback Callback.
      */
-    void requestScanAsync(ScanCallback scanCallback);
+    fun requestScanAsync(scanCallback: ScanCallback)
 
     /**
      * Scan done callback.
@@ -94,7 +94,7 @@ public interface CameraPlatformInterface {
          *
          * @param isSuccess Scan is success or not.
          */
-        void onScanDone(boolean isSuccess);
+        fun onScanDone(isSuccess: Boolean)
     }
 
     /**
@@ -102,7 +102,7 @@ public interface CameraPlatformInterface {
      *
      * @param cancelScanCallback Callback.
      */
-    void requestCancelScanAsync(CancelScanCallback cancelScanCallback);
+    fun requestCancelScanAsync(cancelScanCallback: CancelScanCallback)
 
     /**
      * Cancel scan done callback.
@@ -111,7 +111,7 @@ public interface CameraPlatformInterface {
         /**
          * Cancel scan is done.
          */
-        void onCancelScanDone();
+        fun onCancelScanDone()
     }
 
     /**
@@ -120,8 +120,7 @@ public interface CameraPlatformInterface {
      * @param stillCaptureCallback Callback.
      * @return Request ID
      */
-    @SuppressWarnings("UnusedReturnValue")
-    int requestStillCaptureAsync(StillCaptureCallback stillCaptureCallback);
+    fun requestStillCaptureAsync(stillCaptureCallback: StillCaptureCallback): Int
 
     /**
      * Still capture callback.
@@ -132,14 +131,14 @@ public interface CameraPlatformInterface {
          *
          * @param requestId Capture request ID.
          */
-        void onShutterDone(int requestId);
+        fun onShutterDone(requestId: Int)
 
         /**
          * Capturing sequence is done. After this callback, client app can requests next capture.
          *
          * @param requestId Capture request ID.
          */
-        void onCaptureDone(int requestId);
+        fun onCaptureDone(requestId: Int)
 
         /**
          * Still capture photo data is ready to store.
@@ -147,6 +146,6 @@ public interface CameraPlatformInterface {
          * @param requestId Capture request ID.
          * @param data JPEG frame data.
          */
-        void onPhotoStoreReady(int requestId, byte[] data);
+        fun onPhotoStoreReady(requestId: Int, data: ByteArray)
     }
 }
