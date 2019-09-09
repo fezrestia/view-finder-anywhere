@@ -38,7 +38,7 @@ class OverlayViewFinderController(val context: Context) {
             get
             private set
 
-    private var storageController: StorageController? = null
+    private lateinit var storageController: StorageController
 
     private val forceStopTask = ForceStopTask()
 
@@ -137,8 +137,7 @@ class OverlayViewFinderController(val context: Context) {
         camera.release()
 
         // Storage.
-        storageController?.release()
-        storageController = null
+        storageController.release()
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "stop() : X")
     }
@@ -664,7 +663,7 @@ class OverlayViewFinderController(val context: Context) {
 
         override fun onPhotoStoreReady(requestId: Int, data: ByteArray) {
             // Request store.
-            storageController!!.storePicture(data)
+            storageController.storePicture(data)
 
             currentState.onPhotoStoreReady(data)
         }

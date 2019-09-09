@@ -502,6 +502,7 @@ class Camera2DeviceDelegated(
         val cam = ensure(camDevice)
         val session = ensure(camSession)
         val surface = ensure(evfSurface)
+        val callback = ensure(captureCallback)
 
         try {
             val builder = cam.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
@@ -536,9 +537,7 @@ class Camera2DeviceDelegated(
             // Build request.
             val evfReq = builder.build()
 
-            captureCallback = CaptureCallback()
-
-            session.setRepeatingRequest(evfReq, captureCallback, callbackHandler)
+            session.setRepeatingRequest(evfReq, callback, callbackHandler)
 
         } catch (e: CameraAccessException) {
             throw RuntimeException("Failed to startEvfStream()")
@@ -562,7 +561,6 @@ class Camera2DeviceDelegated(
         }
 
         evfReqBuilder = null
-        captureCallback = null
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "stopEvfStream() : X")
     }
@@ -921,6 +919,7 @@ class Camera2DeviceDelegated(
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onClosed()")
 
             camSession = null
+            captureCallback = null
 
             closeLatch.countDown()
         }
@@ -931,6 +930,7 @@ class Camera2DeviceDelegated(
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onConfigured()")
 
             camSession = session
+            captureCallback = CaptureCallback()
 
             openLatch.countDown()
         }

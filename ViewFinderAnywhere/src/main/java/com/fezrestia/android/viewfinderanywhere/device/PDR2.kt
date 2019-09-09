@@ -187,7 +187,7 @@ internal object PDR2 {
 
         val sensorOrientation = charas.get(CameraCharacteristics.SENSOR_ORIENTATION)!!
 
-        return (sensorOrientation + deviceOrientation + 360) % 360
+        return (sensorOrientation + orientation + 360) % 360
     }
 
     /**
