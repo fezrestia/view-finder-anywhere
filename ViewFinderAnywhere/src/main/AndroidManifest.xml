@@ -6,8 +6,8 @@
 
         package="com.fezrestia.android.viewfinderanywhere"
 
-        android:versionCode="288"
-        android:versionName="4.0.3-288"
+        android:versionCode="289"
+        android:versionName="4.0.3-289"
 >
 
     <!-- Permissions. -->
