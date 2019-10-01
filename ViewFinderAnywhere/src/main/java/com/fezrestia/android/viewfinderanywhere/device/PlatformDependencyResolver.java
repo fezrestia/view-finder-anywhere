@@ -1,5 +1,11 @@
 package com.fezrestia.android.viewfinderanywhere.device;
 
+import android.content.Context;
+import android.graphics.Matrix;
+import android.graphics.RectF;
+import android.view.Surface;
+import android.view.WindowManager;
+
 import com.fezrestia.android.lib.util.log.Log;
 import com.fezrestia.android.viewfinderanywhere.config.ViewFinderAspect;
 
@@ -211,5 +217,94 @@ class PlatformDependencyResolver {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "Result : " + ret.toString());
         if (Log.IS_DEBUG) Log.logDebug(TAG, "getOptimalPictureSize() : X");
         return ret;
+    }
+
+    /**
+     * Get transform matrix for TextureView preview stream.
+     *
+     * @param context Context.
+     * @param bufferWidth Frame buffer width.
+     * @param bufferHeight Frame buffer height.
+     * @param finderWidth Finder width.
+     * @param finderHeight Finder height.
+     * @return Transform matrix.
+     */
+    static Matrix getTextureViewTransformMatrix(
+            Context context,
+            int bufferWidth,
+            int bufferHeight,
+            int finderWidth,
+            int finderHeight) {
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "getTextureViewTransformMatrix() : E");
+
+        // Display rotation.
+        WindowManager winMng = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        int rotation = winMng.getDefaultDisplay().getRotation();
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "## rotation = " + rotation);
+
+        Matrix matrix = new Matrix();
+        matrix.reset();
+
+        RectF bufferRect = new RectF(0f, 0f, bufferWidth, bufferHeight);
+        RectF finderRect = new RectF(0f, 0f, finderWidth, finderHeight);
+        if (Log.IS_DEBUG) {
+            Log.logDebug(TAG, "## BufferRect = " + bufferRect.toShortString());
+            Log.logDebug(TAG, "## FinderRect = " + finderRect.toShortString());
+        }
+        float centerX = finderRect.centerX();
+        float centerY = finderRect.centerY();
+
+        // Aspect consideration.
+        float bufferAspect;
+        switch (rotation) {
+            case Surface.ROTATION_0:
+                // Fall through.
+            case Surface.ROTATION_180:
+                bufferAspect = bufferRect.height() / bufferRect.width();
+                break;
+
+            case Surface.ROTATION_90:
+                // Fall through.
+            case Surface.ROTATION_270:
+                bufferAspect = bufferRect.width() / bufferRect.height();
+                break;
+
+            default:
+                throw new IllegalStateException("Rotation is not valid.");
+        }
+        float finderAspect = finderRect.width() / finderRect.height();
+        if (Log.IS_DEBUG) {
+            Log.logDebug(TAG, "## BufferAspect = " + bufferAspect);
+            Log.logDebug(TAG, "## FinderAspect = " + finderAspect);
+        }
+
+        // Check aspect.
+        if ((int) (bufferAspect * 100) != (int) (finderAspect * 100)) {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "#### Aspect is not matched");
+            // Not matched.
+
+            if (bufferAspect < finderAspect) {
+                // Black area is available on right and left based on buffer coordinates.
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "## Fit buffer right and left to finder.");
+
+                matrix.postScale(
+                        1.0f,
+                        finderAspect / bufferAspect,
+                        centerX,
+                        centerY);
+            } else {
+                // Black area is available on top and bottom based on buffer coordinates.
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "## Fit buffer top and bottom to finder");
+
+                matrix.postScale(
+                        bufferAspect / finderAspect,
+                        1.0f,
+                        centerX,
+                        centerY);
+            }
+        }
+
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "getTextureViewTransformMatrix() : X");
+        return matrix;
     }
 }

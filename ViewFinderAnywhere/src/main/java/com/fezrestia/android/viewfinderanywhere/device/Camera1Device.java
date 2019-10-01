@@ -124,7 +124,7 @@ public class Camera1Device implements CameraPlatformInterface {
     }
 
     @Override
-    public void openAsync(float evfAspectWH, OpenCallback openCallback) {
+    public void openAsync(float evfAspectWH, @NonNull OpenCallback openCallback) {
         mEvfAspectWH = evfAspectWH;
         Runnable task = new OpenTask(openCallback);
         mBackWorker.execute(task);
@@ -259,7 +259,7 @@ public class Camera1Device implements CameraPlatformInterface {
     }
 
     @Override
-    public void closeAsync(CloseCallback closeCallback) {
+    public void closeAsync(@NonNull CloseCallback closeCallback) {
 //        Runnable removeSurfaceTask = new SetSurfaceTask(null);
 //        mBackWorker.execute(removeSurfaceTask);
         Runnable closeTask = new CloseTask(closeCallback);
@@ -305,7 +305,7 @@ public class Camera1Device implements CameraPlatformInterface {
     @Override
     public void bindPreviewSurfaceAsync(
             TextureView textureView,
-            BindSurfaceCallback bindSurfaceCallback) {
+            @NonNull BindSurfaceCallback bindSurfaceCallback) {
 
         int previewWidth = mPreviewSize.getWidth();
         int previewHeight = mPreviewSize.getHeight();
@@ -318,7 +318,7 @@ public class Camera1Device implements CameraPlatformInterface {
         }
 
         // Transform matrix.
-        Matrix matrix = PDR2.getTextureViewTransformMatrix(
+        Matrix matrix = PlatformDependencyResolver.getTextureViewTransformMatrix(
                 mContext,
                 previewWidth,
                 previewHeight,
@@ -440,7 +440,7 @@ public class Camera1Device implements CameraPlatformInterface {
     }
 
     @Override
-    public void requestScanAsync(ScanCallback scanCallback) {
+    public void requestScanAsync(@NonNull ScanCallback scanCallback) {
         mScanTask = new ScanTask(scanCallback);
         mBackWorker.execute(mScanTask);
     }
@@ -533,7 +533,7 @@ public class Camera1Device implements CameraPlatformInterface {
     }
 
     @Override
-    public void requestCancelScanAsync(CancelScanCallback cancelScanCallback) {
+    public void requestCancelScanAsync(@NonNull CancelScanCallback cancelScanCallback) {
         // Cancel scan task.
         mScanTask.cancel();
 
@@ -581,7 +581,7 @@ public class Camera1Device implements CameraPlatformInterface {
     }
 
     @Override
-    public int requestStillCaptureAsync(StillCaptureCallback stillCaptureCallback) {
+    public int requestStillCaptureAsync(@NonNull StillCaptureCallback stillCaptureCallback) {
         ++mRequestId;
         Runnable stillCaptureTask = new StillCaptureTask(mRequestId, stillCaptureCallback);
         mBackWorker.execute(stillCaptureTask);
