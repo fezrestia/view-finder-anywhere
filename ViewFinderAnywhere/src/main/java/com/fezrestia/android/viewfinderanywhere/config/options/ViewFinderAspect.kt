@@ -1,4 +1,4 @@
-package com.fezrestia.android.viewfinderanywhere.config
+package com.fezrestia.android.viewfinderanywhere.config.options
 
 enum class ViewFinderAspect(val ratioWH: Float) {
     WH_1_1(1.0f / 1.0f),

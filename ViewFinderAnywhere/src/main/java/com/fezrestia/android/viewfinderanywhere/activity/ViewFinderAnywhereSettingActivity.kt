@@ -19,9 +19,9 @@ import com.fezrestia.android.lib.util.log.Log
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
 import com.fezrestia.android.viewfinderanywhere.R
-import com.fezrestia.android.viewfinderanywhere.config.CameraApiLevel
-import com.fezrestia.android.viewfinderanywhere.config.ViewFinderAspect
-import com.fezrestia.android.viewfinderanywhere.config.ViewFinderSize
+import com.fezrestia.android.viewfinderanywhere.config.options.CameraApiLevel
+import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAspect
+import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderSize
 import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger
 import com.fezrestia.android.viewfinderanywhere.storage.DirFileUtil
 import com.google.firebase.analytics.FirebaseAnalytics

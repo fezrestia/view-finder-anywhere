@@ -1,4 +1,4 @@
-package com.fezrestia.android.viewfinderanywhere.config
+package com.fezrestia.android.viewfinderanywhere.config.options
 
 @Suppress("unused")
 enum class ViewFinderSize(val scaleRate: Float) {

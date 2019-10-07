@@ -1,4 +1,4 @@
-package com.fezrestia.android.viewfinderanywhere.device;
+package com.fezrestia.android.viewfinderanywhere.device.api1;
 
 import android.content.Context;
 import android.graphics.Matrix;
@@ -7,7 +7,7 @@ import android.view.Surface;
 import android.view.WindowManager;
 
 import com.fezrestia.android.lib.util.log.Log;
-import com.fezrestia.android.viewfinderanywhere.config.ViewFinderAspect;
+import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAspect;
 
 import org.jetbrains.annotations.NotNull;
 

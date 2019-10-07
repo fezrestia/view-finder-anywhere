@@ -1,6 +1,6 @@
 @file:Suppress("PropertyName", "PrivatePropertyName")
 
-package com.fezrestia.android.viewfinderanywhere.device
+package com.fezrestia.android.viewfinderanywhere.device.api2
 
 import android.content.Context
 import android.graphics.ImageFormat
@@ -26,6 +26,8 @@ import android.view.Surface
 import android.view.TextureView
 
 import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.media.ImageProc
+import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface
 
 import java.util.ArrayList
 import java.util.concurrent.CountDownLatch
@@ -827,7 +829,7 @@ class Camera2DeviceDelegated(
             img.close()
 
             // Process JPEG.
-            val resultJpeg = PDR2.doCropRotJpeg(
+            val resultJpeg = ImageProc.doCropRotJpeg(
                     data,
                     reqTag.rotationDeg,
                     cropRegionRect.width().toFloat() / cropRegionRect.height().toFloat(),

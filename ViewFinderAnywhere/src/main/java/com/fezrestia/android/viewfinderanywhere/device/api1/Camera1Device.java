@@ -1,4 +1,4 @@
-package com.fezrestia.android.viewfinderanywhere.device;
+package com.fezrestia.android.viewfinderanywhere.device.api1;
 
 import android.content.Context;
 import android.graphics.Matrix;
@@ -12,7 +12,9 @@ import android.view.TextureView;
 import android.view.WindowManager;
 
 import com.fezrestia.android.lib.util.log.Log;
+import com.fezrestia.android.lib.util.media.ImageProc;
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
+import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -740,7 +742,7 @@ public class Camera1Device implements CameraPlatformInterface {
             public void run() {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "HandleJpegTask.run() : E");
 
-                mResultJpeg = PDR2.doCropRotJpeg(
+                mResultJpeg = ImageProc.doCropRotJpeg(
                         mSrcJpeg,
                         mRotationDeg,
                         mCropAspectWH,

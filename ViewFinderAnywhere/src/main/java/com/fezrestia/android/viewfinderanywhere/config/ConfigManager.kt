@@ -1,6 +1,9 @@
 package com.fezrestia.android.viewfinderanywhere.config
 
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
+import com.fezrestia.android.viewfinderanywhere.config.options.CameraApiLevel
+import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAspect
+import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderSize
 
 /**
  * Total configuration manager.

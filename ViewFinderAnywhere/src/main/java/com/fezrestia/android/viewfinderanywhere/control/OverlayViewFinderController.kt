@@ -7,10 +7,10 @@ import android.os.Handler
 import com.fezrestia.android.lib.util.log.Log
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
 import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
-import com.fezrestia.android.viewfinderanywhere.config.CameraApiLevel
+import com.fezrestia.android.viewfinderanywhere.config.options.CameraApiLevel
 import com.fezrestia.android.viewfinderanywhere.config.ConfigManager
-import com.fezrestia.android.viewfinderanywhere.device.Camera1Device
-import com.fezrestia.android.viewfinderanywhere.device.Camera2Device
+import com.fezrestia.android.viewfinderanywhere.device.api1.Camera1Device
+import com.fezrestia.android.viewfinderanywhere.device.api2.Camera2Device
 import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface
 import com.fezrestia.android.viewfinderanywhere.storage.StorageController
 import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView

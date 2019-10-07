@@ -1,4 +1,4 @@
-package com.fezrestia.android.viewfinderanywhere.config
+package com.fezrestia.android.viewfinderanywhere.config.options
 
 enum class CameraApiLevel {
     API_1,
