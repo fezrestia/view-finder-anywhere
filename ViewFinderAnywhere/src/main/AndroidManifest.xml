@@ -6,8 +6,8 @@
 
     package="com.fezrestia.android.viewfinderanywhere"
 
-    android:versionCode="335"
-    android:versionName="4.1.0-335"
+    android:versionCode="338"
+    android:versionName="4.1.1-338"
 >
 <!--                     | | | |-> incremental build count
                          | | |-> patch

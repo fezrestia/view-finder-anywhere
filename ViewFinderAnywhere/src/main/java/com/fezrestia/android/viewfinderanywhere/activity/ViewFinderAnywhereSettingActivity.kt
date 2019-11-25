@@ -91,9 +91,13 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             vfAspectPref.entryValues = aspects
             vfAspectPref.onPreferenceChangeListener = onChangeListenerImpl
 
+            // Storage selector En/Disable.
             val storagePref: SwitchPreference = findPreference(SP_KEY_IS_STORAGE_SELECTOR_ENABLED)!!
             storagePref.onPreferenceChangeListener = onChangeListenerImpl
 
+            // Add new directory.
+            val addNewDirPref: EditTextPreference = findPreference(SP_KEY_STORAGE_SELECTOR_CREATE_NEW_DIRECTORY)!!
+            addNewDirPref.onPreferenceChangeListener = onChangeListenerImpl
         }
 
         override fun onStart() {
@@ -111,6 +115,10 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             pluginPref.entries = pluginEntries
             pluginPref.entryValues = pluginValues
             pluginPref.onPreferenceChangeListener = OnChangeListenerImpl()
+
+            // Update storage related pref state.
+            val storagePref: SwitchPreference = findPreference(SP_KEY_IS_STORAGE_SELECTOR_ENABLED)!!
+            setEnabledStorageSelectorRelatedPreferences(storagePref.isChecked)
 
             // Storage selector selectables.
             updateStorageSelectorSelectableDirectoryList()
