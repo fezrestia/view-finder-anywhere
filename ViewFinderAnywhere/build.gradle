@@ -1,4 +1,3 @@
-//noinspection GradleDependency
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
@@ -6,13 +5,13 @@ apply plugin: 'kotlin-android-extensions'
 import java.util.regex.Pattern
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
     buildToolsVersion '29.0.2'
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere"
         minSdkVersion 26
-        targetSdkVersion 28
+        targetSdkVersion 29
     }
 
     compileOptions {
@@ -63,10 +62,19 @@ android {
 
     // Define APK name and replace.
     applicationVariants.all { variant ->
-        variant.outputs.all { output ->
-            if (variant.name == 'release') {
-                if (output.outputFile != null && output.outputFile.name.endsWith('.apk')) {
-                    outputFileName = "ViewFinderAnywhere.apk"
+        variant.outputs.each { output ->
+            if (output.outputFileName.endsWith(".apk")) {
+                def name = getArchivesBaseName()
+                def ver = variant.versionName
+
+                switch (variant.name) {
+                    case "debug":
+                        // NOP.
+                        break
+
+                    case "release":
+                        output.outputFileName = "${name}_${ver}.apk"
+                        break
                 }
             }
         }
@@ -84,15 +92,15 @@ android {
 
 dependencies {
     // FireBase analytics.
-    implementation 'com.google.firebase:firebase-core:17.2.0'
+    implementation 'com.google.firebase:firebase-core:17.2.1'
     // Firebase notifications.
-    implementation "com.google.firebase:firebase-messaging:20.0.0"
+    implementation 'com.google.firebase:firebase-messaging:20.0.1'
     // Firebase crash report.
     implementation "com.google.firebase:firebase-crash:16.2.1"
     // Kotlin support.
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.50'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.60'
     implementation 'androidx.preference:preference-ktx:1.1.0'
-    implementation "org.jetbrains.kotlin:kotlin-reflect:1.3.50"
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.3.60'
 }
 
 // Add for FireBase.

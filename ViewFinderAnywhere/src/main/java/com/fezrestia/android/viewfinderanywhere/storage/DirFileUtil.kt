@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Environment
 import com.fezrestia.android.lib.util.log.Log
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
+import com.fezrestia.android.viewfinderanywhere.BuildConfig
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
@@ -25,6 +25,9 @@ object DirFileUtil {
     // Constants.
     const val JPEG_FILE_EXT = ".JPG"
 
+    // Local external storage relative path.
+    private const val LOCAL_STORAGE_REL_PATH = "/Android/data/${BuildConfig.APPLICATION_ID}/files"
+
     // Date in file name format.
     @SuppressLint("ConstantLocale")
     val FILE_NAME_SDF = SimpleDateFormat("yyyy-MM-dd_HHmmss", Locale.getDefault())
@@ -39,11 +42,21 @@ object DirFileUtil {
      */
     @JvmStatic
     fun getApplicationStorageRootPath(context: Context): String {
-        val root = Environment.getExternalStorageDirectory().path
+        val extDir = context.getExternalFilesDir(null)?.absolutePath
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "## ExtFilesDir = $extDir")
+
+        val root = if (extDir != null) {
+            extDir.replace(LOCAL_STORAGE_REL_PATH, "")
+        } else {
+            Log.logError(TAG, "## extDir == null")
+            throw RuntimeException("Ext.Storage is NOT writable.")
+        }
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "## root = $root")
 
         if (Log.IS_DEBUG) {
-            Log.logDebug(TAG, "## Environment.getExternalStorageDirectory() = $root")
-            Log.logDebug(TAG, "## ExtFilesDifs")
+            @Suppress("DEPRECATION") val oldExtRoot = Environment.getExternalStorageDirectory().path
+            Log.logDebug(TAG, "## Environment.getExternalStorageDirectory() = $oldExtRoot")
+            Log.logDebug(TAG, "## ExtFilesDiffs")
             val dirs = context.getExternalFilesDirs(null)
             dirs.forEach { Log.logDebug(TAG, "dir = $it") }
         }

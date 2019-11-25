@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <manifest
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
 
-        package="com.fezrestia.android.viewfinderanywhere"
+    package="com.fezrestia.android.viewfinderanywhere"
 
-        android:versionCode="314"
-        android:versionName="4.0.5-314"
+    android:versionCode="335"
+    android:versionName="4.1.0-335"
 >
+<!--                     | | | |-> incremental build count
+                         | | |-> patch
+                         | |-> minor
+                         |-> major
+-->
 
     <!-- Permissions. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
@@ -23,19 +28,19 @@
 
     <!-- Application. -->
     <application
-            android:name=".ViewFinderAnywhereApplication"
-            android:icon="@drawable/application_icon"
-            android:label="@string/application_label"
-            android:hardwareAccelerated="true"
-            android:allowBackup="false"
-            tools:ignore="GoogleAppIndexingWarning"
+        android:name=".ViewFinderAnywhereApplication"
+        android:icon="@drawable/application_icon"
+        android:label="@string/application_label"
+        android:hardwareAccelerated="true"
+        android:allowBackup="false"
+        tools:ignore="GoogleAppIndexingWarning"
     >
         <activity
-                android:name=".activity.ViewFinderAnywhereSettingActivity"
-                android:label="@string/preference_app_label"
-                android:theme="@style/Theme.AppCompat"
-                android:launchMode="singleTask"
-                tools:ignore="ExportedPreferenceActivity"
+            android:name=".activity.ViewFinderAnywhereSettingActivity"
+            android:label="@string/preference_app_label"
+            android:theme="@style/Theme.AppCompat"
+            android:launchMode="singleTask"
+            tools:ignore="ExportedPreferenceActivity"
         >
 
             <intent-filter>
@@ -47,13 +52,13 @@
         </activity>
 
         <service
-                android:name=".service.OverlayViewFinderService"
-                android:exported="false"
+            android:name=".service.OverlayViewFinderService"
+            android:exported="false"
         />
 
         <service
-                android:name="com.fezrestia.android.lib.firebase.FirebaseMessagingServiceImpl"
-                android:exported="false"
+            android:name="com.fezrestia.android.lib.firebase.FirebaseMessagingServiceImpl"
+            android:exported="false"
         >
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

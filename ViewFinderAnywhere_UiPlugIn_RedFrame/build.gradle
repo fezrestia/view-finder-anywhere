@@ -25,10 +25,19 @@ android {
 
     // Define APK name and replace.
     applicationVariants.all { variant ->
-        variant.outputs.all { output ->
-            if (variant.name == 'release') {
-                if (output.outputFile != null && output.outputFile.name.endsWith('.apk')) {
-                    outputFileName = "ViewFinderAnywhereUiPlugInRedFrame.apk"
+        variant.outputs.each { output ->
+            if (output.outputFileName.endsWith(".apk")) {
+                def name = getArchivesBaseName()
+                def ver = variant.versionName
+
+                switch (variant.name) {
+                    case "debug":
+                        // NOP.
+                        break
+
+                    case "release":
+                        output.outputFileName = "${name}_${ver}.apk"
+                        break
                 }
             }
         }

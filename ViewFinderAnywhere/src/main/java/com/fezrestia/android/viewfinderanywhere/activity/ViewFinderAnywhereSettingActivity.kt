@@ -319,7 +319,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             if (Log.IS_DEBUG) {
                 Log.logDebug(TAG, "contentsRoot = ${contentsRoot.path}")
                 Log.logDebug(TAG, "listFiles() DONE")
-                fileList.forEach { file -> Log.logDebug(TAG, "path = ${file.path}") }
+//                fileList.forEach { file -> Log.logDebug(TAG, "path = ${file.path}") }
             }
 
             // Scan directories.

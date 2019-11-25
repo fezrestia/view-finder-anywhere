@@ -279,8 +279,8 @@ class OverlayViewFinderRootView : RelativeLayout {
     }
 
     private fun releaseWindowPositionCorrector() {
-        if (windowPositionCorrectionTask != null) {
-            uiHandler.removeCallbacks(windowPositionCorrectionTask)
+        windowPositionCorrectionTask?.let { task ->
+            uiHandler.removeCallbacks(task)
             windowPositionCorrectionTask = null
         }
     }
@@ -820,8 +820,8 @@ class OverlayViewFinderRootView : RelativeLayout {
             controller.currentState.requestScan()
 
             // Stop animation.
-            if (windowPositionCorrectionTask != null) {
-                uiHandler.removeCallbacks(windowPositionCorrectionTask)
+            windowPositionCorrectionTask?.let { task ->
+                uiHandler.removeCallbacks(task)
                 windowPositionCorrectionTask = null
             }
 
@@ -944,8 +944,10 @@ class OverlayViewFinderRootView : RelativeLayout {
             }
 
             // Correct position start.
-            windowPositionCorrectionTask = WindowPositionCorrectionTask(target)
-            uiHandler.postDelayed(windowPositionCorrectionTask, WINDOW_ANIMATION_INTERVAL)
+            WindowPositionCorrectionTask(target).let { task ->
+                uiHandler.postDelayed(task, WINDOW_ANIMATION_INTERVAL)
+                windowPositionCorrectionTask = task
+            }
         }
 
         override fun onSingleCanceled() {
@@ -1009,7 +1011,10 @@ class OverlayViewFinderRootView : RelativeLayout {
         // Pause controller.
         if (isResumed) {
             // Kill animation.
-            uiHandler.removeCallbacks(windowPositionCorrectionTask)
+            windowPositionCorrectionTask?.let { task ->
+                uiHandler.removeCallbacks(task)
+                windowPositionCorrectionTask = null
+            }
 
             // Hide surface.
             clearSurface()
