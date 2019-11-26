@@ -50,6 +50,8 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
         private val RES_ID_STRING_PLUG_IN_TITLE = "plug_in_title"
 
+        private val onChangeListenerImpl = OnChangeListenerImpl()
+
         // UI Plug-IN container class.
         private inner class UiPlugInPackage(
                 internal val packageName: String,
@@ -58,14 +60,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.preferences_view_finder_anywhere, rootKey)
 
-            val onChangeListenerImpl = OnChangeListenerImpl()
-
             // Setup static preference options.
-
-            // En/Disable.
-            val enDisPref: SwitchPreference = findPreference(SP_KEY_OVERLAY_VIEW_FINDER_ENABLE_DISABLE)!!
-            enDisPref.isChecked = App.isOverlayViewFinderEnabled
-            enDisPref.onPreferenceChangeListener = onChangeListenerImpl
 
             // API Level.
             val apiLevelPref: ListPreference = findPreference(CameraApiLevel.key)!!
@@ -106,6 +101,11 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
             // Setup dynamic preference options.
 
+            // En/Disable.
+            val enDisPref: SwitchPreference = findPreference(SP_KEY_OVERLAY_VIEW_FINDER_ENABLE_DISABLE)!!
+            enDisPref.isChecked = App.isOverlayViewFinderEnabled
+            enDisPref.onPreferenceChangeListener = onChangeListenerImpl
+
             // UI PlugIN Packages.
             val pluginPref: ListPreference = findPreference(
                     Constants.SP_KEY_UI_PLUGIN_PACKAGE)!!
@@ -114,7 +114,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             val pluginValues = plugins.map { it.packageName }.toTypedArray()
             pluginPref.entries = pluginEntries
             pluginPref.entryValues = pluginValues
-            pluginPref.onPreferenceChangeListener = OnChangeListenerImpl()
+            pluginPref.onPreferenceChangeListener = onChangeListenerImpl
 
             // Update storage related pref state.
             val storagePref: SwitchPreference = findPreference(Constants.SP_KEY_IS_STORAGE_SELECTOR_ENABLED)!!
@@ -354,7 +354,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             pref.entries = entries
             pref.entryValues = entries
             pref.values = validValues
-            pref.onPreferenceChangeListener = OnChangeListenerImpl()
+            pref.onPreferenceChangeListener = onChangeListenerImpl
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "updateStorageSelectorSelectableDirectoryList() : X")
         }

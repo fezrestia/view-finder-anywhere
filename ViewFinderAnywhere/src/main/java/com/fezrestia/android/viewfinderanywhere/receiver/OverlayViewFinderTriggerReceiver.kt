@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.IntentFilter
 
 import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.Constants
 import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger
 
@@ -42,6 +43,14 @@ class OverlayViewFinderTriggerReceiver : BroadcastReceiver() {
         when (intent.action) {
             Constants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY -> {
                 OnOffTrigger.requestToggleVisibility(context)
+            }
+
+            Constants.INTENT_ACTION_TOGGLE_OVERLAY_ENABLE_DISABLE -> {
+                if (App.isOverlayViewFinderEnabled) {
+                    OnOffTrigger.requestStop(context)
+                } else {
+                    OnOffTrigger.requestStart(context)
+                }
             }
 
             Intent.ACTION_SCREEN_ON -> {

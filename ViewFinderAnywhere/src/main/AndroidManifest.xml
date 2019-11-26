@@ -6,8 +6,8 @@
 
     package="com.fezrestia.android.viewfinderanywhere"
 
-    android:versionCode="341"
-    android:versionName="4.1.2-341"
+    android:versionCode="351"
+    android:versionName="4.2.0-351"
 >
 <!--                     | | | |-> incremental build count
                          | | |-> patch
@@ -64,6 +64,27 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <receiver
+            android:name=".receiver.OverlayViewFinderTriggerReceiver"
+            android:exported="false"
+        >
+            <intent-filter>
+                <action android:name="com.fezrestia.android.viewfinderanywhere.intent.ACTION_TOGGLE_OVERLAY_ENABLE_DISABLE" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".widget.ToggleEnableDisableWidget"
+        >
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/toggle_enable_disable_widget_info"
+            />
+        </receiver>
 
     </application>
 

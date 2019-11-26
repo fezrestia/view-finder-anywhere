@@ -14,6 +14,9 @@ class Constants {
         /** Intent constants. */
         const val INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY
                 = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_TOGGLE_OVERLAY_VISIBILITY"
+        /** Intent constants to toggle overlay enable/disable. */
+        const val INTENT_ACTION_TOGGLE_OVERLAY_ENABLE_DISABLE
+                = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_TOGGLE_OVERLAY_ENABLE_DISABLE"
         /** Open storage selector. */
         const val INTENT_ACTION_OPEN_STORAGE_SELECTOR
                 = "com.fezrestia.android.viewfinderanywhere.intent.ACTION_OPEN_STORAGE_SELECTOR"
