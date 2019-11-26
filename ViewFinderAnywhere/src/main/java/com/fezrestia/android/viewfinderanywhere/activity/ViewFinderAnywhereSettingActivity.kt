@@ -16,13 +16,14 @@ import androidx.preference.*
 
 import com.fezrestia.android.lib.firebase.FirebaseAnalyticsController
 import com.fezrestia.android.lib.util.log.Log
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
+import com.fezrestia.android.viewfinderanywhere.App
+import com.fezrestia.android.viewfinderanywhere.Constants
 import com.fezrestia.android.viewfinderanywhere.R
 import com.fezrestia.android.viewfinderanywhere.config.options.CameraApiLevel
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAspect
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderSize
 import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger
+import com.fezrestia.android.viewfinderanywhere.plugin.ui.loadCustomizedUiResources
 import com.fezrestia.android.viewfinderanywhere.storage.DirFileUtil
 import com.google.firebase.analytics.FirebaseAnalytics
 
@@ -45,7 +46,6 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
         private val TAG = "SettingFragment"
 
         private val SP_KEY_OVERLAY_VIEW_FINDER_ENABLE_DISABLE = "sp-key-overlay-view-finder-enable-disable"
-        private val SP_KEY_IS_STORAGE_SELECTOR_ENABLED = "sp-key-is-storage-selector-enabled"
         private val SP_KEY_STORAGE_SELECTOR_CREATE_NEW_DIRECTORY = "sp-key-storage-selector-create-new-directory"
 
         private val RES_ID_STRING_PLUG_IN_TITLE = "plug_in_title"
@@ -64,7 +64,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
             // En/Disable.
             val enDisPref: SwitchPreference = findPreference(SP_KEY_OVERLAY_VIEW_FINDER_ENABLE_DISABLE)!!
-            enDisPref.isChecked = ViewFinderAnywhereApplication.isOverlayViewFinderEnabled
+            enDisPref.isChecked = App.isOverlayViewFinderEnabled
             enDisPref.onPreferenceChangeListener = onChangeListenerImpl
 
             // API Level.
@@ -92,7 +92,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             vfAspectPref.onPreferenceChangeListener = onChangeListenerImpl
 
             // Storage selector En/Disable.
-            val storagePref: SwitchPreference = findPreference(SP_KEY_IS_STORAGE_SELECTOR_ENABLED)!!
+            val storagePref: SwitchPreference = findPreference(Constants.SP_KEY_IS_STORAGE_SELECTOR_ENABLED)!!
             storagePref.onPreferenceChangeListener = onChangeListenerImpl
 
             // Add new directory.
@@ -108,7 +108,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
             // UI PlugIN Packages.
             val pluginPref: ListPreference = findPreference(
-                    ViewFinderAnywhereConstants.SP_KEY_UI_PLUGIN_PACKAGE)!!
+                    Constants.SP_KEY_UI_PLUGIN_PACKAGE)!!
             val plugins = queryUiPlugInPackages()
             val pluginEntries = plugins.map { it.plugInTitle }.toTypedArray()
             val pluginValues = plugins.map { it.packageName }.toTypedArray()
@@ -117,7 +117,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             pluginPref.onPreferenceChangeListener = OnChangeListenerImpl()
 
             // Update storage related pref state.
-            val storagePref: SwitchPreference = findPreference(SP_KEY_IS_STORAGE_SELECTOR_ENABLED)!!
+            val storagePref: SwitchPreference = findPreference(Constants.SP_KEY_IS_STORAGE_SELECTOR_ENABLED)!!
             setEnabledStorageSelectorRelatedPreferences(storagePref.isChecked)
 
             // Storage selector selectables.
@@ -147,20 +147,18 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                             OnOffTrigger.requestStop(requireContext())
                         }
 
-                        firebaseValue = ViewFinderAnywhereConstants.getBooleanString(isChecked)
+                        firebaseValue = Constants.getBooleanString(isChecked)
                     }
 
                     CameraApiLevel.key -> {
                         firebaseValue = newValue as String
                     }
 
-                    ViewFinderAnywhereConstants.SP_KEY_UI_PLUGIN_PACKAGE -> {
+                    Constants.SP_KEY_UI_PLUGIN_PACKAGE -> {
                         val customPackage: String = newValue as String
 
                         // Reload resources.
-                        ViewFinderAnywhereApplication.loadCustomizedUiResources(
-                                requireContext(),
-                                customPackage)
+                        loadCustomizedUiResources(requireContext(), customPackage)
 
                         // For Firebase.
                         firebaseValue = FirebaseAnalyticsController.getPkgNameValue(customPackage)
@@ -174,20 +172,18 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                         firebaseValue = newValue as String
                     }
 
-                    SP_KEY_IS_STORAGE_SELECTOR_ENABLED -> {
+                    Constants.SP_KEY_IS_STORAGE_SELECTOR_ENABLED -> {
                         val isEnabled: Boolean = newValue as Boolean
 
                         if (!isEnabled) {
                             // Reset all storage settings.
-                            ViewFinderAnywhereApplication.getGlobalSharedPreferences().edit()
-                                    .putStringSet(
-                                            ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
-                                            null)
+                            App.sp.edit().putStringSet(
+                                    Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
+                                    null)
                                     .apply()
-                            ViewFinderAnywhereApplication.getGlobalSharedPreferences().edit()
-                                    .putStringSet(
-                                            ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_TARGET_DIRECTORY,
-                                            null)
+                            App.sp.edit().putStringSet(
+                                    Constants.SP_KEY_STORAGE_SELECTOR_TARGET_DIRECTORY,
+                                    null)
                                     .apply()
 
                             setEnabledStorageSelectorRelatedPreferences(false)
@@ -217,7 +213,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                         }
                     }
 
-                    ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY -> {
+                    Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY -> {
                         @Suppress("UNCHECKED_CAST")
                         val validDirSet: MutableSet<String> = newValue as MutableSet<String>
 
@@ -227,10 +223,9 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                         if (Log.IS_DEBUG) validDirSet.forEach { dir -> Log.logDebug(TAG, "ValidDir = $dir") }
 
                         // Store.
-                        ViewFinderAnywhereApplication.getGlobalSharedPreferences().edit()
-                                .putStringSet(
-                                        ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
-                                        validDirSet)
+                        App.sp.edit().putStringSet(
+                                Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
+                                validDirSet)
                                 .apply()
                     }
 
@@ -241,8 +236,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
                 if (firebaseValue != null) {
                     // Firebase analytics.
-                    ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
-                            .createNewLogRequest()
+                    App.firebase.createNewLogRequest()
                             .setEvent(FirebaseAnalytics.Event.SELECT_CONTENT)
                             .setParam(FirebaseAnalytics.Param.ITEM_ID, preference.key)
                             .setParam(FirebaseAnalytics.Param.ITEM_NAME, firebaseValue)
@@ -259,7 +253,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             createPref.isEnabled = isEnabled
 
             val selectablePref: MultiSelectListPreference = findPreference(
-                    ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY)!!
+                    Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY)!!
             selectablePref.isEnabled = isEnabled
         }
 
@@ -268,7 +262,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
             val plugins: MutableList<UiPlugInPackage> = mutableListOf()
 
-            val intent = Intent(ViewFinderAnywhereConstants.INTENT_ACTION_REGISTER_UI_PLUG_IN)
+            val intent = Intent(Constants.INTENT_ACTION_REGISTER_UI_PLUG_IN)
             val results = pm.queryIntentActivities(intent, 0)
             results.forEach { result ->
                 // Create plug-in package context.
@@ -343,10 +337,9 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             }
 
             // Existing path is valid for selected values.
-            val selectableSet: Set<String> = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
-                    .getStringSet(
-                            ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
-                            setOf<String>()) as Set<String>
+            val selectableSet = App.sp.getStringSet(
+                    Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
+                    setOf<String>()) as Set<String>
             val validValues = mutableSetOf<String>()
             selectableSet.forEach { selectable ->
                 if (dirPathList.contains(selectable)) {
@@ -356,7 +349,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
             // Apply to preferences.
             val pref: MultiSelectListPreference = findPreference(
-                    ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY)!!
+                    Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY)!!
             val entries = dirPathList.toTypedArray()
             pref.entries = entries
             pref.entryValues = entries
@@ -401,7 +394,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
         }
 
         // Firebase analytics.
-        ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController().createNewLogRequest()
+        App.firebase.createNewLogRequest()
                 .setEvent(FirebaseAnalytics.Event.APP_OPEN)
                 .setParam(FirebaseAnalytics.Param.ITEM_ID, TAG)
                 .done()

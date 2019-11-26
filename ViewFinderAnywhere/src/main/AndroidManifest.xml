@@ -6,8 +6,8 @@
 
     package="com.fezrestia.android.viewfinderanywhere"
 
-    android:versionCode="338"
-    android:versionName="4.1.1-338"
+    android:versionCode="341"
+    android:versionName="4.1.2-341"
 >
 <!--                     | | | |-> incremental build count
                          | | |-> patch
@@ -28,7 +28,7 @@
 
     <!-- Application. -->
     <application
-        android:name=".ViewFinderAnywhereApplication"
+        android:name=".App"
         android:icon="@drawable/application_icon"
         android:label="@string/application_label"
         android:hardwareAccelerated="true"

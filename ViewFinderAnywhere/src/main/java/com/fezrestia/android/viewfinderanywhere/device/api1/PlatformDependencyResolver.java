@@ -239,7 +239,7 @@ class PlatformDependencyResolver {
 
         // Display rotation.
         WindowManager winMng = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        int rotation = winMng.getDefaultDisplay().getRotation();
+        int rotation = Objects.requireNonNull(winMng).getDefaultDisplay().getRotation();
         if (Log.IS_DEBUG) Log.logDebug(TAG, "## rotation = " + rotation);
 
         Matrix matrix = new Matrix();

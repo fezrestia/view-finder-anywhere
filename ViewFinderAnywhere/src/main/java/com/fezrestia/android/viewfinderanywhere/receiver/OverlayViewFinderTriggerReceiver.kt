@@ -8,12 +8,10 @@ import android.content.Intent
 import android.content.IntentFilter
 
 import com.fezrestia.android.lib.util.log.Log
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
+import com.fezrestia.android.viewfinderanywhere.Constants
 import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger
 
 class OverlayViewFinderTriggerReceiver : BroadcastReceiver() {
-    private val TAG = "OverlayViewFinderTriggerReceiver"
-
     /**
      * Register this receiver to system.
      *
@@ -21,7 +19,7 @@ class OverlayViewFinderTriggerReceiver : BroadcastReceiver() {
      */
     fun register(context: Context) {
         val filter = IntentFilter()
-        filter.addAction(ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY)
+        filter.addAction(Constants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY)
         filter.addAction(Intent.ACTION_SCREEN_ON)
         filter.addAction(Intent.ACTION_SCREEN_OFF)
 
@@ -42,7 +40,7 @@ class OverlayViewFinderTriggerReceiver : BroadcastReceiver() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "ACTION = ${intent.action}")
 
         when (intent.action) {
-            ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY -> {
+            Constants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY -> {
                 OnOffTrigger.requestToggleVisibility(context)
             }
 
@@ -59,5 +57,9 @@ class OverlayViewFinderTriggerReceiver : BroadcastReceiver() {
                 throw IllegalArgumentException("Unexpected Action = ${intent.action}")
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "OverlayViewFinderTriggerReceiver"
     }
 }

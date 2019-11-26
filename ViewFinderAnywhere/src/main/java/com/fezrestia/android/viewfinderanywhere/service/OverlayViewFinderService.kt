@@ -14,10 +14,11 @@ import android.view.View
 
 import com.fezrestia.android.lib.util.log.Log
 import com.fezrestia.android.viewfinderanywhere.R
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
+import com.fezrestia.android.viewfinderanywhere.App
+import com.fezrestia.android.viewfinderanywhere.Constants
 import com.fezrestia.android.viewfinderanywhere.config.ConfigManager
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController
+import com.fezrestia.android.viewfinderanywhere.plugin.ui.loadCustomizedUiResources
 import com.fezrestia.android.viewfinderanywhere.receiver.OverlayViewFinderTriggerReceiver
 import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView
 import com.fezrestia.android.viewfinderanywhere.view.StorageSelectorRootView
@@ -49,15 +50,14 @@ class OverlayViewFinderService : Service() {
 
         // If service is restarted after process is killed by LMK for instance,
         // load current selected resources here.
-        val customPackage = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
-                .getString(ViewFinderAnywhereConstants.SP_KEY_UI_PLUGIN_PACKAGE, null)
-        ViewFinderAnywhereApplication.loadCustomizedUiResources(this, customPackage)
+        val customPackage = App.sp.getString(Constants.SP_KEY_UI_PLUGIN_PACKAGE, null)
+        loadCustomizedUiResources(this, customPackage)
 
         // Create and dependency injection.
         setupCoreInstances()
 
         // Visibility toggle intent.
-        val visibilityToggle = Intent(ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY)
+        val visibilityToggle = Intent(Constants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY)
         visibilityToggle.setPackage(applicationContext.packageName)
         val notificationContent = PendingIntent.getBroadcast(
                 this,
@@ -116,8 +116,8 @@ class OverlayViewFinderService : Service() {
         if (action == null) {
             Log.logError(TAG, "ACTION = NULL")
         } else when (action) {
-            ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_START_SERVICE -> {
-                ViewFinderAnywhereApplication.isOverlayViewFinderEnabled = true
+            Constants.INTENT_ACTION_REQUEST_START_SERVICE -> {
+                App.isOverlayViewFinderEnabled = true
 
                 // Start overlay view finder.
                 cameraView.initialize()
@@ -127,7 +127,7 @@ class OverlayViewFinderService : Service() {
                 triggerReceiver.register(this)
             }
 
-            ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_STOP_SERVICE -> {
+            Constants.INTENT_ACTION_REQUEST_STOP_SERVICE -> {
                 // Stop overlay view finder.
                 triggerReceiver.unregister(this)
                 controller.pause()
@@ -136,20 +136,20 @@ class OverlayViewFinderService : Service() {
 
                 stopSelf()
 
-                ViewFinderAnywhereApplication.isOverlayViewFinderEnabled = false
+                App.isOverlayViewFinderEnabled = false
             }
 
-            ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY -> {
+            Constants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY -> {
                 controller.currentState.onToggleShowHideRequired()
             }
 
-            ViewFinderAnywhereConstants.INTENT_ACTION_OPEN_STORAGE_SELECTOR -> {
+            Constants.INTENT_ACTION_OPEN_STORAGE_SELECTOR -> {
                 // Add UI.
                 storageView.initialize()
                 storageView.addToOverlayWindow()
             }
 
-            ViewFinderAnywhereConstants.INTENT_ACTION_CLOSE_STORAGE_SELECTOR -> {
+            Constants.INTENT_ACTION_CLOSE_STORAGE_SELECTOR -> {
                 // Remove UI.
                 storageView.removeFromOverlayWindow()
             }

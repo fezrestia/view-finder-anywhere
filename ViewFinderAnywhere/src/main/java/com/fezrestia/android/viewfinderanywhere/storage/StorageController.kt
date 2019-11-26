@@ -7,8 +7,8 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Handler
 import com.fezrestia.android.lib.util.log.Log
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
+import com.fezrestia.android.viewfinderanywhere.App
+import com.fezrestia.android.viewfinderanywhere.Constants
 import java.util.Calendar
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
@@ -133,10 +133,9 @@ class StorageController constructor (
     }
 
     private fun getTargetDirSet(): MutableSet<String> {
-        val targetDirSet: MutableSet<String>
-                = ViewFinderAnywhereApplication.getGlobalSharedPreferences().getStringSet(
-                        ViewFinderAnywhereConstants.SP_KEY_STORAGE_SELECTOR_TARGET_DIRECTORY,
-                        mutableSetOf<String>()) as MutableSet<String>
+        val targetDirSet = App.sp.getStringSet(
+                Constants.SP_KEY_STORAGE_SELECTOR_TARGET_DIRECTORY,
+                mutableSetOf<String>()) as MutableSet<String>
 
         // Default dir.
         if (targetDirSet.isEmpty()) {

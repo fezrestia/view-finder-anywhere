@@ -1,6 +1,6 @@
 package com.fezrestia.android.viewfinderanywhere.config
 
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
+import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.config.options.CameraApiLevel
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAspect
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderSize
@@ -27,8 +27,7 @@ class ConfigManager {
 
     private fun loadPreferences() {
         // Target Camera API Level.
-        val apiLevel = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
-                .getString(CameraApiLevel.key,null)
+        val apiLevel = App.sp.getString(CameraApiLevel.key, null)
         camApiLv = if (apiLevel == null) {
             // Use default.
             CameraApiLevel.API_1
@@ -37,8 +36,7 @@ class ConfigManager {
         }
 
         // Size.
-        val size = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
-                .getString(ViewFinderSize.key, null)
+        val size = App.sp.getString(ViewFinderSize.key, null)
         evfSize = if (size == null) {
             // Unexpected or not initialized yet. Use default.
             ViewFinderSize.L
@@ -47,8 +45,7 @@ class ConfigManager {
         }
 
         // Aspect.
-        val aspect = ViewFinderAnywhereApplication.getGlobalSharedPreferences()
-                .getString(ViewFinderAspect.key, null)
+        val aspect = App.sp.getString(ViewFinderAspect.key, null)
         evfAspect = if (aspect == null) {
             // Unexpected or not initialized yet. Use default.
             ViewFinderAspect.WH_1_1

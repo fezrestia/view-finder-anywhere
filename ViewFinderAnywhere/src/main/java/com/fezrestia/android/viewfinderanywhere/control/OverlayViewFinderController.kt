@@ -5,8 +5,8 @@ import android.net.Uri
 import android.os.Handler
 
 import com.fezrestia.android.lib.util.log.Log
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
+import com.fezrestia.android.viewfinderanywhere.App
+import com.fezrestia.android.viewfinderanywhere.Constants
 import com.fezrestia.android.viewfinderanywhere.config.options.CameraApiLevel
 import com.fezrestia.android.viewfinderanywhere.config.ConfigManager
 import com.fezrestia.android.viewfinderanywhere.device.api1.Camera1Device
@@ -22,12 +22,7 @@ import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView
  * @param context Context Master context
  */
 class OverlayViewFinderController(val context: Context) {
-    private val TAG = "OverlayViewFinderController"
-
     private val TRIGGER_FAILED_FEEDBACK_DELAY_MILLIS = 1000L
-
-    // UI thread handler.
-    private val uiHandler: Handler
 
     // Core instances.
     private lateinit var rootView: OverlayViewFinderRootView
@@ -43,7 +38,7 @@ class OverlayViewFinderController(val context: Context) {
     private val forceStopTask = ForceStopTask()
 
     init {
-        uiHandler = ViewFinderAnywhereApplication.getUiThreadHandler()
+        // NOP.
     }
 
     /**
@@ -78,14 +73,14 @@ class OverlayViewFinderController(val context: Context) {
         // Camera.
         camera = when (configManager.camApiLv) {
             CameraApiLevel.API_1 -> Camera1Device(context)
-            CameraApiLevel.API_2 -> Camera2Device(context, uiHandler)
+            CameraApiLevel.API_2 -> Camera2Device(context, App.ui)
         }
         camera.prepare()
 
         // Storage.
         storageController = StorageController(
                 context,
-                uiHandler,
+                App.ui,
                 StorageControllerCallback())
 
         if (Log.IS_DEBUG) Log.logDebug(TAG, "start() : X")
@@ -101,7 +96,7 @@ class OverlayViewFinderController(val context: Context) {
         currentState.onResume()
 
         // Storage selector.
-        if (ViewFinderAnywhereApplication.isStorageSelectorEnabled()) {
+        if (App.isStorageSelectorEnabled) {
             // Start storage selector.
             OnOffTrigger.openStorageSelector(context)
         }
@@ -383,7 +378,7 @@ class OverlayViewFinderController(val context: Context) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraBusy()")
 
             // Camera can not be used.
-            uiHandler.postDelayed(
+            App.ui.postDelayed(
                     forceStopTask,
                     TRIGGER_FAILED_FEEDBACK_DELAY_MILLIS)
         }
@@ -419,7 +414,7 @@ class OverlayViewFinderController(val context: Context) {
         override val isActive = true
 
         override fun entry() {
-            uiHandler.post(VisualFeedbackClearTask())
+            App.ui.post(VisualFeedbackClearTask())
         }
 
         override fun onPause() {
@@ -445,7 +440,7 @@ class OverlayViewFinderController(val context: Context) {
         override val isActive = true
 
         override fun entry() {
-            uiHandler.post(VisualFeedbackOnScanStartedTask())
+            App.ui.post(VisualFeedbackOnScanStartedTask())
         }
 
         override fun onPause() {
@@ -506,7 +501,7 @@ class OverlayViewFinderController(val context: Context) {
         override val isActive = true
 
         override fun entry() {
-            uiHandler.post(VisualFeedbackOnScanDoneTask(isSuccess))
+            App.ui.post(VisualFeedbackOnScanDoneTask(isSuccess))
         }
 
         override fun onPause() {
@@ -564,8 +559,8 @@ class OverlayViewFinderController(val context: Context) {
         override fun onShutterDone() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onShutterDone()")
 
-            uiHandler.post(VisualFeedbackClearTask())
-            uiHandler.post(VisualFeedbackOnShutterDoneTask())
+            App.ui.post(VisualFeedbackClearTask())
+            App.ui.post(VisualFeedbackOnShutterDoneTask())
         }
 
         override fun onStillCaptureDone() {
@@ -651,9 +646,8 @@ class OverlayViewFinderController(val context: Context) {
             currentState.onShutterDone()
 
             // Firebase analytics.
-            ViewFinderAnywhereApplication.getGlobalFirebaseAnalyticsController()
-                    .createNewLogRequest()
-                    .setEvent(ViewFinderAnywhereConstants.FIREBASE_EVENT_ON_SHUTTER_DONE)
+            App.firebase.createNewLogRequest()
+                    .setEvent(Constants.FIREBASE_EVENT_ON_SHUTTER_DONE)
                     .done()
         }
 
@@ -675,4 +669,7 @@ class OverlayViewFinderController(val context: Context) {
         }
     }
 
+    companion object {
+        private const val TAG = "OverlayViewFinderController"
+    }
 }

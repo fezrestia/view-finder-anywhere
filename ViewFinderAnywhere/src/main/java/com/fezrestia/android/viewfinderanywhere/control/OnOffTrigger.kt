@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 
 import com.fezrestia.android.lib.util.log.Log
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
+import com.fezrestia.android.viewfinderanywhere.Constants
 import com.fezrestia.android.viewfinderanywhere.service.OverlayViewFinderService
 
 /**
@@ -34,7 +34,7 @@ object OnOffTrigger {
      */
     @JvmStatic
     fun requestStart(context: Context) {
-        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_START_SERVICE)
+        notifyToService(context, Constants.INTENT_ACTION_REQUEST_START_SERVICE)
     }
 
     /**
@@ -44,7 +44,7 @@ object OnOffTrigger {
      */
     @JvmStatic
     fun requestStop(context: Context) {
-        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_REQUEST_STOP_SERVICE)
+        notifyToService(context, Constants.INTENT_ACTION_REQUEST_STOP_SERVICE)
     }
 
     /**
@@ -56,7 +56,7 @@ object OnOffTrigger {
     fun requestToggleVisibility(context: Context) {
         notifyToService(
                 context,
-                ViewFinderAnywhereConstants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY)
+                Constants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY)
     }
 
     /**
@@ -66,7 +66,7 @@ object OnOffTrigger {
      */
     @JvmStatic
     fun openStorageSelector(context: Context) {
-        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_OPEN_STORAGE_SELECTOR)
+        notifyToService(context, Constants.INTENT_ACTION_OPEN_STORAGE_SELECTOR)
     }
 
     /**
@@ -76,7 +76,7 @@ object OnOffTrigger {
      */
     @JvmStatic
     fun closeStorageSelector(context: Context) {
-        notifyToService(context, ViewFinderAnywhereConstants.INTENT_ACTION_CLOSE_STORAGE_SELECTOR)
+        notifyToService(context, Constants.INTENT_ACTION_CLOSE_STORAGE_SELECTOR)
     }
 
     /**

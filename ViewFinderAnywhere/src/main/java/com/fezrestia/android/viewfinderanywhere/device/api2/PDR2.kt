@@ -4,8 +4,6 @@ package com.fezrestia.android.viewfinderanywhere.device.api2
 
 import android.annotation.TargetApi
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.graphics.Rect
@@ -25,8 +23,6 @@ import android.view.WindowManager
 import com.fezrestia.android.lib.util.log.Log
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAspect
 
-import java.io.ByteArrayOutputStream
-import java.io.IOException
 import java.util.ArrayList
 import kotlin.math.abs
 

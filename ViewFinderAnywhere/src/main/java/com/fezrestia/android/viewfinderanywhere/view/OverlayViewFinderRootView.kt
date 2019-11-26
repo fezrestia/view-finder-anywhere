@@ -31,11 +31,11 @@ import com.fezrestia.android.lib.util.log.Log
 import com.fezrestia.android.lib.util.math.IntXY
 import com.fezrestia.android.lib.util.math.IntWH
 import com.fezrestia.android.viewfinderanywhere.R
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication.CustomizableResourceContainer
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereConstants
+import com.fezrestia.android.viewfinderanywhere.App
+import com.fezrestia.android.viewfinderanywhere.Constants
 import com.fezrestia.android.viewfinderanywhere.config.ConfigManager
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController
+import com.fezrestia.android.viewfinderanywhere.plugin.ui.CustomizableResourceContainer
 import kotlinx.android.synthetic.main.overlay_view_finder_root.view.*
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -49,27 +49,9 @@ class OverlayViewFinderRootView : RelativeLayout {
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
     constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(context, attrs, defStyle)
 
-    companion object {
-        // Log tag.
-        const val TAG = "OverlayViewFinderRootView"
-
-        // Window position correction animation interval.
-        private const val WINDOW_ANIMATION_INTERVAL = 16L
-
-        // Hidden window position.
-        private const val WINDOW_HIDDEN_POS_X = -5000
-
-        // Alpha definitions.
-        private const val SHOWN_ALPHA = 1.0f
-        private const val HIDDEN_ALPHA = 0.0f
-    }
-
     // Core instances.
     private lateinit var controller: OverlayViewFinderController
     private lateinit var configManager: ConfigManager
-
-    // UI thread handler.
-    private val uiHandler = ViewFinderAnywhereApplication.getUiThreadHandler()
 
     // Display coordinates.
     private val displayWH = IntWH(0, 0)
@@ -156,7 +138,7 @@ class OverlayViewFinderRootView : RelativeLayout {
             lastDelta.set(dXY)
 
             // Next.
-            uiHandler.postDelayed(
+            App.ui.postDelayed(
                     this,
                     WINDOW_ANIMATION_INTERVAL)
 
@@ -196,7 +178,7 @@ class OverlayViewFinderRootView : RelativeLayout {
     }
 
     private fun cacheInstances() {
-        customResContainer = ViewFinderAnywhereApplication.customResContainer
+        customResContainer = App.customResContainer
         val res = context.resources
 
         // Viewfinder related.
@@ -219,7 +201,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         paint.isAntiAlias = true
         paint.typeface = Typeface.createFromAsset(
                 context.assets,
-                ViewFinderAnywhereConstants.FONT_FILENAME_CODA)
+                Constants.FONT_FILENAME_CODA)
         val fontMetrics = paint.fontMetrics
         val textHeight = ceil(abs(fontMetrics.ascent).toDouble()
                 + abs(fontMetrics.descent)
@@ -280,7 +262,7 @@ class OverlayViewFinderRootView : RelativeLayout {
 
     private fun releaseWindowPositionCorrector() {
         windowPositionCorrectionTask?.let { task ->
-            uiHandler.removeCallbacks(task)
+            App.ui.removeCallbacks(task)
             windowPositionCorrectionTask = null
         }
     }
@@ -305,6 +287,11 @@ class OverlayViewFinderRootView : RelativeLayout {
         val gripSize = context.resources.getDimensionPixelSize(
                 R.dimen.viewfinder_grip_size)
 
+        val winX: Int
+        val winY: Int
+        val winW: Int
+        val winH: Int
+
         when (orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
                 windowLayoutParams.gravity = Gravity.BOTTOM or Gravity.RIGHT
@@ -322,15 +309,11 @@ class OverlayViewFinderRootView : RelativeLayout {
                         windowLayoutParams.y)
 
                 // Cache.
-                val winX = displayWH.longLen() - viewfinderWH.w - windowLayoutParams.x
-                val winY = displayWH.shortLen() - viewfinderWH.h - gripSize
-                        - windowLayoutParams.y
-                val winW = viewfinderWH.w
-                val winH = viewfinderWH.h + gripSize
-                ViewFinderAnywhereApplication.TotalWindowConfiguration
-                        .OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
-                if (Log.IS_DEBUG) Log.logDebug(TAG,
-                        "updateWindowParams() : [X=$winX] [Y=$winY] [W=$winW] [H=$winH]")
+                winX = displayWH.longLen() - viewfinderWH.w - windowLayoutParams.x
+                winY = displayWH.shortLen() - viewfinderWH.h - gripSize - windowLayoutParams.y
+                winW = viewfinderWH.w
+                winH = viewfinderWH.h + gripSize
+                OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
             }
 
             Configuration.ORIENTATION_PORTRAIT -> {
@@ -349,21 +332,20 @@ class OverlayViewFinderRootView : RelativeLayout {
                         windowLayoutParams.y)
 
                 // Cache.
-                val winX = displayWH.shortLen() - viewfinderWH.w - gripSize
-                        - windowLayoutParams.x
-                val winY = displayWH.longLen() - viewfinderWH.h - windowLayoutParams.y
-                val winW = viewfinderWH.w + gripSize
-                val winH = viewfinderWH.h
-                ViewFinderAnywhereApplication.TotalWindowConfiguration
-                        .OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
-                if (Log.IS_DEBUG) Log.logDebug(TAG,
-                        "updateWindowParams() : [X=$winX] [Y=$winY] [W=$winW] [H=$winH]")
+                winX = displayWH.shortLen() - viewfinderWH.w - gripSize - windowLayoutParams.x
+                winY = displayWH.longLen() - viewfinderWH.h - windowLayoutParams.y
+                winW = viewfinderWH.w + gripSize
+                winH = viewfinderWH.h
+                OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
             }
 
             else -> {
-                // Unexpected orientation.
                 throw IllegalStateException("Unexpected orientation.")
             }
+        }
+
+        if (Log.IS_DEBUG) {
+            Log.logDebug(TAG, "updateWindowParams() : X=$winX, Y=$winY, W=$winW, H=$winH")
         }
 
         // Check active.
@@ -386,7 +368,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         winMng.removeView(this)
 
         // Release drawing cache.
-        uiHandler.post(ReleaseDrawingResourceTask())
+        App.ui.post(ReleaseDrawingResourceTask())
     }
 
     private inner class ReleaseDrawingResourceTask : Runnable {
@@ -688,7 +670,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                         this@OverlayViewFinderRootView,
                         0,
                         0,//ViewConfiguration.get(getContext()).getScaledTouchSlop(),
-                        ViewFinderAnywhereApplication.getUiThreadHandler())
+                        App.ui)
                 interactionEngine.setInteractionCallback(InteractionCallbackImpl())
                 setOnTouchListener(OnTouchListenerImpl())
 
@@ -711,15 +693,15 @@ class OverlayViewFinderRootView : RelativeLayout {
 
             if (isResumed && viewfinder.alpha == HIDDEN_ALPHA) {
                 showSurfaceTask.reset()
-                uiHandler.post(showSurfaceTask)
+                App.ui.post(showSurfaceTask)
             }
         }
     }
 
     private fun clearSurface() {
-        uiHandler.removeCallbacks(showSurfaceTask)
+        App.ui.removeCallbacks(showSurfaceTask)
         hideSurfaceTask.reset()
-        uiHandler.post(hideSurfaceTask)
+        App.ui.post(hideSurfaceTask)
     }
 
     private abstract inner class SurfaceVisibilityControlTask : Runnable {
@@ -772,7 +754,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                 //   On Android N, invalidate() is called in setAlpha().
                 //   So, this task takes 1 frame V-Sync millis (about 16[ms])
                 //   Not to delay fade in/out, post next control task immediately.
-                uiHandler.post(this)
+                App.ui.post(this)
             }
         }
     }
@@ -821,7 +803,7 @@ class OverlayViewFinderRootView : RelativeLayout {
 
             // Stop animation.
             windowPositionCorrectionTask?.let { task ->
-                uiHandler.removeCallbacks(task)
+                App.ui.removeCallbacks(task)
                 windowPositionCorrectionTask = null
             }
 
@@ -945,7 +927,7 @@ class OverlayViewFinderRootView : RelativeLayout {
 
             // Correct position start.
             WindowPositionCorrectionTask(target).let { task ->
-                uiHandler.postDelayed(task, WINDOW_ANIMATION_INTERVAL)
+                App.ui.postDelayed(task, WINDOW_ANIMATION_INTERVAL)
                 windowPositionCorrectionTask = task
             }
         }
@@ -1012,7 +994,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         if (isResumed) {
             // Kill animation.
             windowPositionCorrectionTask?.let { task ->
-                uiHandler.removeCallbacks(task)
+                App.ui.removeCallbacks(task)
                 windowPositionCorrectionTask = null
             }
 
@@ -1153,7 +1135,7 @@ class OverlayViewFinderRootView : RelativeLayout {
 
         override fun onShutterDone() {
             shutter_feedback.visibility = View.VISIBLE
-            uiHandler.postDelayed(
+            App.ui.postDelayed(
                     recoverShutterFeedbackTask,
                     SHUTTER_FEEDBACK_DURATION_MILLIS)
         }
@@ -1175,5 +1157,20 @@ class OverlayViewFinderRootView : RelativeLayout {
                     .forEach { view -> view.setBackgroundColor(color) }
             scan_indicator_container.invalidate()
         }
+    }
+
+    companion object {
+        // Log tag.
+        const val TAG = "OverlayViewFinderRootView"
+
+        // Window position correction animation interval.
+        private const val WINDOW_ANIMATION_INTERVAL = 16L
+
+        // Hidden window position.
+        private const val WINDOW_HIDDEN_POS_X = -5000
+
+        // Alpha definitions.
+        private const val SHOWN_ALPHA = 1.0f
+        private const val HIDDEN_ALPHA = 0.0f
     }
 }

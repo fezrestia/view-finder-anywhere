@@ -13,7 +13,7 @@ import android.view.WindowManager;
 
 import com.fezrestia.android.lib.util.log.Log;
 import com.fezrestia.android.lib.util.media.ImageProc;
-import com.fezrestia.android.viewfinderanywhere.ViewFinderAnywhereApplication;
+import com.fezrestia.android.viewfinderanywhere.App;
 import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface;
 
 import java.io.IOException;
@@ -113,7 +113,7 @@ public class Camera1Device implements CameraPlatformInterface {
 
     @Override
     public void prepare() {
-        mUiWorker = ViewFinderAnywhereApplication.getUiThreadHandler();
+        mUiWorker = App.Companion.getUi();
 
         generateBackWorker();
     }
