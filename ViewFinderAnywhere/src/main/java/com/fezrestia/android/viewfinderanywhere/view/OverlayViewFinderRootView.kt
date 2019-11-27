@@ -247,7 +247,7 @@ class OverlayViewFinderRootView : RelativeLayout {
     fun release() {
         releaseWindowPositionCorrector()
 
-        interactionEngine.setInteractionCallback(null)
+        interactionEngine.callback = null
         interactionEngine.release()
         viewfinder.surfaceTextureListener = null
         setOnTouchListener(null)
@@ -671,7 +671,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                         0,
                         0,//ViewConfiguration.get(getContext()).getScaledTouchSlop(),
                         App.ui)
-                interactionEngine.setInteractionCallback(InteractionCallbackImpl())
+                interactionEngine.callback = InteractionCallbackImpl()
                 setOnTouchListener(OnTouchListenerImpl())
 
                 // Notify to device.
@@ -945,7 +945,7 @@ class OverlayViewFinderRootView : RelativeLayout {
             // NOP.
         }
 
-        override fun onDoubleScaled(currentLen: Float, previousLen: Float, originalLen: Float) {
+        override fun onDoubleScaled(currentLength: Float, previousLength: Float, originalLength: Float) {
             // NOP.
         }
 
