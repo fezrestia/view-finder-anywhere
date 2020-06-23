@@ -94,7 +94,7 @@ dependencies {
     // FireBase analytics.
     implementation 'com.google.firebase:firebase-core:17.4.3'
     // Firebase notifications.
-    implementation 'com.google.firebase:firebase-messaging:20.2.0'
+    implementation 'com.google.firebase:firebase-messaging:20.2.1'
     // Firebase crash report.
     implementation "com.google.firebase:firebase-crash:16.2.1"
     // Kotlin support.
