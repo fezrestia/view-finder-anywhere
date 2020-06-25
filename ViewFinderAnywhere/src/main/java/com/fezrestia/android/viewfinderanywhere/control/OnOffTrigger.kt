@@ -1,3 +1,5 @@
+@file:Suppress("ConstantConditionIf")
+
 package com.fezrestia.android.viewfinderanywhere.control
 
 import android.content.Context

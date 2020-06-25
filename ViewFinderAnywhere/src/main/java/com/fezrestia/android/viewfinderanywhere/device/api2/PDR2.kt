@@ -1,4 +1,4 @@
-@file:Suppress("MayBeConstant")
+@file:Suppress("MayBeConstant", "ConstantConditionIf")
 
 package com.fezrestia.android.viewfinderanywhere.device.api2
 

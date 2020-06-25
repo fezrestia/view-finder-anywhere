@@ -6,8 +6,8 @@
 
     package="com.fezrestia.android.viewfinderanywhere"
 
-    android:versionCode="377"
-    android:versionName="4.2.3-377"
+    android:versionCode="381"
+    android:versionName="4.2.4-381"
 >
 <!--                     | | | |-> incremental build count
                          | | |-> patch
@@ -55,15 +55,6 @@
             android:name=".service.OverlayViewFinderService"
             android:exported="false"
         />
-
-        <service
-            android:name="com.fezrestia.android.lib.firebase.FirebaseMessagingServiceImpl"
-            android:exported="false"
-        >
-            <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
-            </intent-filter>
-        </service>
 
         <receiver
             android:name=".receiver.OverlayViewFinderTriggerReceiver"

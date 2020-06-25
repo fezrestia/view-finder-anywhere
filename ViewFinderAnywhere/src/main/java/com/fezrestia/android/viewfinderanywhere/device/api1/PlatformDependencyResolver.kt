@@ -1,3 +1,5 @@
+@file:Suppress("ConstantConditionIf")
+
 package com.fezrestia.android.viewfinderanywhere.device.api1
 
 import android.content.Context
@@ -83,7 +85,8 @@ internal object PlatformDependencyResolver {
         // Check MAX size.
         var acceptableMaxSize: Size? = null
         for (eachSize in aspectAcceptable) {
-            if (PREFERRED_PREVIEW_SIZE_FOR_STILL.width < eachSize.width || PREFERRED_PREVIEW_SIZE_FOR_STILL.height < eachSize.height) {
+            if (PREFERRED_PREVIEW_SIZE_FOR_STILL.width < eachSize.width
+                    || PREFERRED_PREVIEW_SIZE_FOR_STILL.height < eachSize.height) {
                 // Too large.
                 continue
             }

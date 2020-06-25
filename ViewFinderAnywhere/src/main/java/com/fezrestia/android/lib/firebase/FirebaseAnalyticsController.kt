@@ -1,3 +1,5 @@
+@file:Suppress("ConstantConditionIf")
+
 package com.fezrestia.android.lib.firebase
 
 import android.content.Context

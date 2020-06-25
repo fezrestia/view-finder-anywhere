@@ -1,8 +1,9 @@
+@file:Suppress("PrivatePropertyName", "ConstantConditionIf", "unused")
+
 package com.fezrestia.android.viewfinderanywhere.control
 
 import android.content.Context
 import android.net.Uri
-import android.os.Handler
 
 import com.fezrestia.android.lib.util.log.Log
 import com.fezrestia.android.viewfinderanywhere.App
@@ -30,16 +31,11 @@ class OverlayViewFinderController(val context: Context) {
     private lateinit var camera: CameraPlatformInterface
 
     var currentState: State = StateFinalized()
-            get
             private set
 
     private lateinit var storageController: StorageController
 
     private val forceStopTask = ForceStopTask()
-
-    init {
-        // NOP.
-    }
 
     /**
      * Set core instance dependency.

@@ -1,4 +1,4 @@
-@file:Suppress("PropertyName", "PrivatePropertyName")
+@file:Suppress("PropertyName", "PrivatePropertyName", "ConstantConditionIf")
 
 package com.fezrestia.android.viewfinderanywhere.device.api2
 
@@ -57,7 +57,9 @@ class Camera2Device(
         delegated = null
     }
 
-    override fun openAsync(evfAspectWH: Float, openCallback: CameraPlatformInterface.OpenCallback) {
+    override fun openAsync(
+            evfAspectWH: Float,
+            openCallback: CameraPlatformInterface.OpenCallback) {
         val d = delegated ?: throw error()
         d.openAsync(evfAspectWH, openCallback)
     }
@@ -67,7 +69,9 @@ class Camera2Device(
         d.closeAsync(closeCallback)
     }
 
-    override fun bindPreviewSurfaceAsync(textureView: TextureView, bindSurfaceCallback: CameraPlatformInterface.BindSurfaceCallback) {
+    override fun bindPreviewSurfaceAsync(
+            textureView: TextureView,
+            bindSurfaceCallback: CameraPlatformInterface.BindSurfaceCallback) {
         val d = delegated ?: throw error()
         d.bindPreviewSurfaceAsync(textureView, bindSurfaceCallback)
     }
@@ -238,7 +242,9 @@ class Camera2DeviceDelegated(
         if (Log.IS_DEBUG) Log.logDebug(TAG, "release() : X")
     }
 
-    override fun openAsync(evfAspectWH: Float, openCallback: CameraPlatformInterface.OpenCallback) {
+    override fun openAsync(
+            evfAspectWH: Float,
+            openCallback: CameraPlatformInterface.OpenCallback) {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "openAsync()")
 
         requestHandler.post(OpenTask(evfAspectWH, openCallback))

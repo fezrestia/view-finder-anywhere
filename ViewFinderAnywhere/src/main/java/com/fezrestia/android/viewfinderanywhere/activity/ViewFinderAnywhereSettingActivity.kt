@@ -1,4 +1,4 @@
-@file:Suppress("PrivatePropertyName")
+@file:Suppress("PrivatePropertyName", "ConstantConditionIf")
 
 package com.fezrestia.android.viewfinderanywhere.activity
 
@@ -12,7 +12,12 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.appcompat.app.AppCompatActivity
-import androidx.preference.*
+import androidx.preference.EditTextPreference
+import androidx.preference.ListPreference
+import androidx.preference.MultiSelectListPreference
+import androidx.preference.Preference
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SwitchPreference
 
 import com.fezrestia.android.lib.firebase.FirebaseAnalyticsController
 import com.fezrestia.android.lib.util.log.Log

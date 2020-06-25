@@ -1,4 +1,4 @@
-@file:Suppress("PrivatePropertyName")
+@file:Suppress("PrivatePropertyName", "ConstantConditionIf")
 
 package com.fezrestia.android.viewfinderanywhere.receiver
 

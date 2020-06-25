@@ -1,3 +1,5 @@
+@file:Suppress("SpellCheckingInspection")
+
 package com.fezrestia.android.viewfinderanywhere
 
 class Constants {

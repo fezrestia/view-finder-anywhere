@@ -1,3 +1,5 @@
+@file:Suppress("ConstantConditionIf")
+
 package com.fezrestia.android.lib.util.media
 
 import android.graphics.Bitmap
