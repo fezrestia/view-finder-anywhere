@@ -10,7 +10,7 @@ import java.util.regex.Pattern
 
 android {
     compileSdkVersion 29
-    buildToolsVersion '30.0.0'
+    buildToolsVersion '30.0.2'
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere"
@@ -100,7 +100,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-crashlytics:17.2.1'
 
     // Kotlin support.
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.0'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.10'
     implementation 'androidx.preference:preference-ktx:1.1.1'
-    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.4.0'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.4.10'
 }

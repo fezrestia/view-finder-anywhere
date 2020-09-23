@@ -6,8 +6,8 @@
 
     package="com.fezrestia.android.viewfinderanywhere"
 
-    android:versionCode="394"
-    android:versionName="4.2.6-394"
+    android:versionCode="401"
+    android:versionName="4.2.7-401"
 >
 <!--                     | | | |-> incremental build count
                          | | |-> patch
