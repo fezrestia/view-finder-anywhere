@@ -28,6 +28,7 @@ class CustomizableResourceContainer {
     var colorScanOnGoing = 0
     var colorScanSuccess = 0
     var colorScanFailure = 0
+    var colorRec = 0
 
     /**
      * Do reset all resource references.
@@ -57,6 +58,6 @@ class CustomizableResourceContainer {
         colorScanOnGoing = res.getColor(R.color.viewfinder_scan_indicator_ongoing, null)
         colorScanSuccess = res.getColor(R.color.viewfinder_scan_indicator_success, null)
         colorScanFailure = res.getColor(R.color.viewfinder_scan_indicator_failure, null)
-
+        colorRec = res.getColor(R.color.viewfinder_rec_indicator, null)
     }
 }

@@ -148,4 +148,29 @@ interface CameraPlatformInterface {
          */
         fun onPhotoStoreReady(requestId: Int, data: ByteArray)
     }
+
+    /**
+     * Start recording async.
+     */
+    fun requestStartRecAsync(recCallback: RecCallback)
+
+    /**
+     * Stop recording async.
+     */
+    fun requestStopRecAsync()
+
+    /**
+     * Interface for recording feature callback.
+     */
+    interface RecCallback {
+        /**
+         * Recording is started.
+         */
+        fun onRecStarted()
+
+        /**
+         * Recording is stopped.
+         */
+        fun onRecStopped()
+    }
 }

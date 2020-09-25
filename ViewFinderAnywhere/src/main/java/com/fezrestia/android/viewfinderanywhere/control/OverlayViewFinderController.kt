@@ -156,6 +156,8 @@ class OverlayViewFinderController(val context: Context) {
         fun requestScan()
         fun requestCancelScan()
         fun requestStillCapture()
+        fun requestStartRec()
+        fun requestStopRec()
     }
 
     private interface FromDeviceInterface {
@@ -166,6 +168,8 @@ class OverlayViewFinderController(val context: Context) {
         fun onShutterDone()
         fun onStillCaptureDone()
         fun onPhotoStoreReady(data: ByteArray)
+        fun onRecStarted()
+        fun onRecStopped()
     }
 
     private interface FromStorageInterface {
@@ -243,6 +247,14 @@ class OverlayViewFinderController(val context: Context) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStillCapture() : NOP")
         }
 
+        override fun requestStartRec() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStartRec() : NOP")
+        }
+
+        override fun requestStopRec() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStopRec() : NOP")
+        }
+
         override fun onScanDone(isSuccess: Boolean) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onScanDone() : NOP")
         }
@@ -265,6 +277,14 @@ class OverlayViewFinderController(val context: Context) {
 
         override fun onPhotoStoreDone(isSuccess: Boolean, uri: Uri?) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPhotoStoreDone() : NOP")
+        }
+
+        override fun onRecStarted() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStarted() : NOP")
+        }
+
+        override fun onRecStopped() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStopped() : NOP")
         }
     }
 
@@ -426,6 +446,14 @@ class OverlayViewFinderController(val context: Context) {
 
             changeStateTo(StateDoingScan())
         }
+
+        override fun requestStartRec() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStartRec()")
+
+            camera.requestStartRecAsync(RecCallbackImpl())
+
+            changeStateTo(StateRec())
+        }
     }
 
     private inner class StateDoingScan : StateAllFallback() {
@@ -571,6 +599,44 @@ class OverlayViewFinderController(val context: Context) {
         }
     }
 
+    private inner class StateRec : StateAllFallback() {
+        private val TAG = "StateRec"
+
+        override fun onResume() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume()")
+
+            // TODO: Consider pause/resume during rec.
+
+        }
+
+        override fun onPause() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()")
+
+            // TODO: Consider pause/resume during rec.
+
+        }
+
+        override fun onRecStarted() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStarted()")
+
+            rootView.getVisualFeedbackTrigger().onRecStarted()
+        }
+
+        override fun onRecStopped() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStopped()")
+
+            rootView.getVisualFeedbackTrigger().onRecStopped()
+
+            changeStateTo(StateIdle())
+        }
+
+        override fun requestStopRec() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStopRec()")
+
+            camera.requestStopRecAsync()
+        }
+    }
+
     private inner class ForceStopTask : Runnable {
         override fun run() {
             rootView.forceStop()
@@ -662,6 +728,16 @@ class OverlayViewFinderController(val context: Context) {
     private inner class StorageControllerCallback : StorageController.Callback {
         override fun onPhotoStoreDone(isSuccess: Boolean, uri: Uri?) {
             currentState.onPhotoStoreDone(isSuccess, uri)
+        }
+    }
+
+    private inner class RecCallbackImpl : CameraPlatformInterface.RecCallback {
+        override fun onRecStarted() {
+            currentState.onRecStarted()
+        }
+
+        override fun onRecStopped() {
+            currentState.onRecStopped()
         }
     }
 

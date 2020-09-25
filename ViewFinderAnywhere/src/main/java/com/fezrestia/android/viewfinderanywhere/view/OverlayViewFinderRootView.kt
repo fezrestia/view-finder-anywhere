@@ -233,12 +233,18 @@ class OverlayViewFinderRootView : RelativeLayout {
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                        or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
-                        or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-                        or WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+                INTERACTIVE_WINDOW_FLAGS,
                 PixelFormat.TRANSLUCENT)
+    }
+
+    private fun enableInteraction() {
+        windowLayoutParams.flags = INTERACTIVE_WINDOW_FLAGS
+        windowManager.updateViewLayout(this, windowLayoutParams)
+    }
+
+    private fun disableInteraction() {
+        windowLayoutParams.flags = NOT_INTERACTIVE_WINDOW_FLAGS
+        windowManager.updateViewLayout(this, windowLayoutParams)
     }
 
     /**
@@ -738,12 +744,16 @@ class OverlayViewFinderRootView : RelativeLayout {
                 if (SHOWN_ALPHA < actualAlpha) {
                     actualAlpha = SHOWN_ALPHA
                     isNextTaskRequired = false
+
+                    enableInteraction()
                 }
             } else {
                 actualAlpha -= ALPHA_DELTA
                 if (actualAlpha < HIDDEN_ALPHA) {
                     actualAlpha = HIDDEN_ALPHA
                     isNextTaskRequired = false
+
+                    disableInteraction()
                 }
             }
 
@@ -1062,6 +1072,33 @@ class OverlayViewFinderRootView : RelativeLayout {
                 return true
             }
 
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                if (keyEvent.repeatCount != 0) {
+                    // Do not handle hold press.
+                    return true
+                }
+
+                when (keyEvent.action) {
+                    KeyEvent.ACTION_DOWN -> {
+                        if (Log.IS_DEBUG) Log.logDebug(TAG, "dispatchKeyEvent() : [VOLUME- DOWN]")
+
+                        controller.currentState.requestStartRec()
+                    }
+
+                    KeyEvent.ACTION_UP -> {
+                        if (Log.IS_DEBUG) Log.logDebug(TAG, "dispatchKeyEvent() : [VOLUME- UP]")
+
+                        controller.currentState.requestStopRec()
+                    }
+
+                    else -> {
+                        if (Log.IS_DEBUG) Log.logDebug(TAG, "dispatchKeyEvent() : [VOLUME- NO ACT]")
+                    }
+                }
+
+                return true
+            }
+
             else -> {
                 // Un-used key code.
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "dispatchKeyEvent() : [UNUSED KEY]")
@@ -1096,6 +1133,10 @@ class OverlayViewFinderRootView : RelativeLayout {
         }
     }
 
+    override fun showContextMenuForChild(originalView: View?): Boolean {
+        return super.showContextMenuForChild(originalView)
+    }
+
     /**
      * Visual feedback trigger.
      */
@@ -1104,6 +1145,8 @@ class OverlayViewFinderRootView : RelativeLayout {
         fun onScanStarted()
         fun onScanDone(isSuccess: Boolean)
         fun onShutterDone()
+        fun onRecStarted()
+        fun onRecStopped()
         fun clear()
     }
 
@@ -1147,6 +1190,15 @@ class OverlayViewFinderRootView : RelativeLayout {
             }
         }
 
+        override fun onRecStarted() {
+            updateIndicatorColor(customResContainer.colorRec)
+            scan_indicator_container.visibility = View.VISIBLE
+        }
+
+        override fun onRecStopped() {
+            scan_indicator_container.visibility = View.INVISIBLE
+        }
+
         override fun clear() {
             scan_indicator_container.visibility = View.INVISIBLE
         }
@@ -1162,6 +1214,19 @@ class OverlayViewFinderRootView : RelativeLayout {
     companion object {
         // Log tag.
         const val TAG = "OverlayViewFinderRootView"
+
+        private const val INTERACTIVE_WINDOW_FLAGS = ( 0 // Dummy
+                or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+                or WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+                )
+
+        private const val NOT_INTERACTIVE_WINDOW_FLAGS = ( 0 // Dummy
+                or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+                or WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+                )
 
         // Window position correction animation interval.
         private const val WINDOW_ANIMATION_INTERVAL = 16L

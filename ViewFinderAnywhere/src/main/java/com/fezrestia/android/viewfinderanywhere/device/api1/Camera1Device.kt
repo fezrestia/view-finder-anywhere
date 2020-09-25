@@ -366,7 +366,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
         private val latch = CountDownLatch(1)
         private var isCanceled = false
 
-        internal fun cancel() {
+        fun cancel() {
             isCanceled = true
             latch.countDown()
         }
@@ -410,7 +410,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
     }
 
     private inner class FocusCallbackImpl(private val latch: CountDownLatch) : Camera.AutoFocusCallback {
-        internal var isSuccess = false
+        var isSuccess = false
             private set
 
         override fun onAutoFocus(isSuccess: Boolean, camera: Camera) {
@@ -537,7 +537,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
 //        }
 
         private inner class PictureCallbackImpl(private val latch: CountDownLatch) : Camera.PictureCallback {
-            internal lateinit var jpegBuffer: ByteArray
+            lateinit var jpegBuffer: ByteArray
                 private set
 
             override fun onPictureTaken(jpegBuffer: ByteArray, camera: Camera) {
@@ -582,6 +582,51 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
                     stillCaptureCallback.onPhotoStoreReady(requestId, resultJpeg)
                 }
             }
+        }
+    }
+
+    private var recCallback: CameraPlatformInterface.RecCallback? = null
+
+    override fun requestStartRecAsync(recCallback: CameraPlatformInterface.RecCallback) {
+        this.recCallback = recCallback
+        val startRecTask = StartRecTask(recCallback)
+        backWorker?.execute(startRecTask)
+    }
+
+    private inner class StartRecTask(
+            private val callback: CameraPlatformInterface.RecCallback) : Runnable {
+        override fun run() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "StartRecTask.run() : E")
+
+
+
+
+            callback.onRecStarted()
+
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "StartRecTask.run() : X")
+        }
+    }
+
+    override fun requestStopRecAsync() {
+        recCallback?.let { callback ->
+            val stopRecTask = StopRecTask(callback)
+            backWorker?.execute(stopRecTask)
+            recCallback = null
+        }
+    }
+
+    private inner class StopRecTask(
+            private val callback: CameraPlatformInterface.RecCallback) : Runnable {
+        override fun run() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "StopRecTask.run() : E")
+
+
+
+
+
+            callback.onRecStopped()
+
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "StopRecTask.run() : X")
         }
     }
 

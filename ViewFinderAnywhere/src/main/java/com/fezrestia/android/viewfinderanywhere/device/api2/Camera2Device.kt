@@ -91,6 +91,16 @@ class Camera2Device(
         return d.requestStillCaptureAsync(stillCaptureCallback)
     }
 
+    override fun requestStartRecAsync(recCallback: CameraPlatformInterface.RecCallback) {
+        val d = delegated ?: throw error()
+        return d.requestStartRecAsync(recCallback)
+    }
+
+    override fun requestStopRecAsync() {
+        val d = delegated ?: throw error()
+        return d.requestStopRecAsync()
+    }
+
     private fun error(): RuntimeException = RuntimeException("delegated is null.")
 }
 
@@ -877,7 +887,7 @@ class Camera2DeviceDelegated(
             openLatch.countDown()
         }
 
-        internal fun waitForOpened(): Boolean = waitForLatch(openLatch)
+        fun waitForOpened(): Boolean = waitForLatch(openLatch)
 
         override fun onClosed(camera: CameraDevice) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onClosed()")
@@ -887,7 +897,7 @@ class Camera2DeviceDelegated(
             closeLatch.countDown()
         }
 
-        internal fun waitForClosed(): Boolean = waitForLatch(closeLatch)
+        fun waitForClosed(): Boolean = waitForLatch(closeLatch)
 
         override fun onDisconnected(camera: CameraDevice) {
             Log.logError(TAG, "onDisconnected()")
@@ -932,7 +942,7 @@ class Camera2DeviceDelegated(
             closeLatch.countDown()
         }
 
-        internal fun waitForClosed(): Boolean = waitForLatch(closeLatch)
+        fun waitForClosed(): Boolean = waitForLatch(closeLatch)
 
         override fun onConfigured(session: CameraCaptureSession) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onConfigured()")
@@ -943,7 +953,7 @@ class Camera2DeviceDelegated(
             openLatch.countDown()
         }
 
-        internal fun waitForOpened(): Boolean = waitForLatch(openLatch)
+        fun waitForOpened(): Boolean = waitForLatch(openLatch)
 
         override fun onConfigureFailed(session: CameraCaptureSession) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onConfigureFailed()")
@@ -967,7 +977,7 @@ class Camera2DeviceDelegated(
     }
 
     private inner class CaptureCallback : CameraCaptureSession.CaptureCallback() {
-        internal val TAG = "CaptureCallback"
+        private val TAG = "CaptureCallback"
 
         private lateinit var latestRequest: CaptureRequest
         private lateinit var latestResult: TotalCaptureResult
@@ -1078,22 +1088,22 @@ class Camera2DeviceDelegated(
             }
         }
 
-        internal fun requestDetectScanDone() {
+        fun requestDetectScanDone() {
             scanDoneLatch = CountDownLatch(1)
         }
 
-        internal fun waitForScanDone(): Boolean {
+        fun waitForScanDone(): Boolean {
             val latch = ensure(scanDoneLatch)
             waitForLatch(latch)
             scanDoneLatch = null
             return PDR2.isAfSucceeded(latestResult)
         }
 
-        internal fun requestDetectCancelScanDone() {
+        fun requestDetectCancelScanDone() {
             cancelScanDoneLatch = CountDownLatch(1)
         }
 
-        internal fun waitForCancelScanDone() {
+        fun waitForCancelScanDone() {
             val latch = ensure(cancelScanDoneLatch)
             waitForLatch(latch)
             cancelScanDoneLatch = null
@@ -1122,11 +1132,11 @@ class Camera2DeviceDelegated(
             latch.countDown()
         }
 
-        internal fun requestDetectShutterDone() {
+        fun requestDetectShutterDone() {
             shutterDoneLatch = CountDownLatch(1)
         }
 
-        internal fun waitForShutterDone(): Int {
+        fun waitForShutterDone(): Int {
             val latch = ensure(shutterDoneLatch)
             waitForLatch(latch)
             shutterDoneLatch = null
@@ -1135,11 +1145,11 @@ class Camera2DeviceDelegated(
             return reqTag.requestId
         }
 
-        internal fun requestDetectCaptureDone() {
+        fun requestDetectCaptureDone() {
             captureDoneLatch = CountDownLatch(1)
         }
 
-        internal fun waitForCaptureDone(): Int {
+        fun waitForCaptureDone(): Int {
             val latch = ensure(captureDoneLatch)
             waitForLatch(latch)
             captureDoneLatch = null
@@ -1148,7 +1158,7 @@ class Camera2DeviceDelegated(
             return reqTag.requestId
         }
 
-        internal fun requestHandlePhotoStoreReadyCallback(callback: CameraPlatformInterface.StillCaptureCallback) {
+        fun requestHandlePhotoStoreReadyCallback(callback: CameraPlatformInterface.StillCaptureCallback) {
             this.clientStillCaptureCallback = callback
         }
 
@@ -1196,6 +1206,52 @@ class Camera2DeviceDelegated(
         override fun onImageAvailable(reader: ImageReader) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onImageAvailable()")
             // NOP.
+        }
+    }
+
+    private var recCallback: CameraPlatformInterface.RecCallback? = null
+
+    override fun requestStartRecAsync(recCallback: CameraPlatformInterface.RecCallback) {
+        this.recCallback = recCallback
+        val startRecTask = StartRecTask(recCallback)
+        requestHandler.post(startRecTask)
+    }
+
+    private inner class StartRecTask(
+            private val callback: CameraPlatformInterface.RecCallback) : Runnable {
+        override fun run() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "StartRecTask.run() : E")
+
+
+
+
+
+            clientCallbackHandler.post { callback.onRecStarted() }
+
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "StartRecTask.run() : X")
+        }
+    }
+
+    override fun requestStopRecAsync() {
+        recCallback?.let { callback ->
+            val stopRecTask = StopRecTask(callback)
+            requestHandler.post(stopRecTask)
+            recCallback = null
+        }
+    }
+
+    private inner class StopRecTask(
+            private val callback: CameraPlatformInterface.RecCallback) : Runnable {
+        override fun run() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "StopRecTask.run() : E")
+
+
+
+
+
+            clientCallbackHandler.post { callback.onRecStopped() }
+
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "StopRecTask.run() : X")
         }
     }
 

@@ -13,4 +13,7 @@
     <color name="viewfinder_scan_indicator_success">#00FF00</color>
     <color name="viewfinder_scan_indicator_failure">#FF0000</color>
 
+    <!-- Rec indicator. -->
+    <color name="viewfinder_rec_indicator">#FF0000</color>
+
 </resources>
