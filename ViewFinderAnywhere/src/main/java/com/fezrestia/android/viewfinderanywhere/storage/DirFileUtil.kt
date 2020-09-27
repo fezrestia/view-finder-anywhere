@@ -26,6 +26,7 @@ object DirFileUtil {
 
     // Constants.
     const val JPEG_FILE_EXT = ".JPG"
+    const val MP4_FILE_EXT = ".MP4"
 
     // Local external storage relative path.
     private const val LOCAL_STORAGE_REL_PATH = "/Android/data/${BuildConfig.APPLICATION_ID}/files"

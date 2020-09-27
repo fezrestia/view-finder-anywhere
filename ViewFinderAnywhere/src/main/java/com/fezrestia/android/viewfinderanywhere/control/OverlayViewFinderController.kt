@@ -450,7 +450,9 @@ class OverlayViewFinderController(val context: Context) {
         override fun requestStartRec() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStartRec()")
 
-            camera.requestStartRecAsync(RecCallbackImpl())
+            camera.requestStartRecAsync(
+                    storageController.getVideoFileFullPath(),
+                    RecCallbackImpl())
 
             changeStateTo(StateRec())
         }
@@ -736,7 +738,8 @@ class OverlayViewFinderController(val context: Context) {
             currentState.onRecStarted()
         }
 
-        override fun onRecStopped() {
+        override fun onRecStopped(recFileFullPath: String) {
+            storageController.notifyToMediaScanner(recFileFullPath)
             currentState.onRecStopped()
         }
     }

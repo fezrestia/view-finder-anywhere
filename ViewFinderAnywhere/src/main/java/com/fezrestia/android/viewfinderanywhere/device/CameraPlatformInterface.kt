@@ -151,8 +151,11 @@ interface CameraPlatformInterface {
 
     /**
      * Start recording async.
+     *
+     * @param recFileFullPath
+     * @param recCallback
      */
-    fun requestStartRecAsync(recCallback: RecCallback)
+    fun requestStartRecAsync(recFileFullPath: String, recCallback: RecCallback)
 
     /**
      * Stop recording async.
@@ -170,7 +173,9 @@ interface CameraPlatformInterface {
 
         /**
          * Recording is stopped.
+         *
+         * @param recFileFullPath Recorded audio/video file full path.
          */
-        fun onRecStopped()
+        fun onRecStopped(recFileFullPath: String)
     }
 }

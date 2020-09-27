@@ -232,4 +232,61 @@ class StorageController constructor (
             connection.disconnect()
         }
     }
+
+    /**
+     * Get target video path to be stored.
+     *
+     * @return Store target video full path.
+     */
+    fun getVideoFileFullPath(): String {
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "getVideoFileFullPath()")
+
+        val targetDir: String = getTargetDirSet().first()
+        val targetFileName: String = getTargetFileName()
+
+        val rootPath = DirFileUtil.getApplicationStorageRootPath(context)
+
+        val targetFullPath = if (targetDir == DirFileUtil.DEFAULT_STORAGE_DIR_NAME) {
+            "$rootPath/$targetFileName${DirFileUtil.MP4_FILE_EXT}"
+        } else {
+            "$rootPath/$targetDir/$targetFileName${DirFileUtil.MP4_FILE_EXT}"
+        }
+
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "Target Video Full Path = $targetFullPath")
+
+        return targetFullPath
+    }
+
+    private class NotifyToMediaScannerTask(context: Context, val path: String)
+            : MediaScannerConnection.MediaScannerConnectionClient, Runnable {
+        private val TAG = "NotifyToMediaScannerTask"
+
+        private val connection = MediaScannerConnection(context, this)
+
+        override fun run() {
+            connection.connect()
+
+        }
+
+        override fun onMediaScannerConnected() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onMediaScannerConnected()")
+            connection.scanFile(path, null)
+        }
+
+        override fun onScanCompleted(path: String, uri: Uri) {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onScanCompleted()")
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "URI = ${uri.path}")
+
+            connection.disconnect()
+        }
+    }
+
+    /**
+     * Notify path to MediaScanner and to be scanned.
+     *
+     * @path
+     */
+    fun notifyToMediaScanner(path: String) {
+        backWorker.execute(NotifyToMediaScannerTask(context, path))
+    }
 }

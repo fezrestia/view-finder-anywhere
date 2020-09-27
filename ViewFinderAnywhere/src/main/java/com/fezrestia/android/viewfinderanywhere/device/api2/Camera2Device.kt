@@ -15,9 +15,14 @@ import android.hardware.camera2.CaptureFailure
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
+import android.hardware.camera2.params.OutputConfiguration
+import android.hardware.camera2.params.SessionConfiguration
 import android.hardware.camera2.params.StreamConfigurationMap
-import android.media.ImageReader
 import android.media.MediaActionSound
+import android.media.MediaCodec
+import android.media.MediaFormat
+import android.media.MediaMuxer
+import android.media.ImageReader
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Size
@@ -28,8 +33,9 @@ import android.view.TextureView
 import com.fezrestia.android.lib.util.log.Log
 import com.fezrestia.android.lib.util.media.ImageProc
 import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface
+import com.fezrestia.android.viewfinderanywhere.device.codec.MediaCodecPDR
+import java.nio.ByteBuffer
 
-import java.util.ArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -91,9 +97,9 @@ class Camera2Device(
         return d.requestStillCaptureAsync(stillCaptureCallback)
     }
 
-    override fun requestStartRecAsync(recCallback: CameraPlatformInterface.RecCallback) {
+    override fun requestStartRecAsync(recFileFullPath: String, recCallback: CameraPlatformInterface.RecCallback) {
         val d = delegated ?: throw error()
-        return d.requestStartRecAsync(recCallback)
+        return d.requestStartRecAsync(recFileFullPath, recCallback)
     }
 
     override fun requestStopRecAsync() {
@@ -148,6 +154,8 @@ class Camera2DeviceDelegated(
     private var requestHandler: Handler
     private var backHandlerThread: HandlerThread
     private var backHandler: Handler
+    private var recHandlerThread: HandlerThread
+    private var recHandler: Handler
 
     // Orientation.
     private var orientationDegree = OrientationEventListener.ORIENTATION_UNKNOWN
@@ -190,6 +198,11 @@ class Camera2DeviceDelegated(
         backHandlerThread.start()
         backHandler = Handler(backHandlerThread.looper)
 
+        // Rec worker thread.
+        recHandlerThread = HandlerThread("rec", Thread.NORM_PRIORITY)
+        recHandlerThread.start()
+        recHandler = Handler(backHandlerThread.looper)
+
         // Internal clientCallback.
         cameraAvailabilityCallback = CameraAvailabilityCallback()
         camMng.registerAvailabilityCallback(
@@ -231,6 +244,8 @@ class Camera2DeviceDelegated(
         shutdown(callbackHandlerThread)
         // Back worker.
         shutdown(backHandlerThread)
+        // Rec thread.
+        shutdown(recHandlerThread)
 
         // Internal clientCallback.
         camMng.unregisterAvailabilityCallback(cameraAvailabilityCallback)
@@ -353,6 +368,13 @@ class Camera2DeviceDelegated(
                     callbackHandler)
             if (Log.IS_DEBUG) Log.logDebug(TAG, "Still ImageReader : DONE")
 
+            // Video recorder.
+            val videoSize: Size = PDR2.getVideoStreamFrameSize(camCharacteristics)
+            recMediaFormat = MediaCodecPDR.getVideoMediaFormat(videoSize.width, videoSize.height)
+            recEncoderName = MediaCodecPDR.getVideoEncoderName(recMediaFormat!!)
+            recSurface = MediaCodec.createPersistentInputSurface()
+            recMediaCodec = genVideoMediaCodec()
+
             // Orientation.
             orientationEventListenerImpl.enable()
             if (Log.IS_DEBUG) Log.logDebug(TAG, "Orientation : DONE")
@@ -393,6 +415,12 @@ class Camera2DeviceDelegated(
 
             // Still image reader.
             stillImgReader.close()
+
+            // Video surface.
+            recSurface?.let { surface ->
+                surface.release()
+                recSurface = null
+            }
 
             // Orientation.
             orientationEventListenerImpl.disable()
@@ -463,17 +491,28 @@ class Camera2DeviceDelegated(
             evfSurface = evf
 
             // Outputs.
-            val outputs = ArrayList<Surface>()
-            outputs.add(evf)
-            outputs.add(stillImgReader.surface)
-
+            val recSurface = ensure(recSurface)
             val sessionCallback = CaptureSessionStateCallback()
             captureSessionStateCallback = sessionCallback
             try {
-                cam.createCaptureSession(
-                        outputs,
-                        sessionCallback,
-                        callbackHandler)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    val evfOutputConfig = OutputConfiguration(evf)
+                    val stillOutputConfig = OutputConfiguration(stillImgReader.surface)
+                    val videoOutputConfig = OutputConfiguration(recSurface)
+
+                    val sessionConfig = SessionConfiguration(
+                            SessionConfiguration.SESSION_REGULAR,
+                            listOf(evfOutputConfig, stillOutputConfig, videoOutputConfig),
+                            { task -> callbackHandler.post(task) }, // Executor.
+                            sessionCallback)
+                    cam.createCaptureSession(sessionConfig)
+                } else {
+                    val outputs = listOf(evf, stillImgReader.surface, recSurface)
+                    cam.createCaptureSession(
+                            outputs,
+                            sessionCallback,
+                            callbackHandler)
+                }
             } catch (e: CameraAccessException) {
                 earlyReturn("Failed to configure outputs.", false)
                 return
@@ -1004,14 +1043,55 @@ class Camera2DeviceDelegated(
 
             if (intent == null) {
                 if (Log.IS_DEBUG) Log.logError(TAG, "CaptureIntent == null.")
-            } else if (intent == CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_STILL_CAPTURE")
+            } else when (intent) {
+                CaptureRequest.CONTROL_CAPTURE_INTENT_PREVIEW -> {
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_PREVIEW")
+                    // NOP.
+                }
 
-                // Shutter sound.
-//                shutterSound.play(MediaActionSound.SHUTTER_CLICK);
+                CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE -> {
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_STILL_CAPTURE")
 
-                val latch = ensure(shutterDoneLatch)
-                latch.countDown()
+                    // Shutter sound.
+//                    shutterSound.play(MediaActionSound.SHUTTER_CLICK);
+
+                    val latch = ensure(shutterDoneLatch)
+                    latch.countDown()
+                }
+
+                CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_RECORD -> {
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_VIDEO_RECORD")
+                    // NOP.
+                }
+
+                // NOT used intent.
+
+                CaptureRequest.CONTROL_CAPTURE_INTENT_CUSTOM -> {
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_CUSTOM")
+                    // NOP.
+                }
+
+                CaptureRequest.CONTROL_CAPTURE_INTENT_MANUAL -> {
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_MANUAL")
+                    // NOP.
+                }
+
+                CaptureRequest.CONTROL_CAPTURE_INTENT_MOTION_TRACKING -> {
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_MOTION_TRACKING")
+                    // NOP.
+                }
+
+                CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT -> {
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_VIDEO_SNAPSHOT")
+                    // NOP.
+                }
+
+                CaptureRequest.CONTROL_CAPTURE_INTENT_ZERO_SHUTTER_LAG -> {
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_ZERO_SHUTTER_LAG")
+                    // NOP.
+                }
+
+                else -> Log.logError(TAG, "  handle unexpected INTENT")
             }
         }
 
@@ -1027,7 +1107,7 @@ class Camera2DeviceDelegated(
             val intent = request.get(CaptureRequest.CONTROL_CAPTURE_INTENT)
 
             if (intent == null) {
-                Log.logError(TAG, "CaptureIntent == null.")
+                if (Log.IS_DEBUG) Log.logError(TAG, "CaptureIntent == null.")
             } else when (intent) {
                 CaptureRequest.CONTROL_CAPTURE_INTENT_PREVIEW -> {
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_PREVIEW")
@@ -1037,6 +1117,38 @@ class Camera2DeviceDelegated(
                 CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE -> {
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_STILL_CAPTURE")
                     handleStillIntentCaptureCompleted(request)
+                }
+
+                CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_RECORD -> {
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_VIDEO_RECORD")
+                    handleVideoIntentCaptureCompleted(request)
+                }
+
+                // NOT used intent.
+
+                CaptureRequest.CONTROL_CAPTURE_INTENT_CUSTOM -> {
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_CUSTOM")
+                    // NOP.
+                }
+
+                CaptureRequest.CONTROL_CAPTURE_INTENT_MANUAL -> {
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_MANUAL")
+                    // NOP.
+                }
+
+                CaptureRequest.CONTROL_CAPTURE_INTENT_MOTION_TRACKING -> {
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_MOTION_TRACKING")
+                    // NOP.
+                }
+
+                CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT -> {
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_VIDEO_SNAPSHOT")
+                    // NOP.
+                }
+
+                CaptureRequest.CONTROL_CAPTURE_INTENT_ZERO_SHUTTER_LAG -> {
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_ZERO_SHUTTER_LAG")
+                    // NOP.
                 }
 
                 else -> Log.logError(TAG, "  handle unexpected INTENT")
@@ -1162,6 +1274,12 @@ class Camera2DeviceDelegated(
             this.clientStillCaptureCallback = callback
         }
 
+        private fun handleVideoIntentCaptureCompleted(request: CaptureRequest) {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "handleVideoIntentCaptureCompleted()")
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "## request = $request")
+            // NOP.
+        }
+
         override fun onCaptureFailed(
                 session: CameraCaptureSession,
                 request: CaptureRequest,
@@ -1188,7 +1306,13 @@ class Camera2DeviceDelegated(
                 frameNumber: Long) {
             super.onCaptureSequenceCompleted(session, sequenceId, frameNumber)
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureSequenceCompleted()")
-            // NOP.
+
+            if (recSequenceId == sequenceId) {
+                // Surface buffers for rec MediaCodec input are all produced.
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "Rec surface stream is finished.")
+
+                recMediaCodec?.signalEndOfInputStream()
+            }
         }
 
         override fun onCaptureSequenceAborted(
@@ -1209,10 +1333,100 @@ class Camera2DeviceDelegated(
         }
     }
 
+    // Video rec.
+    private var recMediaCodec: MediaCodec? = null
+    private var recSurface: Surface? = null
+    private var recMediaFormat: MediaFormat? = null
+    private var recEncoderName: String? = null
+    private var videoMuxer: MediaMuxer? = null
     private var recCallback: CameraPlatformInterface.RecCallback? = null
+    private var recSequenceId: Int = 0
+    private var recFileFullPath: String = ""
 
-    override fun requestStartRecAsync(recCallback: CameraPlatformInterface.RecCallback) {
+    private fun genVideoMediaCodec(): MediaCodec {
+        val encoderName = ensure(recEncoderName)
+        val mediaFormat = ensure(recMediaFormat)
+        val recSurface = ensure(recSurface)
+
+        return MediaCodec.createByCodecName(encoderName).apply {
+            setCallback(MediaCodecCallbackImpl(), recHandler)
+            configure(
+                    mediaFormat,
+                    null, // output surface.
+                    null, // media crypto.
+                    MediaCodec.CONFIGURE_FLAG_ENCODE)
+            setInputSurface(recSurface)
+        }
+    }
+
+    private inner class MediaCodecCallbackImpl : MediaCodec.Callback() {
+        private val TAG = "MediaCodecCallbackImpl"
+
+        private var videoTrackIndex: Int = 0
+
+        override fun onInputBufferAvailable(codec: MediaCodec, index: Int) {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onInputBufferAvailable() : index=$index")
+            // NOP.
+        }
+
+        override fun onOutputBufferAvailable(codec: MediaCodec, index: Int, info: MediaCodec.BufferInfo) {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onOutputBufferAvailable() : index=$index, info=$info")
+
+            val muxer = ensure(videoMuxer)
+
+            val outBuf: ByteBuffer = ensure(codec.getOutputBuffer(index))
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "  outBuf.remaining = ${outBuf.remaining()}")
+
+            muxer.writeSampleData(videoTrackIndex, outBuf, info)
+
+            codec.releaseOutputBuffer(index, false)
+
+            if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "FLAG = BUFFER_FLAG_END_OF_STREAM")
+
+                muxer.stop()
+                muxer.release()
+                videoMuxer = null
+
+                codec.stop()
+                codec.release()
+                recMediaCodec = genVideoMediaCodec() // prepare next.
+
+                startEvfStream()
+
+                recCallback?.let { callback ->
+                    clientCallbackHandler.post { callback.onRecStopped(recFileFullPath) }
+                    recCallback = null
+                }
+            }
+        }
+
+        override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onError() : e=$e")
+
+            // TODO: Handle error.
+
+        }
+
+        override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onOutputFormatChanged() : format=$format")
+
+            // After first frame encoded, output format is changed to valid.
+            // Add video track here with valid format.
+
+            val muxer = ensure(videoMuxer)
+
+            videoTrackIndex = muxer.addTrack(format)
+            muxer.start()
+        }
+    }
+
+    override fun requestStartRecAsync(
+            recFileFullPath: String,
+            recCallback: CameraPlatformInterface.RecCallback) {
+        this.recFileFullPath = recFileFullPath
         this.recCallback = recCallback
+
         val startRecTask = StartRecTask(recCallback)
         requestHandler.post(startRecTask)
     }
@@ -1222,9 +1436,49 @@ class Camera2DeviceDelegated(
         override fun run() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StartRecTask.run() : E")
 
+            val cam = ensure(camDevice)
+            val session = ensure(camSession)
+            val capCallback = ensure(captureCallback)
+            val evfSurface = ensure(evfSurface)
+            val recSurface = ensure(recSurface)
 
+            val evfBuilder = cam.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+                addTarget(evfSurface)
+                set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO)
+                set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
+                set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+                set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
+                set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, CaptureRequest.CONTROL_AE_ANTIBANDING_MODE_AUTO)
+                set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO)
+            }
+            val evfReq = evfBuilder.build()
 
+            val recBuilder = cam.createCaptureRequest(CameraDevice.TEMPLATE_RECORD).apply {
+                addTarget(recSurface)
+                set(CaptureRequest.SCALER_CROP_REGION, cropRegionRect)
 
+            }
+            val recReq = recBuilder.build()
+
+            stopEvfStream()
+
+            val recorder = ensure(recMediaCodec)
+
+            recSequenceId = session.setRepeatingBurst(
+                    listOf(evfReq, recReq),
+                    capCallback,
+                    callbackHandler)
+
+            recorder.start()
+
+            videoMuxer = MediaMuxer(
+                    recFileFullPath,
+                    MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4).apply {
+                val videoRot = PDR2.getFrameOrientation(
+                        camCharacteristics,
+                        orientationDegree)
+                setOrientationHint(videoRot)
+            }
 
             clientCallbackHandler.post { callback.onRecStarted() }
 
@@ -1233,23 +1487,15 @@ class Camera2DeviceDelegated(
     }
 
     override fun requestStopRecAsync() {
-        recCallback?.let { callback ->
-            val stopRecTask = StopRecTask(callback)
-            requestHandler.post(stopRecTask)
-            recCallback = null
-        }
+        val stopRecTask = StopRecTask()
+        requestHandler.post(stopRecTask)
     }
 
-    private inner class StopRecTask(
-            private val callback: CameraPlatformInterface.RecCallback) : Runnable {
+    private inner class StopRecTask : Runnable {
         override fun run() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StopRecTask.run() : E")
 
-
-
-
-
-            clientCallbackHandler.post { callback.onRecStopped() }
+            camSession?.stopRepeating()
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StopRecTask.run() : X")
         }

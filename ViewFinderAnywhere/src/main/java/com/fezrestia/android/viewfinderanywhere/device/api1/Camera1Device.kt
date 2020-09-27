@@ -585,9 +585,13 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
         }
     }
 
+    private var recFileFullPath: String = ""
     private var recCallback: CameraPlatformInterface.RecCallback? = null
 
-    override fun requestStartRecAsync(recCallback: CameraPlatformInterface.RecCallback) {
+    override fun requestStartRecAsync(
+            recFileFullPath: String,
+            recCallback: CameraPlatformInterface.RecCallback) {
+        this.recFileFullPath = recFileFullPath
         this.recCallback = recCallback
         val startRecTask = StartRecTask(recCallback)
         backWorker?.execute(startRecTask)
@@ -624,7 +628,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
 
 
 
-            callback.onRecStopped()
+            callback.onRecStopped(recFileFullPath)
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StopRecTask.run() : X")
         }
