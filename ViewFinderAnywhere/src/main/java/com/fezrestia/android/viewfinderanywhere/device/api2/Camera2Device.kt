@@ -1340,7 +1340,7 @@ class Camera2DeviceDelegated(
     private var recEncoderName: String? = null
     private var videoMuxer: MediaMuxer? = null
     private var recCallback: CameraPlatformInterface.RecCallback? = null
-    private var recSequenceId: Int = 0
+    private var recSequenceId: Int = -1
     private var recFileFullPath: String = ""
 
     private fun genVideoMediaCodec(): MediaCodec {
