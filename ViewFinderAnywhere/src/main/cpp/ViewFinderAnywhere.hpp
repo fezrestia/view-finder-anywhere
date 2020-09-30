@@ -22,11 +22,6 @@ namespace fezrestia {
 
     static ANativeWindow* gUiNativeWindow;
 
-    static EGLDisplay gSystemEglDisplay;
-    static EGLSurface gSystemEglDrawSurface;
-    static EGLSurface gSystemEglReadSurface;
-    static EGLContext gSystemEglContext;
-
     static EGLDisplay gAppEglDisplay;
     static EGLConfig gAppEglConfig;
     static EGLContext gAppEglContext;

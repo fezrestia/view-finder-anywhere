@@ -33,24 +33,6 @@ namespace fezrestia {
     int initializeEgl() {
         TraceLog(TAG, "initializeEgl() : E");
 
-        // Cache system default EGL.
-        gSystemEglDisplay = eglGetCurrentDisplay();
-        if (gSystemEglDisplay == EGL_NO_DISPLAY) {
-            LogE(TAG, "System EGL Display == EGL_NO_DISPLAY");
-        }
-        gSystemEglDrawSurface = eglGetCurrentSurface(EGL_DRAW);
-        if (gSystemEglDrawSurface == EGL_NO_SURFACE) {
-            LogE(TAG, "System EGL Draw Surface == EGL_NO_SURFACE");
-        }
-        gSystemEglReadSurface = eglGetCurrentSurface(EGL_READ);
-        if (gSystemEglReadSurface == EGL_NO_SURFACE) {
-            LogE(TAG, "System EGL Read Surface == EGL_NO_SURFACE");
-        }
-        gSystemEglContext = eglGetCurrentContext();
-        if (gSystemEglContext == EGL_NO_CONTEXT) {
-            LogE(TAG, "System EGL Context == EGL_NO_CONTEXT");
-        }
-
         // Attributes.
         const EGLint eglConfigAttrs[] = {
                 EGL_RENDERABLE_TYPE,    EGL_OPENGL_ES2_BIT,
@@ -157,17 +139,6 @@ namespace fezrestia {
         gAppEglDisplay = nullptr;
         gAppEglConfig = nullptr;
         gAppEglContext = nullptr;
-
-        gSystemEglDisplay = nullptr;
-        gSystemEglDrawSurface = nullptr;
-        gSystemEglReadSurface = nullptr;
-        gSystemEglContext = nullptr;
-
-        // Clear system default EGL cache.
-        gSystemEglDisplay = nullptr;
-        gSystemEglReadSurface = nullptr;
-        gSystemEglDrawSurface = nullptr;
-        gSystemEglContext = nullptr;
 
         TraceLog(TAG, "finalizeEgl() : X");
         return 0;
@@ -522,13 +493,8 @@ namespace fezrestia {
     int returnEglToSystemDefault() {
         TraceLog(TAG, "returnEglToSystemDefault() : E");
 
-        if (eglMakeCurrent(
-                gSystemEglDisplay,
-                gSystemEglDrawSurface,
-                gSystemEglReadSurface,
-                gSystemEglContext) == EGL_FALSE) {
-            LogE(TAG, "Failed to return EGL to System Default.");
-            return -1;
+        if (eglReleaseThread() == EGL_FALSE) {
+            LogE(TAG, "Failed to release EGL context.");
         }
 
         TraceLog(TAG, "returnEglToSystemDefault() : X");
