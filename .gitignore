@@ -10,6 +10,7 @@
 # Build outputs and intermediates
 build/
 */build/
+.cxx/
 
 # Local environment related
 local.properties

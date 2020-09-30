@@ -63,7 +63,7 @@ class OverlayViewFinderRootView : RelativeLayout {
     private val viewfinderWH = IntWH(0, 0)
 
     // Window.
-    private lateinit var windowManager: WindowManager
+    lateinit var windowManager: WindowManager
     private lateinit var windowLayoutParams: WindowManager.LayoutParams
 
     // UI Plug-IN.
@@ -655,6 +655,8 @@ class OverlayViewFinderRootView : RelativeLayout {
             if (Log.IS_DEBUG) Log.logDebug(TAG,
                     "onSurfaceTextureAvailable() : [W=$width] [H=$height]")
 
+            controller.currentState.onSurfaceCreated()
+
             checkViewFinderAspect(width, height)
         }
 
@@ -690,7 +692,7 @@ class OverlayViewFinderRootView : RelativeLayout {
 
         override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceTextureDestroyed()")
-            // NOP.
+            controller.currentState.onSurfaceReleased()
             return false
         }
 
@@ -1131,10 +1133,6 @@ class OverlayViewFinderRootView : RelativeLayout {
                 hide()
             }
         }
-    }
-
-    override fun showContextMenuForChild(originalView: View?): Boolean {
-        return super.showContextMenuForChild(originalView)
     }
 
     /**

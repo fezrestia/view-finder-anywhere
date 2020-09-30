@@ -3,6 +3,7 @@
 package com.fezrestia.android.viewfinderanywhere.device.api2
 
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.hardware.SensorManager
@@ -107,6 +108,16 @@ class Camera2Device(
         return d.requestStopRecAsync()
     }
 
+    override fun getPreviewStreamSize(): Size {
+        val d = delegated ?: throw error()
+        return d.getPreviewStreamSize()
+    }
+
+    override fun getSensorOrientation(): Int {
+        val d = delegated ?: throw error()
+        return d.getSensorOrientation()
+    }
+
     private fun error(): RuntimeException = RuntimeException("delegated is null.")
 }
 
@@ -137,6 +148,7 @@ class Camera2DeviceDelegated(
     private var requestId = 0
     private lateinit var previewStreamFrameSize: Size
     private lateinit var cropRegionRect: Rect
+    private var sensorOrientation: Int = -1
 
     // Internal clientCallback.
     private var cameraAvailabilityCallback: CameraAvailabilityCallback
@@ -318,6 +330,9 @@ class Camera2DeviceDelegated(
                     return
                 }
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "get Camera stream config map : DONE")
+
+                sensorOrientation = camCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)!!
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "sensorOrientation = $sensorOrientation")
 
                 if (Log.IS_DEBUG) {
                     Log.logDebug(TAG, "## Output Image Formats")
@@ -1499,6 +1514,34 @@ class Camera2DeviceDelegated(
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StopRecTask.run() : X")
         }
+    }
+
+    override fun getPreviewStreamSize(): Size {
+        when (context.resources.configuration.orientation) {
+            Configuration.ORIENTATION_LANDSCAPE -> {
+                // Screen orientation and imager orientation is matched.
+                return previewStreamFrameSize
+            }
+            Configuration.ORIENTATION_PORTRAIT -> {
+                // Screen orientation and imager orientation is against.
+                return Size(previewStreamFrameSize.height, previewStreamFrameSize.width)
+            }
+            else -> {
+                val w = context.resources.displayMetrics.widthPixels
+                val h = context.resources.displayMetrics.heightPixels
+                return if (w > h) {
+                    // Landscape.
+                    previewStreamFrameSize
+                } else {
+                    // Portrait.
+                    Size(previewStreamFrameSize.height, previewStreamFrameSize.width)
+                }
+            }
+        }
+    }
+
+    override fun getSensorOrientation(): Int {
+        return sensorOrientation
     }
 
     private fun waitForLatch(latch: CountDownLatch): Boolean {

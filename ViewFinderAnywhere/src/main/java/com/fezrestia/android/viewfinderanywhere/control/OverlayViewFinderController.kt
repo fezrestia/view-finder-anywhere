@@ -1,18 +1,21 @@
-@file:Suppress("PrivatePropertyName", "ConstantConditionIf", "unused")
+@file:Suppress("PrivatePropertyName", "ConstantConditionIf", "unused", "PropertyName")
 
 package com.fezrestia.android.viewfinderanywhere.control
 
 import android.content.Context
+import android.graphics.SurfaceTexture
 import android.net.Uri
-
+import android.util.Size
+import android.view.Surface
+import android.view.TextureView
 import com.fezrestia.android.lib.util.log.Log
 import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.Constants
-import com.fezrestia.android.viewfinderanywhere.config.options.CameraApiLevel
 import com.fezrestia.android.viewfinderanywhere.config.ConfigManager
+import com.fezrestia.android.viewfinderanywhere.config.options.CameraApiLevel
+import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface
 import com.fezrestia.android.viewfinderanywhere.device.api1.Camera1Device
 import com.fezrestia.android.viewfinderanywhere.device.api2.Camera2Device
-import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface
 import com.fezrestia.android.viewfinderanywhere.storage.StorageController
 import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView
 
@@ -22,13 +25,14 @@ import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView
  * @constructor
  * @param context Context Master context
  */
-class OverlayViewFinderController(val context: Context) {
+class OverlayViewFinderController(private val context: Context) {
     private val TRIGGER_FAILED_FEEDBACK_DELAY_MILLIS = 1000L
 
     // Core instances.
     private lateinit var rootView: OverlayViewFinderRootView
     private lateinit var configManager: ConfigManager
     private lateinit var camera: CameraPlatformInterface
+    private var cameraSurfaceTexture: SurfaceTexture? = null
 
     var currentState: State = StateFinalized()
             private set
@@ -36,6 +40,17 @@ class OverlayViewFinderController(val context: Context) {
     private lateinit var storageController: StorageController
 
     private val forceStopTask = ForceStopTask()
+
+    /**
+     * Primary CONSTRUCTOR.
+     */
+    init {
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR() : E")
+
+        nativeOnCreated()
+
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR() : X")
+    }
 
     /**
      * Set core instance dependency.
@@ -54,7 +69,11 @@ class OverlayViewFinderController(val context: Context) {
      * Release all references.
      */
     fun release() {
-        // NOP.
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "release() : E")
+
+        nativeOnDestroyed()
+
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "release() : X")
     }
 
     /**
@@ -152,7 +171,9 @@ class OverlayViewFinderController(val context: Context) {
     private interface FromViewInterface {
         fun onPreOpenRequested()
         fun onPreOpenCanceled()
+        fun onSurfaceCreated()
         fun onSurfaceReady()
+        fun onSurfaceReleased()
         fun requestScan()
         fun requestCancelScan()
         fun requestStillCapture()
@@ -161,8 +182,8 @@ class OverlayViewFinderController(val context: Context) {
     }
 
     private interface FromDeviceInterface {
-        fun onCameraReady()
-        fun onCameraBusy()
+        fun onCameraOpened(isSuccess: Boolean)
+        fun onCameraClosed()
         fun onScanDone(isSuccess: Boolean)
         fun onCancelScanDone()
         fun onShutterDone()
@@ -223,16 +244,24 @@ class OverlayViewFinderController(val context: Context) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenCanceled() : NOP")
         }
 
+        override fun onSurfaceCreated() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceCreated() : NOP")
+        }
+
         override fun onSurfaceReady() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady() : NOP")
         }
 
-        override fun onCameraReady() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraReady() : NOP")
+        override fun onSurfaceReleased() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReleased() : NOP")
         }
 
-        override fun onCameraBusy() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraBusy() : NOP")
+        override fun onCameraOpened(isSuccess: Boolean) {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraOpened() : NOP")
+        }
+
+        override fun onCameraClosed() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraClosed() : NOP")
         }
 
         override fun requestScan() {
@@ -313,8 +342,6 @@ class OverlayViewFinderController(val context: Context) {
     private inner class StateFinalized : StateAllFallback() {
         private val TAG = "StateFinalized"
 
-        private var isPreOpenRequested = false
-
         override fun entry() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "entry()")
 
@@ -331,26 +358,33 @@ class OverlayViewFinderController(val context: Context) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenRequested()")
 
             camera.openAsync(configManager.evfAspect.ratioWH, OpenCallbackImpl())
-            isPreOpenRequested = true
         }
 
         override fun onPreOpenCanceled() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenCanceled()")
 
-            if (isPreOpenRequested) {
-                camera.closeAsync(CloseCallbackImpl())
-                isPreOpenRequested = false
+            camera.closeAsync(CloseCallbackImpl())
+        }
+
+        override fun onCameraOpened(isSuccess: Boolean) {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraOpened()")
+
+            if (isSuccess) {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "Success to open camera.")
+                // Prepare in advance.
+                prepareCameraStreamTexture(
+                        camera.getPreviewStreamSize(),
+                        camera.getSensorOrientation())
+            } else {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "Failed to open camera.")
+                // NOP.
             }
         }
 
-        override fun onCameraReady() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraReady()")
+        override fun onCameraClosed() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraClosed()")
 
-            if (isPreOpenRequested) {
-                // Bind surface in advance.
-                val surface = rootView.getViewFinderSurface()
-                camera.bindPreviewSurfaceAsync(surface, BindSurfaceCallbackImpl())
-            }
+            releaseCameraStreamTexture()
         }
 
         override fun onToggleShowHideRequired() {
@@ -361,6 +395,12 @@ class OverlayViewFinderController(val context: Context) {
             } else {
                 rootView.show()
             }
+        }
+
+        override fun onSurfaceReleased() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReleased()")
+
+            nativeOnUiSurfaceFinalized()
         }
     }
 
@@ -382,21 +422,30 @@ class OverlayViewFinderController(val context: Context) {
             changeStateTo(StateFinalized())
         }
 
-        override fun onCameraReady() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraReady()")
+        override fun onSurfaceCreated() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceCreated()")
 
-            isCameraAlreadyReady = true
-
-            checkCameraAndSurfaceAndStartViewFinder()
+            // Start initialization of native GL/EGL related.
+            val uiSurface = Surface(rootView.getViewFinderSurface().surfaceTexture)
+            nativeOnUiSurfaceInitialized(uiSurface)
         }
 
-        override fun onCameraBusy() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraBusy()")
+        override fun onCameraOpened(isSuccess: Boolean) {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraOpened()")
 
-            // Camera can not be used.
-            App.ui.postDelayed(
-                    forceStopTask,
-                    TRIGGER_FAILED_FEEDBACK_DELAY_MILLIS)
+            if (isSuccess) {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "Success to open camera")
+
+                isCameraAlreadyReady = true
+                checkCameraAndSurfaceAndStartViewFinder()
+            } else {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "Failed to open camera")
+
+                // Camera can not be used.
+                App.ui.postDelayed(
+                        forceStopTask,
+                        TRIGGER_FAILED_FEEDBACK_DELAY_MILLIS)
+            }
         }
 
         override fun onSurfaceReady() {
@@ -413,8 +462,15 @@ class OverlayViewFinderController(val context: Context) {
             if (isCameraAlreadyReady && isSurfaceAlreadyReady) {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "Camera and surface are ready.")
 
+                prepareCameraStreamTexture(
+                        camera.getPreviewStreamSize(),
+                        camera.getSensorOrientation())
+
+                val texView = TextureView(context)
+                texView.surfaceTexture = cameraSurfaceTexture
+
                 camera.bindPreviewSurfaceAsync(
-                        rootView.getViewFinderSurface(),
+                        texView,
                         BindSurfaceCallbackImpl())
 
                 changeStateTo(StateIdle())
@@ -673,17 +729,13 @@ class OverlayViewFinderController(val context: Context) {
 
     private inner class OpenCallbackImpl : CameraPlatformInterface.OpenCallback {
         override fun onOpened(isSuccess: Boolean) {
-            if (isSuccess) {
-                currentState.onCameraReady()
-            } else {
-                currentState.onCameraBusy()
-            }
+            currentState.onCameraOpened(isSuccess)
         }
     }
 
     private inner class CloseCallbackImpl : CameraPlatformInterface.CloseCallback {
         override fun onClosed(isSuccess: Boolean) {
-            // NOP.
+            currentState.onCameraClosed()
         }
     }
 
@@ -744,7 +796,94 @@ class OverlayViewFinderController(val context: Context) {
         }
     }
 
+    private fun prepareCameraStreamTexture(
+            frameSize: Size,
+            frameOrientation: Int) {
+        if (Log.IS_DEBUG) {
+            Log.logDebug(TAG, "## frameSize = $frameSize")
+            Log.logDebug(TAG, "## frameOrientation = $frameOrientation")
+        }
+
+        cameraSurfaceTexture?.let {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "cameraSurfaceTexture exists")
+            // NOP.
+        } ?: run {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "cameraSurfaceTexture N/A")
+
+            val cameraAspect = frameSize.width.toFloat() / frameSize.height.toFloat()
+            nativeSetCameraStreamAspectWH(cameraAspect)
+
+            nativePrepareCameraStreamTexture()
+            val texId = nativeGetCameraStreamTextureId()
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "Camera Stream Tex ID = $texId")
+
+            cameraSurfaceTexture = SurfaceTexture(texId)
+            cameraSurfaceTexture?.setOnFrameAvailableListener(CameraSurfaceTextureCallback())
+
+            val displayRot = when (rootView.windowManager.defaultDisplay.rotation) {
+                Surface.ROTATION_0 -> 0
+                Surface.ROTATION_90 -> 90
+                Surface.ROTATION_180 -> 180
+                Surface.ROTATION_270 -> 270
+                else -> 0
+            }
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "displayRot = $displayRot")
+
+            nativeSetCameraStreamRotDeg(displayRot)
+        }
+    }
+
+    private fun releaseCameraStreamTexture() {
+        cameraSurfaceTexture?.let { it ->
+            it.setOnFrameAvailableListener(null)
+            it.release()
+            cameraSurfaceTexture = null
+        }
+    }
+
+    private inner class CameraSurfaceTextureCallback : SurfaceTexture.OnFrameAvailableListener {
+        val TAG = "CameraSurfaceTextureCallback"
+        override fun onFrameAvailable(surfaceTexture: SurfaceTexture) {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onFrameAvailable()")
+
+            nativeBindAppEglContext()
+
+            surfaceTexture.updateTexImage()
+
+            val matrix = FloatArray(16)
+            surfaceTexture.getTransformMatrix(matrix)
+
+            nativeSetCameraStreamTransformMatrix(matrix)
+
+            nativeOnCameraStreamUpdated()
+
+            nativeUnbindAppEglContext()
+        }
+    }
+
+    private external fun nativeOnCreated(): Int
+    private external fun nativeOnDestroyed(): Int
+
+    private external fun nativeOnUiSurfaceInitialized(surface: Surface): Int
+    private external fun nativeOnUiSurfaceFinalized(): Int
+
+    private external fun nativeBindAppEglContext(): Int
+    private external fun nativeUnbindAppEglContext(): Int
+
+    private external fun nativePrepareCameraStreamTexture(): Int
+    private external fun nativeReleaseCameraStreamTexture(): Int
+
+    private external fun nativeSetCameraStreamAspectWH(aspectWH: Float): Int
+    private external fun nativeGetCameraStreamTextureId(): Int
+    private external fun nativeSetCameraStreamTransformMatrix(matrix: FloatArray): Int
+    private external fun nativeSetCameraStreamRotDeg(frameOrientation: Int): Int
+    private external fun nativeOnCameraStreamUpdated(): Int
+
     companion object {
         private const val TAG = "OverlayViewFinderController"
+
+        init {
+            System.loadLibrary("viewfinderanywhere")
+        }
     }
 }

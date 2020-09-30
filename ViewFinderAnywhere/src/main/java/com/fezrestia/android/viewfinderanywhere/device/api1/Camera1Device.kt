@@ -3,11 +3,13 @@
 package com.fezrestia.android.viewfinderanywhere.device.api1
 
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.hardware.Camera
 import android.hardware.SensorManager
 import android.os.Handler
+import android.util.Size
 import android.view.OrientationEventListener
 import android.view.Surface
 import android.view.TextureView
@@ -45,6 +47,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
     private var evfAspectWH = 1.0f
     private var scanTask: ScanTask? = null
     private lateinit var previewSize: PlatformDependencyResolver.Size
+    private var info = Camera.CameraInfo()
 
     // Snapshot request ID.
     private var requestId = 0
@@ -175,6 +178,9 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
                             }
                         }
                     }
+
+                    // Cache static config.
+                    Camera.getCameraInfo(cameraId, info)
 
                     // Set.
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "Camera.setParameters() : E")
@@ -632,6 +638,34 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StopRecTask.run() : X")
         }
+    }
+
+    override fun getPreviewStreamSize(): Size {
+        when (context.resources.configuration.orientation) {
+            Configuration.ORIENTATION_LANDSCAPE -> {
+                // Screen orientation and imager orientation is matched.
+                return Size(previewSize.width, previewSize.height)
+            }
+            Configuration.ORIENTATION_PORTRAIT -> {
+                // Screen orientation and imager orientation is against.
+                return Size(previewSize.height, previewSize.width)
+            }
+            else -> {
+                val w = context.resources.displayMetrics.widthPixels
+                val h = context.resources.displayMetrics.heightPixels
+                return if (w > h) {
+                    // Landscape.
+                    Size(previewSize.width, previewSize.height)
+                } else {
+                    // Portrait.
+                    Size(previewSize.height, previewSize.width)
+                }
+            }
+        }
+    }
+
+    override fun getSensorOrientation(): Int {
+        return info.orientation
     }
 
     companion object {

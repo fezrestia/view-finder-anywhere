@@ -1,5 +1,6 @@
 package com.fezrestia.android.viewfinderanywhere.device
 
+import android.util.Size
 import android.view.TextureView
 
 /**
@@ -178,4 +179,19 @@ interface CameraPlatformInterface {
          */
         fun onRecStopped(recFileFullPath: String)
     }
+
+    /**
+     * Get preview stream frame width/height size in pixel.
+     * Coordinate is depending on current screen configuration.
+     *
+     * @return
+     */
+    fun getPreviewStreamSize(): Size
+
+    /**
+     * Get sensor orientation, one of 0, 90, 180, 270.
+     *
+     * @return
+     */
+    fun getSensorOrientation(): Int
 }
