@@ -5,6 +5,7 @@ package com.fezrestia.android.viewfinderanywhere.control
 import android.content.Context
 import android.graphics.SurfaceTexture
 import android.net.Uri
+import android.os.SystemClock
 import android.util.Size
 import android.view.Surface
 import android.view.TextureView
@@ -691,6 +692,12 @@ class OverlayViewFinderController(private val context: Context) {
         private val TAG = "StateRec"
 
         val mpegFileFullPath = storageController.getVideoFileFullPath()
+        var isPauseRequested = false
+
+        val MIN_REC_DURATION_MILLIS = 1000L
+        var startRecUptimeMillis = 0L
+
+        var isWaitingForStopRec = false
 
         override fun entry() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "entry()")
@@ -703,18 +710,28 @@ class OverlayViewFinderController(private val context: Context) {
             camera.requestStartVideoStreamAsync(VideoCallbackImpl())
         }
 
+        override fun exit() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "exit()")
+            // NOP.
+        }
+
         override fun onResume() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume()")
 
-            // TODO: Consider pause/resume during rec.
-
+            // If pause/resume action is done in Rec state,
+            // recording will be stopped and return to Idle state.
+            isPauseRequested = false
         }
 
         override fun onPause() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()")
 
-            // TODO: Consider pause/resume during rec.
+            // If pause action is done in Rec state,
+            // stop recording immediately and return to Finalized state.
+            isPauseRequested = true
 
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "Auto requestStopRec()")
+            requestStopRec()
         }
 
         override fun onVideoStreamStarted() {
@@ -733,7 +750,18 @@ class OverlayViewFinderController(private val context: Context) {
 
         override fun onRecStarted() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStarted()")
-            // NOP.
+
+            if (isWaitingForStopRec) {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStarted() stop immediately")
+
+                App.ui.postDelayed(
+                        { doStopRec() },
+                        MIN_REC_DURATION_MILLIS)
+            } else {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStarted() cache start timestamp")
+
+                startRecUptimeMillis = SystemClock.uptimeMillis()
+            }
         }
 
         override fun onRecStopped() {
@@ -747,14 +775,49 @@ class OverlayViewFinderController(private val context: Context) {
 
             rootView.getVisualFeedbackTrigger().onRecStopped()
 
-            changeStateTo(StateIdle())
+            if (isPauseRequested) {
+                changeStateTo(StateFinalized())
+            } else {
+                changeStateTo(StateIdle())
+            }
         }
 
         override fun requestStopRec() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStopRec()")
 
-            nativeStopVideoEncode()
+            if (isWaitingForStopRec) {
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "Already waiting for stop recording")
+                return
+            }
 
+            isWaitingForStopRec = true
+
+            if (startRecUptimeMillis == 0L) {
+                // Recording is requested to stop immediately, but rec is not started yet.
+                // NOP here but stop recording immediately after recording started.
+            } else {
+                // Recording is already started.
+
+                val recTimeMillis = SystemClock.uptimeMillis() - startRecUptimeMillis
+                if (recTimeMillis < MIN_REC_DURATION_MILLIS) {
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "recTimeMillis=$recTimeMillis is too short.")
+
+                    // If rec time is less than min rec duration,
+                    // delay stop recording still min duration.
+                    App.ui.postDelayed(
+                            { doStopRec() },
+                            MIN_REC_DURATION_MILLIS - recTimeMillis)
+
+                } else {
+                    doStopRec()
+                }
+            }
+        }
+
+        private fun doStopRec() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "doStopRec()")
+
+            nativeStopVideoEncode()
             camera.requestStopVideoStreamAsync()
         }
     }
