@@ -466,7 +466,209 @@ namespace fezrestia {
         // Swap buffer.
         eglSwapBuffers(gAppEglDisplay, gEglSurfaceUi);
 
+        if (gIsVideoEncoding) {
+            TraceLog(TAG, "## Render Video Encode Surface : E");
+
+            // Enable video surface EGL context.
+            changeCurrentEglTo(gEncoderEglDisplay, gEglSurfaceEncoder, gEglSurfaceEncoder, gEncoderEglContext);
+
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // NOLINT(hicpp-signed-bitwise)
+
+            gSurfaceTextureFrame->render();
+
+            if (checkGlError(TAG) != GL_NO_ERROR) {
+                LogE(TAG, "nativeOnCameraStreamUpdated() : VIDEO ENCODING : GL ERROR");
+            }
+
+            glFlush();
+            glFinish();
+
+            eglSwapBuffers(gAppEglDisplay, gEglSurfaceEncoder);
+
+            // Return EGL context to UI surface.
+            changeCurrentEglTo(gAppEglDisplay, gEglSurfaceUi, gEglSurfaceUi, gAppEglContext);
+
+            TraceLog(TAG, "## Render Video Encode Surface : X");
+        }
+
         TraceLog(TAG, "nativeOnCameraStreamUpdated() : X");
+        return 0;
+    }
+
+    extern "C" JNIEXPORT jint JNICALL Java_com_fezrestia_android_viewfinderanywhere_control_OverlayViewFinderController_nativeSetEncoderSurface(
+            JNIEnv* jenv,
+            jobject __unused instance,
+            jobject surface) {
+        TraceLog(TAG, "nativeSetEncoderSurface() : E");
+
+        // Attributes.
+        const EGLint eglConfigAttrs[] = {
+                EGL_RENDERABLE_TYPE,    EGL_OPENGL_ES2_BIT,
+                EGL_RED_SIZE,           8,
+                EGL_GREEN_SIZE,         8,
+                EGL_BLUE_SIZE,          8,
+                EGL_RECORDABLE_ANDROID, 1,
+                EGL_NONE
+        };
+        const EGLint eglContextAttrs[] = {
+                EGL_CONTEXT_CLIENT_VERSION, 2,
+                EGL_NONE
+        };
+
+        // Get display.
+        EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+        if (display == EGL_NO_DISPLAY) {
+            LogE(TAG, "Default Display == EGL_NO_DISPLAY");
+        }
+        // Initialize display.
+        switch (eglInitialize(display, nullptr, nullptr)) {
+            case EGL_FALSE:
+                LogE(TAG, "eglInitialize() == EGL_FALSE");
+                break;
+            case EGL_BAD_DISPLAY:
+                LogE(TAG, "eglInitialize() == EGL_BAD_DISPLAY");
+                break;
+            case EGL_NOT_INITIALIZED:
+                LogE(TAG, "eglInitialize() == EGL_NOT_INITIALIZED");
+                break;
+        }
+
+        // Set config.
+        EGLConfig config;
+        EGLint numConfigs;
+        switch (eglChooseConfig(display, eglConfigAttrs, &config, 1, &numConfigs)) {
+            case EGL_FALSE:
+                LogE(TAG, "eglInitialize() == EGL_FALSE");
+                break;
+            case EGL_BAD_DISPLAY:
+                LogE(TAG, "eglInitialize() == EGL_BAD_DISPLAY");
+                break;
+            case EGL_BAD_ATTRIBUTE:
+                LogE(TAG, "eglInitialize() == EGL_BAD_ATTRIBUTE");
+                break;
+            case EGL_NOT_INITIALIZED:
+                LogE(TAG, "eglInitialize() == EGL_NOT_INITIALIZED");
+                break;
+            case EGL_BAD_PARAMETER:
+                LogE(TAG, "eglInitialize() == EGL_BAD_PARAMETER");
+                break;
+        }
+
+        // Get EGL frame buffer info.
+        EGLint format;
+        switch (eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &format)) {
+            case EGL_FALSE:
+                LogE(TAG, "eglInitialize() == EGL_FALSE");
+                break;
+            case EGL_BAD_DISPLAY:
+                LogE(TAG, "eglInitialize() == EGL_BAD_DISPLAY");
+                break;
+            case EGL_NOT_INITIALIZED:
+                LogE(TAG, "eglInitialize() == EGL_NOT_INITIALIZED");
+                break;
+            case EGL_BAD_CONFIG:
+                LogE(TAG, "eglInitialize() == EGL_BAD_CONFIG");
+                break;
+            case EGL_BAD_ATTRIBUTE:
+                LogE(TAG, "eglInitialize() == EGL_BAD_ATTRIBUTE");
+                break;
+        }
+
+        // Get EGL rendering context.
+        EGLContext context = eglCreateContext(display, config, gAppEglContext, eglContextAttrs);
+        if (context == EGL_NO_CONTEXT) {
+            LogE(TAG, "eglCreateContext() == EGL_NO_CONTEXT");
+        }
+
+        // Cache encoder EGL.
+        gEncoderEglDisplay = display;
+        gEncoderEglConfig = config;
+        gEncoderEglContext = context;
+
+        gEncoderNativeWindow = ANativeWindow_fromSurface(jenv, surface);
+
+        // Create EGL surface.
+        gEglSurfaceEncoder = eglCreateWindowSurface(
+                gEncoderEglDisplay,
+                gEncoderEglConfig,
+                gEncoderNativeWindow,
+                nullptr);
+
+        // Enable encoder EGL.
+        changeCurrentEglTo(gEncoderEglDisplay, gEglSurfaceEncoder, gEglSurfaceEncoder, gEncoderEglContext);
+
+        // Get resolution.
+        EGLint width;
+        EGLint height;
+        eglQuerySurface(
+                gAppEglDisplay,
+                gEglSurfaceEncoder,
+                EGL_WIDTH,
+                &width);
+        eglQuerySurface(
+                gAppEglDisplay,
+                gEglSurfaceEncoder,
+                EGL_HEIGHT,
+                &height);
+        gSurfaceEncoderWidth = width;
+        gSurfaceEncoderHeight = height;
+        TraceLog(TAG, "## gSurfaceEncoderWidth =");
+        TraceLog(TAG, std::to_string(gSurfaceEncoderWidth));
+        TraceLog(TAG, "## gSurfaceEncoderHeight =");
+        TraceLog(TAG, std::to_string(gSurfaceEncoderHeight));
+
+        // Return EGL to system default.
+        returnEglToSystemDefault();
+
+        TraceLog(TAG, "nativeSetEncoderSurface() : X");
+        return 0;
+    }
+
+    extern "C" JNIEXPORT jint JNICALL Java_com_fezrestia_android_viewfinderanywhere_control_OverlayViewFinderController_nativeStartVideoEncode(
+            JNIEnv* __unused jenv,
+            jobject __unused instance) {
+        TraceLog(TAG, "nativeStartVideoEncode() : E");
+
+        gIsVideoEncoding = true;
+
+        TraceLog(TAG, "nativeStartVideoEncode() : X");
+        return 0;
+    }
+
+    extern "C" JNIEXPORT jint JNICALL Java_com_fezrestia_android_viewfinderanywhere_control_OverlayViewFinderController_nativeStopVideoEncode(
+            JNIEnv* __unused jenv,
+            jobject __unused instance) {
+        TraceLog(TAG, "nativeStopVideoEncode() : E");
+
+        gIsVideoEncoding = false;
+
+        TraceLog(TAG, "nativeStopVideoEncode() : X");
+        return 0;
+    }
+
+    extern "C" JNIEXPORT jint JNICALL Java_com_fezrestia_android_viewfinderanywhere_control_OverlayViewFinderController_nativeReleaseEncoderSurface(
+            JNIEnv* __unused jenv,
+            jobject __unused instance) {
+        TraceLog(TAG, "nativeReleaseEncoderSurface() : E");
+
+        if (gEglSurfaceEncoder != nullptr) {
+            eglDestroySurface(gEncoderEglDisplay, gEglSurfaceEncoder);
+        }
+
+        if (gEncoderNativeWindow != nullptr) {
+            ANativeWindow_release(gEncoderNativeWindow);
+        }
+
+        // Release encoder EGL.
+        eglDestroyContext(gEncoderEglDisplay, gEncoderEglContext);
+        eglTerminate(gEncoderEglDisplay);
+
+        gEncoderEglDisplay = nullptr;
+        gEncoderEglConfig = nullptr;
+        gEncoderEglContext = nullptr;
+
+        TraceLog(TAG, "nativeReleaseEncoderSurface() : X");
         return 0;
     }
 

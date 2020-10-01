@@ -4,6 +4,7 @@
 #include <jni.h>
 
 #include <EGL/egl.h>
+#include <EGL/eglext.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 
@@ -21,6 +22,7 @@ namespace fezrestia {
 //    static JavaVM* gVm;
 
     static ANativeWindow* gUiNativeWindow;
+    static ANativeWindow* gEncoderNativeWindow;
 
     static EGLDisplay gAppEglDisplay;
     static EGLConfig gAppEglConfig;
@@ -29,6 +31,16 @@ namespace fezrestia {
     static EGLSurface gEglSurfaceUi;
     EGLint gSurfaceUiWidth;
     EGLint gSurfaceUiHeight;
+
+    static EGLDisplay gEncoderEglDisplay;
+    static EGLConfig gEncoderEglConfig;
+    static EGLContext gEncoderEglContext;
+
+    static EGLSurface gEglSurfaceEncoder;
+    EGLint gSurfaceEncoderWidth;
+    EGLint gSurfaceEncoderHeight;
+
+    bool gIsVideoEncoding = false;
 
     float gCameraStreamAspectWH = 1.0;
     int gCameraStreamRotDeg = 0;

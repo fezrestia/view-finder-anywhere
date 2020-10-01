@@ -591,42 +591,32 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
         }
     }
 
-    private var recFileFullPath: String = ""
-    private var recCallback: CameraPlatformInterface.RecCallback? = null
+    private var videoCallback: CameraPlatformInterface.VideoCallback? = null
 
-    override fun requestStartRecAsync(
-            recFileFullPath: String,
-            recCallback: CameraPlatformInterface.RecCallback) {
-        this.recFileFullPath = recFileFullPath
-        this.recCallback = recCallback
-        val startRecTask = StartRecTask(recCallback)
-        backWorker?.execute(startRecTask)
+    override fun requestStartVideoStreamAsync(callback: CameraPlatformInterface.VideoCallback) {
+        this.videoCallback = callback
+        backWorker?.execute(StartRecTask())
     }
 
-    private inner class StartRecTask(
-            private val callback: CameraPlatformInterface.RecCallback) : Runnable {
+    private inner class StartRecTask : Runnable {
         override fun run() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StartRecTask.run() : E")
 
 
 
 
-            callback.onRecStarted()
+
+            videoCallback?.onVideoStreamStarted()
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StartRecTask.run() : X")
         }
     }
 
-    override fun requestStopRecAsync() {
-        recCallback?.let { callback ->
-            val stopRecTask = StopRecTask(callback)
-            backWorker?.execute(stopRecTask)
-            recCallback = null
-        }
+    override fun requestStopVideoStreamAsync() {
+        backWorker?.execute(StopRecTask())
     }
 
-    private inner class StopRecTask(
-            private val callback: CameraPlatformInterface.RecCallback) : Runnable {
+    private inner class StopRecTask : Runnable {
         override fun run() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StopRecTask.run() : E")
 
@@ -634,7 +624,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
 
 
 
-            callback.onRecStopped(recFileFullPath)
+            videoCallback?.onVideoStreamStopped()
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "StopRecTask.run() : X")
         }

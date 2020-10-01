@@ -16,6 +16,7 @@ import com.fezrestia.android.viewfinderanywhere.config.options.CameraApiLevel
 import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface
 import com.fezrestia.android.viewfinderanywhere.device.api1.Camera1Device
 import com.fezrestia.android.viewfinderanywhere.device.api2.Camera2Device
+import com.fezrestia.android.viewfinderanywhere.device.codec.MpegRecorder
 import com.fezrestia.android.viewfinderanywhere.storage.StorageController
 import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView
 
@@ -38,6 +39,8 @@ class OverlayViewFinderController(private val context: Context) {
             private set
 
     private lateinit var storageController: StorageController
+
+    private var mpegRecorder: MpegRecorder? = null
 
     private val forceStopTask = ForceStopTask()
 
@@ -189,12 +192,17 @@ class OverlayViewFinderController(private val context: Context) {
         fun onShutterDone()
         fun onStillCaptureDone()
         fun onPhotoStoreReady(data: ByteArray)
-        fun onRecStarted()
-        fun onRecStopped()
+        fun onVideoStreamStarted()
+        fun onVideoStreamStopped()
     }
 
     private interface FromStorageInterface {
         fun onPhotoStoreDone(isSuccess: Boolean, uri: Uri?)
+    }
+
+    private interface FromMpegRecorderInterface {
+        fun onRecStarted()
+        fun onRecStopped()
     }
 
     abstract inner class State :
@@ -203,7 +211,8 @@ class OverlayViewFinderController(private val context: Context) {
             FromExternalEnvironment,
             FromViewInterface,
             FromDeviceInterface,
-            FromStorageInterface {
+            FromStorageInterface,
+            FromMpegRecorderInterface {
         private val TAG = "State"
 
         override val isActive: Boolean
@@ -308,6 +317,14 @@ class OverlayViewFinderController(private val context: Context) {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPhotoStoreDone() : NOP")
         }
 
+        override fun onVideoStreamStarted() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onVideoStreamStarted() : NOP")
+        }
+
+        override fun onVideoStreamStopped() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onVideoStreamStopped() : NOP")
+        }
+
         override fun onRecStarted() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStarted() : NOP")
         }
@@ -371,10 +388,7 @@ class OverlayViewFinderController(private val context: Context) {
 
             if (isSuccess) {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "Success to open camera.")
-                // Prepare in advance.
-                prepareCameraStreamTexture(
-                        camera.getPreviewStreamSize(),
-                        camera.getSensorOrientation())
+                // NOP.
             } else {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "Failed to open camera.")
                 // NOP.
@@ -383,6 +397,9 @@ class OverlayViewFinderController(private val context: Context) {
 
         override fun onCameraClosed() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraClosed()")
+
+            mpegRecorder?.release()
+            mpegRecorder = null
 
             releaseCameraStreamTexture()
         }
@@ -462,16 +479,33 @@ class OverlayViewFinderController(private val context: Context) {
             if (isCameraAlreadyReady && isSurfaceAlreadyReady) {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "Camera and surface are ready.")
 
-                prepareCameraStreamTexture(
-                        camera.getPreviewStreamSize(),
-                        camera.getSensorOrientation())
+                // Camera stream surface.
+                run {
+                    prepareCameraStreamTexture(
+                            camera.getPreviewStreamSize(),
+                            camera.getSensorOrientation())
 
-                val texView = TextureView(context)
-                texView.surfaceTexture = cameraSurfaceTexture
+                    val texView = TextureView(context)
+                    texView.surfaceTexture = cameraSurfaceTexture
 
-                camera.bindPreviewSurfaceAsync(
-                        texView,
-                        BindSurfaceCallbackImpl())
+                    camera.bindPreviewSurfaceAsync(
+                            texView,
+                            BindSurfaceCallbackImpl())
+                }
+
+                // Video.
+                run {
+                    val videoSize = calcVideoSize(
+                            camera.getPreviewStreamSize(),
+                            configManager.evfAspect.ratioWH)
+                    if (Log.IS_DEBUG) Log.logDebug(TAG, "## Video Size = $videoSize")
+
+                    mpegRecorder = MpegRecorder(
+                            context,
+                            videoSize,
+                            MpegRecorderCallbackImpl(),
+                            App.ui)
+                }
 
                 changeStateTo(StateIdle())
             } else {
@@ -505,10 +539,6 @@ class OverlayViewFinderController(private val context: Context) {
 
         override fun requestStartRec() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStartRec()")
-
-            camera.requestStartRecAsync(
-                    storageController.getVideoFileFullPath(),
-                    RecCallbackImpl())
 
             changeStateTo(StateRec())
         }
@@ -660,6 +690,19 @@ class OverlayViewFinderController(private val context: Context) {
     private inner class StateRec : StateAllFallback() {
         private val TAG = "StateRec"
 
+        val mpegFileFullPath = storageController.getVideoFileFullPath()
+
+        override fun entry() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "entry()")
+
+            mpegRecorder?.let {
+                it.setup(mpegFileFullPath)
+                nativeSetEncoderSurface(it.getVideoInputSurface())
+                it.start()
+            }
+            camera.requestStartVideoStreamAsync(VideoCallbackImpl())
+        }
+
         override fun onResume() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume()")
 
@@ -674,14 +717,33 @@ class OverlayViewFinderController(private val context: Context) {
 
         }
 
-        override fun onRecStarted() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStarted()")
+        override fun onVideoStreamStarted() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onVideoStreamStarted()")
 
             rootView.getVisualFeedbackTrigger().onRecStarted()
+
+            nativeStartVideoEncode()
+        }
+
+        override fun onVideoStreamStopped() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onVideoStreamStopped()")
+
+            mpegRecorder?.stop()
+        }
+
+        override fun onRecStarted() {
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStarted()")
+            // NOP.
         }
 
         override fun onRecStopped() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStopped()")
+
+            storageController.notifyToMediaScanner(mpegFileFullPath)
+
+            nativeReleaseEncoderSurface()
+
+            mpegRecorder?.reset()
 
             rootView.getVisualFeedbackTrigger().onRecStopped()
 
@@ -691,7 +753,9 @@ class OverlayViewFinderController(private val context: Context) {
         override fun requestStopRec() {
             if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStopRec()")
 
-            camera.requestStopRecAsync()
+            nativeStopVideoEncode()
+
+            camera.requestStopVideoStreamAsync()
         }
     }
 
@@ -785,13 +849,22 @@ class OverlayViewFinderController(private val context: Context) {
         }
     }
 
-    private inner class RecCallbackImpl : CameraPlatformInterface.RecCallback {
+    private inner class VideoCallbackImpl : CameraPlatformInterface.VideoCallback {
+        override fun onVideoStreamStarted() {
+            currentState.onVideoStreamStarted()
+        }
+
+        override fun onVideoStreamStopped() {
+            currentState.onVideoStreamStopped()
+        }
+    }
+
+    private inner class MpegRecorderCallbackImpl : MpegRecorder.Callback {
         override fun onRecStarted() {
             currentState.onRecStarted()
         }
 
         override fun onRecStopped(recFileFullPath: String) {
-            storageController.notifyToMediaScanner(recFileFullPath)
             currentState.onRecStopped()
         }
     }
@@ -820,16 +893,36 @@ class OverlayViewFinderController(private val context: Context) {
             cameraSurfaceTexture = SurfaceTexture(texId)
             cameraSurfaceTexture?.setOnFrameAvailableListener(CameraSurfaceTextureCallback())
 
-            val displayRot = when (rootView.windowManager.defaultDisplay.rotation) {
-                Surface.ROTATION_0 -> 0
-                Surface.ROTATION_90 -> 90
-                Surface.ROTATION_180 -> 180
-                Surface.ROTATION_270 -> 270
-                else -> 0
-            }
+            val displayRot = getDisplayRotDeg()
             if (Log.IS_DEBUG) Log.logDebug(TAG, "displayRot = $displayRot")
 
             nativeSetCameraStreamRotDeg(displayRot)
+        }
+    }
+
+    private fun getDisplayRotDeg(): Int {
+        return when (rootView.windowManager.defaultDisplay.rotation) {
+            Surface.ROTATION_0 -> 0
+            Surface.ROTATION_90 -> 90
+            Surface.ROTATION_180 -> 180
+            Surface.ROTATION_270 -> 270
+            else -> 0
+        }
+    }
+
+    private fun calcVideoSize(previewSize: Size, requestAspectWH: Float): Size {
+        val previewAspectWH = previewSize.width.toFloat() / previewSize.height.toFloat()
+
+        return if (previewAspectWH < requestAspectWH) {
+            // Cut off top/bottom.
+            val w = previewSize.width
+            val h = (w.toFloat() / requestAspectWH).toInt()
+            Size(w, h)
+        } else {
+            // Cut off left/right.
+            val h = previewSize.height
+            val w = (h.toFloat() * requestAspectWH).toInt()
+            Size(w, h)
         }
     }
 
@@ -844,7 +937,7 @@ class OverlayViewFinderController(private val context: Context) {
     private inner class CameraSurfaceTextureCallback : SurfaceTexture.OnFrameAvailableListener {
         val TAG = "CameraSurfaceTextureCallback"
         override fun onFrameAvailable(surfaceTexture: SurfaceTexture) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onFrameAvailable()")
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onFrameAvailable() : E")
 
             nativeBindAppEglContext()
 
@@ -858,6 +951,8 @@ class OverlayViewFinderController(private val context: Context) {
             nativeOnCameraStreamUpdated()
 
             nativeUnbindAppEglContext()
+
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "onFrameAvailable() : X")
         }
     }
 
@@ -878,6 +973,12 @@ class OverlayViewFinderController(private val context: Context) {
     private external fun nativeSetCameraStreamTransformMatrix(matrix: FloatArray): Int
     private external fun nativeSetCameraStreamRotDeg(frameOrientation: Int): Int
     private external fun nativeOnCameraStreamUpdated(): Int
+
+    private external fun nativeSetEncoderSurface(surface: Surface): Int
+    private external fun nativeReleaseEncoderSurface(): Int
+
+    private external fun nativeStartVideoEncode(): Int
+    private external fun nativeStopVideoEncode(): Int
 
     companion object {
         private const val TAG = "OverlayViewFinderController"

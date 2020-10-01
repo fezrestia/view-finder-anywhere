@@ -151,33 +151,20 @@ interface CameraPlatformInterface {
     }
 
     /**
-     * Start recording async.
+     * Start video frame streaming.
      *
-     * @param recFileFullPath
-     * @param recCallback
+     * @param callback
      */
-    fun requestStartRecAsync(recFileFullPath: String, recCallback: RecCallback)
+    fun requestStartVideoStreamAsync(callback: VideoCallback)
 
     /**
-     * Stop recording async.
+     * Stop video frame streaming.
      */
-    fun requestStopRecAsync()
+    fun requestStopVideoStreamAsync()
 
-    /**
-     * Interface for recording feature callback.
-     */
-    interface RecCallback {
-        /**
-         * Recording is started.
-         */
-        fun onRecStarted()
-
-        /**
-         * Recording is stopped.
-         *
-         * @param recFileFullPath Recorded audio/video file full path.
-         */
-        fun onRecStopped(recFileFullPath: String)
+    interface VideoCallback {
+        fun onVideoStreamStarted()
+        fun onVideoStreamStopped()
     }
 
     /**

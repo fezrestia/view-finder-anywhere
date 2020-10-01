@@ -20,12 +20,10 @@ import android.hardware.camera2.params.OutputConfiguration
 import android.hardware.camera2.params.SessionConfiguration
 import android.hardware.camera2.params.StreamConfigurationMap
 import android.media.MediaActionSound
-import android.media.MediaCodec
-import android.media.MediaFormat
-import android.media.MediaMuxer
 import android.media.ImageReader
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.Range
 import android.util.Size
 import android.view.OrientationEventListener
 import android.view.Surface
@@ -34,8 +32,6 @@ import android.view.TextureView
 import com.fezrestia.android.lib.util.log.Log
 import com.fezrestia.android.lib.util.media.ImageProc
 import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface
-import com.fezrestia.android.viewfinderanywhere.device.codec.MediaCodecPDR
-import java.nio.ByteBuffer
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -98,14 +94,14 @@ class Camera2Device(
         return d.requestStillCaptureAsync(stillCaptureCallback)
     }
 
-    override fun requestStartRecAsync(recFileFullPath: String, recCallback: CameraPlatformInterface.RecCallback) {
+    override fun requestStartVideoStreamAsync(callback: CameraPlatformInterface.VideoCallback) {
         val d = delegated ?: throw error()
-        return d.requestStartRecAsync(recFileFullPath, recCallback)
+        return d.requestStartVideoStreamAsync(callback)
     }
 
-    override fun requestStopRecAsync() {
+    override fun requestStopVideoStreamAsync() {
         val d = delegated ?: throw error()
-        return d.requestStopRecAsync()
+        return d.requestStopVideoStreamAsync()
     }
 
     override fun getPreviewStreamSize(): Size {
@@ -166,8 +162,6 @@ class Camera2DeviceDelegated(
     private var requestHandler: Handler
     private var backHandlerThread: HandlerThread
     private var backHandler: Handler
-    private var recHandlerThread: HandlerThread
-    private var recHandler: Handler
 
     // Orientation.
     private var orientationDegree = OrientationEventListener.ORIENTATION_UNKNOWN
@@ -210,11 +204,6 @@ class Camera2DeviceDelegated(
         backHandlerThread.start()
         backHandler = Handler(backHandlerThread.looper)
 
-        // Rec worker thread.
-        recHandlerThread = HandlerThread("rec", Thread.NORM_PRIORITY)
-        recHandlerThread.start()
-        recHandler = Handler(backHandlerThread.looper)
-
         // Internal clientCallback.
         cameraAvailabilityCallback = CameraAvailabilityCallback()
         camMng.registerAvailabilityCallback(
@@ -256,8 +245,6 @@ class Camera2DeviceDelegated(
         shutdown(callbackHandlerThread)
         // Back worker.
         shutdown(backHandlerThread)
-        // Rec thread.
-        shutdown(recHandlerThread)
 
         // Internal clientCallback.
         camMng.unregisterAvailabilityCallback(cameraAvailabilityCallback)
@@ -383,13 +370,6 @@ class Camera2DeviceDelegated(
                     callbackHandler)
             if (Log.IS_DEBUG) Log.logDebug(TAG, "Still ImageReader : DONE")
 
-            // Video recorder.
-            val videoSize: Size = PDR2.getVideoStreamFrameSize(camCharacteristics)
-            recMediaFormat = MediaCodecPDR.getVideoMediaFormat(videoSize.width, videoSize.height)
-            recEncoderName = MediaCodecPDR.getVideoEncoderName(recMediaFormat!!)
-            recSurface = MediaCodec.createPersistentInputSurface()
-            recMediaCodec = genVideoMediaCodec()
-
             // Orientation.
             orientationEventListenerImpl.enable()
             if (Log.IS_DEBUG) Log.logDebug(TAG, "Orientation : DONE")
@@ -430,12 +410,6 @@ class Camera2DeviceDelegated(
 
             // Still image reader.
             stillImgReader.close()
-
-            // Video surface.
-            recSurface?.let { surface ->
-                surface.release()
-                recSurface = null
-            }
 
             // Orientation.
             orientationEventListenerImpl.disable()
@@ -506,23 +480,21 @@ class Camera2DeviceDelegated(
             evfSurface = evf
 
             // Outputs.
-            val recSurface = ensure(recSurface)
             val sessionCallback = CaptureSessionStateCallback()
             captureSessionStateCallback = sessionCallback
             try {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
                     val evfOutputConfig = OutputConfiguration(evf)
                     val stillOutputConfig = OutputConfiguration(stillImgReader.surface)
-                    val videoOutputConfig = OutputConfiguration(recSurface)
 
                     val sessionConfig = SessionConfiguration(
                             SessionConfiguration.SESSION_REGULAR,
-                            listOf(evfOutputConfig, stillOutputConfig, videoOutputConfig),
+                            listOf(evfOutputConfig, stillOutputConfig),
                             { task -> callbackHandler.post(task) }, // Executor.
                             sessionCallback)
                     cam.createCaptureSession(sessionConfig)
                 } else {
-                    val outputs = listOf(evf, stillImgReader.surface, recSurface)
+                    val outputs = listOf(evf, stillImgReader.surface)
                     cam.createCaptureSession(
                             outputs,
                             sessionCallback,
@@ -1076,7 +1048,11 @@ class Camera2DeviceDelegated(
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_RECORD -> {
                     if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_VIDEO_RECORD")
-                    // NOP.
+
+                    if (!isVideoStreamStarted) {
+                        isVideoStreamStarted = true
+                        clientCallbackHandler.post { videoCallback?.onVideoStreamStarted() }
+                    }
                 }
 
                 // NOT used intent.
@@ -1322,11 +1298,8 @@ class Camera2DeviceDelegated(
             super.onCaptureSequenceCompleted(session, sequenceId, frameNumber)
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureSequenceCompleted()")
 
-            if (recSequenceId == sequenceId) {
-                // Surface buffers for rec MediaCodec input are all produced.
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Rec surface stream is finished.")
-
-                recMediaCodec?.signalEndOfInputStream()
+            if (sequenceId == videoSequenceId) {
+                clientCallbackHandler.post { videoCallback?.onVideoStreamStopped() }
             }
         }
 
@@ -1348,171 +1321,89 @@ class Camera2DeviceDelegated(
         }
     }
 
-    // Video rec.
-    private var recMediaCodec: MediaCodec? = null
-    private var recSurface: Surface? = null
-    private var recMediaFormat: MediaFormat? = null
-    private var recEncoderName: String? = null
-    private var videoMuxer: MediaMuxer? = null
-    private var recCallback: CameraPlatformInterface.RecCallback? = null
-    private var recSequenceId: Int = -1
-    private var recFileFullPath: String = ""
+    private var videoCallback: CameraPlatformInterface.VideoCallback? = null
+    private var videoSequenceId: Int = -1
+    private var isVideoStreamStarted = false
 
-    private fun genVideoMediaCodec(): MediaCodec {
-        val encoderName = ensure(recEncoderName)
-        val mediaFormat = ensure(recMediaFormat)
-        val recSurface = ensure(recSurface)
+    override fun requestStartVideoStreamAsync(callback: CameraPlatformInterface.VideoCallback) {
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "startVideoStream()")
 
-        return MediaCodec.createByCodecName(encoderName).apply {
-            setCallback(MediaCodecCallbackImpl(), recHandler)
-            configure(
-                    mediaFormat,
-                    null, // output surface.
-                    null, // media crypto.
-                    MediaCodec.CONFIGURE_FLAG_ENCODE)
-            setInputSurface(recSurface)
-        }
+        videoCallback = callback
+        isVideoStreamStarted = false
+        requestHandler.post(StartVideoStreamTask())
     }
 
-    private inner class MediaCodecCallbackImpl : MediaCodec.Callback() {
-        private val TAG = "MediaCodecCallbackImpl"
+    private inner class StartVideoStreamTask : Runnable {
+        private val TAG = "StartVideoStreamTask"
 
-        private var videoTrackIndex: Int = 0
-
-        override fun onInputBufferAvailable(codec: MediaCodec, index: Int) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onInputBufferAvailable() : index=$index")
-            // NOP.
-        }
-
-        override fun onOutputBufferAvailable(codec: MediaCodec, index: Int, info: MediaCodec.BufferInfo) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onOutputBufferAvailable() : index=$index, info=$info")
-
-            val muxer = ensure(videoMuxer)
-
-            val outBuf: ByteBuffer = ensure(codec.getOutputBuffer(index))
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "  outBuf.remaining = ${outBuf.remaining()}")
-
-            muxer.writeSampleData(videoTrackIndex, outBuf, info)
-
-            codec.releaseOutputBuffer(index, false)
-
-            if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "FLAG = BUFFER_FLAG_END_OF_STREAM")
-
-                muxer.stop()
-                muxer.release()
-                videoMuxer = null
-
-                codec.stop()
-                codec.release()
-                recMediaCodec = genVideoMediaCodec() // prepare next.
-
-                startEvfStream()
-
-                recCallback?.let { callback ->
-                    clientCallbackHandler.post { callback.onRecStopped(recFileFullPath) }
-                    recCallback = null
-                }
-            }
-        }
-
-        override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onError() : e=$e")
-
-            // TODO: Handle error.
-
-        }
-
-        override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onOutputFormatChanged() : format=$format")
-
-            // After first frame encoded, output format is changed to valid.
-            // Add video track here with valid format.
-
-            val muxer = ensure(videoMuxer)
-
-            videoTrackIndex = muxer.addTrack(format)
-            muxer.start()
-        }
-    }
-
-    override fun requestStartRecAsync(
-            recFileFullPath: String,
-            recCallback: CameraPlatformInterface.RecCallback) {
-        this.recFileFullPath = recFileFullPath
-        this.recCallback = recCallback
-
-        val startRecTask = StartRecTask(recCallback)
-        requestHandler.post(startRecTask)
-    }
-
-    private inner class StartRecTask(
-            private val callback: CameraPlatformInterface.RecCallback) : Runnable {
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "StartRecTask.run() : E")
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run()")
 
             val cam = ensure(camDevice)
             val session = ensure(camSession)
-            val capCallback = ensure(captureCallback)
-            val evfSurface = ensure(evfSurface)
-            val recSurface = ensure(recSurface)
+            val surface = ensure(evfSurface)
+            val callback = ensure(captureCallback)
 
-            val evfBuilder = cam.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
-                addTarget(evfSurface)
-                set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO)
-                set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
-                set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
-                set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
-                set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, CaptureRequest.CONTROL_AE_ANTIBANDING_MODE_AUTO)
-                set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO)
+            try {
+                val builder = cam.createCaptureRequest(CameraDevice.TEMPLATE_RECORD)
+
+                builder.addTarget(surface)
+
+                // Parameters.
+                // Mode.
+                builder.set(
+                        CaptureRequest.CONTROL_MODE,
+                        CaptureRequest.CONTROL_MODE_AUTO)
+                // AF.
+                builder.set(
+                        CaptureRequest.CONTROL_AF_MODE,
+                        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
+                // AE.
+                builder.set(
+                        CaptureRequest.CONTROL_AE_MODE,
+                        CaptureRequest.CONTROL_AE_MODE_ON)
+                builder.set(
+                        CaptureRequest.FLASH_MODE,
+                        CaptureRequest.FLASH_MODE_OFF)
+                builder.set(
+                        CaptureRequest.CONTROL_AE_ANTIBANDING_MODE,
+                        CaptureRequest.CONTROL_AE_ANTIBANDING_MODE_AUTO)
+                builder.set(
+                        CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                        Range(30, 30))
+                // AWB.
+                builder.set(
+                        CaptureRequest.CONTROL_AWB_MODE,
+                        CaptureRequest.CONTROL_AWB_MODE_AUTO)
+
+                // Build request.
+                val videoReq = builder.build()
+
+                videoSequenceId = session.setRepeatingRequest(videoReq, callback, callbackHandler)
+
+            } catch (e: CameraAccessException) {
+                throw RuntimeException("Failed to startEvfStream()")
             }
-            val evfReq = evfBuilder.build()
-
-            val recBuilder = cam.createCaptureRequest(CameraDevice.TEMPLATE_RECORD).apply {
-                addTarget(recSurface)
-                set(CaptureRequest.SCALER_CROP_REGION, cropRegionRect)
-
-            }
-            val recReq = recBuilder.build()
-
-            stopEvfStream()
-
-            val recorder = ensure(recMediaCodec)
-
-            recSequenceId = session.setRepeatingBurst(
-                    listOf(evfReq, recReq),
-                    capCallback,
-                    callbackHandler)
-
-            recorder.start()
-
-            videoMuxer = MediaMuxer(
-                    recFileFullPath,
-                    MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4).apply {
-                val videoRot = PDR2.getFrameOrientation(
-                        camCharacteristics,
-                        orientationDegree)
-                setOrientationHint(videoRot)
-            }
-
-            clientCallbackHandler.post { callback.onRecStarted() }
-
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "StartRecTask.run() : X")
         }
     }
 
-    override fun requestStopRecAsync() {
-        val stopRecTask = StopRecTask()
-        requestHandler.post(stopRecTask)
+    override fun requestStopVideoStreamAsync() {
+        if (Log.IS_DEBUG) Log.logDebug(TAG, "stopVideoStream()")
+
+        requestHandler.post(StopVideoStreamTask())
     }
 
-    private inner class StopRecTask : Runnable {
+    private inner class StopVideoStreamTask : Runnable {
+        val TAG = "StopVideoStreamTask"
+
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "StopRecTask.run() : E")
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "run()")
 
-            camSession?.stopRepeating()
+            val session = ensure(camSession)
+            session.stopRepeating()
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "StopRecTask.run() : X")
+            // Restart normal preview.
+            startEvfStream()
         }
     }
 
