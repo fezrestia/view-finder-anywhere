@@ -705,7 +705,6 @@ class OverlayViewFinderController(private val context: Context) {
             mpegRecorder?.let {
                 it.setup(mpegFileFullPath)
                 nativeSetEncoderSurface(it.getVideoInputSurface())
-                it.start()
             }
             camera.requestStartVideoStreamAsync(VideoCallbackImpl())
         }
@@ -740,6 +739,8 @@ class OverlayViewFinderController(private val context: Context) {
             rootView.getVisualFeedbackTrigger().onRecStarted()
 
             nativeStartVideoEncode()
+
+            mpegRecorder?.start()
         }
 
         override fun onVideoStreamStopped() {

@@ -59,8 +59,8 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
         // UI Plug-IN container class.
         private inner class UiPlugInPackage(
-                internal val packageName: String,
-                internal val plugInTitle: String)
+                val packageName: String,
+                val plugInTitle: String)
 
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.preferences_view_finder_anywhere, rootKey)
@@ -431,6 +431,11 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
         get() = (checkSelfPermission(Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED)
 
+    private val isMicPermissionGranted: Boolean
+        @TargetApi(Build.VERSION_CODES.M)
+        get() = (checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+                == PackageManager.PERMISSION_GRANTED)
+
     private val isWriteStoragePermissionGranted: Boolean
         @TargetApi(Build.VERSION_CODES.M)
         get() = (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -465,6 +470,9 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
             if (!isCameraPermissionGranted) {
                 permissions.add(Manifest.permission.CAMERA)
+            }
+            if (!isMicPermissionGranted) {
+                permissions.add(Manifest.permission.RECORD_AUDIO)
             }
             if (!isWriteStoragePermissionGranted) {
                 permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)

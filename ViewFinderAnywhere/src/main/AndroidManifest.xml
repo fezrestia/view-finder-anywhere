@@ -6,8 +6,8 @@
 
     package="com.fezrestia.android.viewfinderanywhere"
 
-    android:versionCode="590"
-    android:versionName="5.3.1-590"
+    android:versionCode="684"
+    android:versionName="5.4.0-684"
 >
 <!--                     | | | |-> incremental build count
                          | | |-> patch
@@ -18,6 +18,7 @@
     <!-- Permissions. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
