@@ -347,8 +347,7 @@ class MpegRecorder(
             val audioEnc = ensure(audioMediaCodec)
             audioEnc.start()
 
-            val audioRec = ensure(audioRecord)
-            audioRec.setRecordPositionUpdateListener(null)
+            recorder.setRecordPositionUpdateListener(null)
 
             if (Log.IS_DEBUG) Log.logDebug(TAG, "onPeriodicNotification() : X")
         }
@@ -360,6 +359,7 @@ class MpegRecorder(
         private var isInputFinished = false
         private var startOutBufPresentationTimeUs = 0L
         private var previousOutBufPresentationTimeUs = 0L
+        private var outputStartDelayUs = 0L
 
         private fun getValidNextPresentationTimeUs(outBufPresentationTimeUs: Long): Long {
             if (outBufPresentationTimeUs < previousOutBufPresentationTimeUs) {
@@ -431,6 +431,14 @@ class MpegRecorder(
                 }
             } while (readSize <= 0)
 
+            if (outputStartDelayUs == 0L) {
+                // First frame.
+                val frameCount: Long = readSize.toLong() / audioFrameSize
+                outputStartDelayUs = frameCount * 1000 * 1000 / audioFormat.sampleRate
+
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "## outputStartDelayUs = $outputStartDelayUs")
+            }
+
             if (audioRec.recordingState == AudioRecord.RECORDSTATE_STOPPED) {
                 if (Log.IS_DEBUG) Log.logDebug(TAG, "## RECORDSTATE_STOPPED")
 
@@ -476,7 +484,7 @@ class MpegRecorder(
                 if (startOutBufPresentationTimeUs == 0L) {
                     // This is first frame.
                     startOutBufPresentationTimeUs = info.presentationTimeUs
-                    info.presentationTimeUs = 0L
+                    info.presentationTimeUs = outputStartDelayUs
                 } else {
                     info.presentationTimeUs = info.presentationTimeUs - startOutBufPresentationTimeUs
                 }
