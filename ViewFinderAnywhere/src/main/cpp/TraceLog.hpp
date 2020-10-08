@@ -3,6 +3,7 @@
 
 #include <ctime>
 #include <string>
+#include <pthread.h>
 
 #include <GLES2/gl2.h>
 

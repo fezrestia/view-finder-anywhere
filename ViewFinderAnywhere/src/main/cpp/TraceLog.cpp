@@ -4,29 +4,36 @@ namespace fezrestia {
 
     const bool IS_ENABLED = false;
 
+    private void log(const std::string& level, const std::string& tag, const std::string& msg) {
+        char name[32];
+        pthread_getname_np(pthread_self(), name, sizeof(name));
+
+        timespec ts{};
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+
+        __android_log_print(
+                ANDROID_LOG_ERROR,
+                "TraceLog",
+                "%s %ld [%s] %s : %s",
+                level.c_str(),
+                ts.tv_sec * 1000 + ts.tv_nsec / 1000 / 1000,
+                name,
+                tag.c_str(),
+                msg.c_str());
+    }
+
     #pragma clang diagnostic push
     #pragma ide diagnostic ignored "OCSimplifyInspection"
     #pragma ide diagnostic ignored "OCDFAInspection"
     void TraceLog(const std::string& tag, const std::string& msg) {
         if (IS_ENABLED) {
-            __android_log_print(
-                    ANDROID_LOG_ERROR,
-                    "TraceLog",
-                    "[CLK/1000=%d] [%s] %s",
-                    (int32_t) clock() / 1000,
-                    tag.c_str(),
-                    msg.c_str());
+            fezrestia::log("DBG", tag, msg);
         }
     }
     #pragma clang diagnostic pop
 
     void LogE(const std::string& tag, const std::string& msg) {
-        __android_log_print(
-                ANDROID_LOG_ERROR,
-                "TraceLog",
-                "ERROR: [%s] %s",
-                tag.c_str(),
-                msg.c_str());
+        fezrestia::log("ERR", tag, msg);
     }
 
     GLenum checkGlError(const std::string& tag) {

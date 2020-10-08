@@ -12,7 +12,7 @@ const val IS_DEBUG = false
  * @param event Log event.
  */
 fun logD(tag: String, event: String) {
-    log("DEBUG", tag, event)
+    log("DBG", tag, event)
 }
 
 /**
@@ -22,14 +22,14 @@ fun logD(tag: String, event: String) {
  * @param event Log event.
  */
 fun logE(tag: String, event: String) {
-    log("ERROR", tag, event)
+    log("ERR", tag, event)
 }
 
 private fun log(globalTag: String, localTag: String, event: String) {
-    val clock = SystemClock.uptimeMillis()
+    val clock = System.nanoTime() / 1000 / 1000
     val thread = Thread.currentThread().name
 
-    val msg = "$globalTag/ CLK=$clock TH=$thread | $localTag : $event"
+    val msg = "$globalTag $clock [$thread] $localTag : $event"
 
     android.util.Log.e("TraceLog", msg)
 }
