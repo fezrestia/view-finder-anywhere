@@ -108,7 +108,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
             // En/Disable.
             val enDisPref: SwitchPreference = findPreference(SP_KEY_OVERLAY_VIEW_FINDER_ENABLE_DISABLE)!!
-            enDisPref.isChecked = App.isOverlayViewFinderEnabled
+            enDisPref.isChecked = App.isOverlayServiceActive
             enDisPref.onPreferenceChangeListener = onChangeListenerImpl
 
             // UI PlugIN Packages.
@@ -147,9 +147,13 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                         val isChecked: Boolean = newValue as Boolean
 
                         if (isChecked) {
-                            OnOffTrigger.requestStart(requireContext())
+                            if (!App.isOverlayServiceActive) {
+                                OnOffTrigger.requestStart(requireContext())
+                            }
                         } else {
-                            OnOffTrigger.requestStop(requireContext())
+                            if (App.isOverlayServiceActive) {
+                                OnOffTrigger.requestStop(requireContext())
+                            }
                         }
 
                         firebaseValue = Constants.getBooleanString(isChecked)

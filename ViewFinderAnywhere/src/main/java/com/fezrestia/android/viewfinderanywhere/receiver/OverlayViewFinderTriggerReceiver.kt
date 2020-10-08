@@ -46,7 +46,7 @@ class OverlayViewFinderTriggerReceiver : BroadcastReceiver() {
             }
 
             Constants.INTENT_ACTION_TOGGLE_OVERLAY_ENABLE_DISABLE -> {
-                if (App.isOverlayViewFinderEnabled) {
+                if (App.isOverlayServiceActive) {
                     OnOffTrigger.requestStop(context)
                 } else {
                     OnOffTrigger.requestStart(context)

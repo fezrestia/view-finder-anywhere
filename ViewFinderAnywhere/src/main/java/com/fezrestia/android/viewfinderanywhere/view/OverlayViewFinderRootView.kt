@@ -72,7 +72,7 @@ class OverlayViewFinderRootView : RelativeLayout {
     private lateinit var viewfinder_grip_labelPortraitBmp: Bitmap
 
     // Touch interaction engine.
-    private lateinit var interactionEngine: InteractionEngine
+    private var interactionEngine: InteractionEngine? = null
 
     // Last window position.
     private val lastWindowXY = IntXY(0, 0)
@@ -253,8 +253,11 @@ class OverlayViewFinderRootView : RelativeLayout {
     fun release() {
         releaseWindowPositionCorrector()
 
-        interactionEngine.callback = null
-        interactionEngine.release()
+        interactionEngine?.let {
+            it.callback = null
+            it.release()
+            interactionEngine = null
+        }
         viewfinder.surfaceTextureListener = null
         setOnTouchListener(null)
 
@@ -678,8 +681,9 @@ class OverlayViewFinderRootView : RelativeLayout {
                         this@OverlayViewFinderRootView,
                         0,
                         0,//ViewConfiguration.get(getContext()).getScaledTouchSlop(),
-                        App.ui)
-                interactionEngine.callback = InteractionCallbackImpl()
+                        App.ui).apply {
+                    this.callback = InteractionCallbackImpl()
+                }
                 setOnTouchListener(OnTouchListenerImpl())
 
                 // Notify to device.
@@ -795,7 +799,7 @@ class OverlayViewFinderRootView : RelativeLayout {
             // Use absolute position, because window position change affects view motion event.
             event.setLocation(event.rawX, event.rawY)
 
-            interactionEngine.onTouchEvent(event)
+            interactionEngine?.onTouchEvent(event)
             return true
         }
     }
@@ -999,33 +1003,6 @@ class OverlayViewFinderRootView : RelativeLayout {
     }
 
     /**
-     * Stop immediately without animation.
-     */
-    fun forceStop() {
-        // Pause controller.
-        if (isResumed) {
-            // Kill animation.
-            windowPositionCorrectionTask?.let { task ->
-                App.ui.removeCallbacks(task)
-                windowPositionCorrectionTask = null
-            }
-
-            // Hide surface.
-            clearSurface()
-
-            // Pause controller.
-            controller.pause()
-
-            // Fix position.
-            windowLayoutParams.x = windowDisabledXY.x
-            windowLayoutParams.y = windowDisabledXY.y
-            windowManager.updateViewLayout(this, windowLayoutParams)
-
-            isResumed = false
-        }
-    }
-
-    /**
      * Overlay window is shown or not.
      *
      * @return Overlay window is shown or not
@@ -1119,9 +1096,6 @@ class OverlayViewFinderRootView : RelativeLayout {
 
         // Update UI.
         updateTotalUserInterface()
-
-        // Force stop.
-        forceStop()
 
         // Hide grip when configuration is landscape.
         if (orientation == Configuration.ORIENTATION_LANDSCAPE) {

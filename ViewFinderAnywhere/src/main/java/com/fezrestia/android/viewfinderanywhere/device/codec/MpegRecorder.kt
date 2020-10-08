@@ -246,9 +246,7 @@ class MpegRecorder(
     /**
      * Video input surface.
      */
-    fun getVideoInputSurface(): Surface {
-        return ensure(videoInputSurface)
-    }
+    fun getVideoInputSurface(): Surface = ensure(videoInputSurface)
 
     private inner class VideoMediaCodecCallbackImpl : MediaCodec.Callback() {
         private val TAG = "VideoMediaCodecCallbackImpl"
@@ -293,7 +291,7 @@ class MpegRecorder(
                         info.presentationTimeUs = info.presentationTimeUs - startOutBufPresentationTimeUs
                     }
                 }
-                Log.logDebug(TAG, "Video Out Buf Revised PresentationTimeUs = ${info.presentationTimeUs}")
+                if (Log.IS_DEBUG) Log.logDebug(TAG, "Video Out Buf Revised PresentationTimeUs = ${info.presentationTimeUs}")
 
                 val muxer: MediaMuxer = ensure(mpegMuxer)
                 muxer.writeSampleData(videoTrackIndex, outBuf, info)
@@ -490,7 +488,7 @@ class MpegRecorder(
                 }
             }
             info.presentationTimeUs = getValidNextPresentationTimeUs(info.presentationTimeUs)
-            Log.logDebug(TAG, "Audio Out Buf Revised PresentationTimeUs = ${info.presentationTimeUs}")
+            if (Log.IS_DEBUG) Log.logDebug(TAG, "Audio Out Buf Revised PresentationTimeUs = ${info.presentationTimeUs}")
 
             val muxer: MediaMuxer = ensure(mpegMuxer)
             muxer.writeSampleData(audioTrackIndex, outBuf, info)

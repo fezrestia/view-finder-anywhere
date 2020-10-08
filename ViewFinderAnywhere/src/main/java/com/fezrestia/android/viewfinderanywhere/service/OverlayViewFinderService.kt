@@ -48,6 +48,8 @@ class OverlayViewFinderService : Service() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onCreate() : E")
         super.onCreate()
 
+        App.isOverlayServiceActive = true
+
         // If service is restarted after process is killed by LMK for instance,
         // load current selected resources here.
         val customPackage = App.sp.getString(Constants.SP_KEY_UI_PLUGIN_PACKAGE, null)
@@ -102,7 +104,7 @@ class OverlayViewFinderService : Service() {
         storageView = View.inflate(this, R.layout.storage_selector_root, null) as StorageSelectorRootView
 
         // Set up dependency injection.
-        controller.setCoreInstances(cameraView, configManager)
+        controller.setCoreInstances(cameraView, storageView, configManager)
         cameraView.setCoreInstances(controller, configManager)
     }
 
@@ -117,41 +119,19 @@ class OverlayViewFinderService : Service() {
             Log.logError(TAG, "ACTION = NULL")
         } else when (action) {
             Constants.INTENT_ACTION_REQUEST_START_SERVICE -> {
-                App.isOverlayViewFinderEnabled = true
-
-                // Start overlay view finder.
-                cameraView.initialize()
-                cameraView.addToOverlayWindow()
-                controller.start()
-                controller.resume()
+                controller.ready()
                 triggerReceiver.register(this)
             }
 
             Constants.INTENT_ACTION_REQUEST_STOP_SERVICE -> {
-                // Stop overlay view finder.
                 triggerReceiver.unregister(this)
-                controller.pause()
-                controller.stop()
-                cameraView.removeFromOverlayWindow()
+                controller.release()
 
                 stopSelf()
-
-                App.isOverlayViewFinderEnabled = false
             }
 
             Constants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY -> {
                 controller.currentState.onToggleShowHideRequired()
-            }
-
-            Constants.INTENT_ACTION_OPEN_STORAGE_SELECTOR -> {
-                // Add UI.
-                storageView.initialize()
-                storageView.addToOverlayWindow()
-            }
-
-            Constants.INTENT_ACTION_CLOSE_STORAGE_SELECTOR -> {
-                // Remove UI.
-                storageView.removeFromOverlayWindow()
             }
 
             Intent.ACTION_SCREEN_ON -> {
@@ -160,7 +140,8 @@ class OverlayViewFinderService : Service() {
 
             Intent.ACTION_SCREEN_OFF -> {
                 // Close overlay window.
-                controller.currentState.requestForceStop()
+                controller.currentState.onPause()
+                cameraView.hide()
             }
 
             else -> throw RuntimeException("Unexpected ACTION")
@@ -172,19 +153,20 @@ class OverlayViewFinderService : Service() {
 
     override fun onDestroy() {
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onDestroy() : E")
-        super.onDestroy()
 
         // Stop foreground.
         stopForeground(true)
 
         releaseCoreInstances()
 
+        App.isOverlayServiceActive = false
+
+        super.onDestroy()
         if (Log.IS_DEBUG) Log.logDebug(TAG, "onDestroy() : X")
     }
 
     private fun releaseCoreInstances() {
         configManager.release()
-        controller.release()
         cameraView.release()
         storageView.release()
 

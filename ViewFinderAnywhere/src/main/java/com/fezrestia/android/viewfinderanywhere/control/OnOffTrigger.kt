@@ -62,26 +62,6 @@ object OnOffTrigger {
     }
 
     /**
-     * Open StorageSelector.
-     *
-     * @param context Master context.
-     */
-    @JvmStatic
-    fun openStorageSelector(context: Context) {
-        notifyToService(context, Constants.INTENT_ACTION_OPEN_STORAGE_SELECTOR)
-    }
-
-    /**
-     * Close StorageSelector.
-     *
-     * @param context Master context.
-     */
-    @JvmStatic
-    fun closeStorageSelector(context: Context) {
-        notifyToService(context, Constants.INTENT_ACTION_CLOSE_STORAGE_SELECTOR)
-    }
-
-    /**
      * Notify screen ON.
      *
      * @param context Master context.

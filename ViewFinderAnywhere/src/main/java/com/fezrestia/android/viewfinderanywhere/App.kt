@@ -74,9 +74,6 @@ class App : Application() {
         lateinit var firebase: FirebaseAnalyticsController
             private set
 
-        // Overlay view finder is enabled or not.
-        var isOverlayViewFinderEnabled = false
-
         /**
          * Currently, StorageSelector is enabled or not.
          *
@@ -86,5 +83,12 @@ class App : Application() {
             get() = sp.getBoolean(
                     Constants.SP_KEY_IS_STORAGE_SELECTOR_ENABLED,
                     false)
+
+        /**
+         * Currently, overlay service is active or not.
+         * Life cycle is service onCreate/onDestroy.
+         */
+        var isOverlayServiceActive: Boolean = false
+
     }
 }
