@@ -27,7 +27,8 @@ import android.widget.LinearLayout
 import android.widget.RelativeLayout
 
 import com.fezrestia.android.lib.interaction.InteractionEngine
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.lib.util.math.IntXY
 import com.fezrestia.android.lib.util.math.IntWH
 import com.fezrestia.android.viewfinderanywhere.R
@@ -100,7 +101,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         private val lastDelta = IntXY(0, 0)
 
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "WindowPositionCorrectionTask.run() : E")
+            if (IS_DEBUG) logD(TAG, "WindowPositionCorrectionTask.run() : E")
 
             val dXY = IntXY(
                     targetWindowXY.x - windowLayoutParams.x,
@@ -116,14 +117,14 @@ class OverlayViewFinderRootView : RelativeLayout {
                         windowLayoutParams)
             } else {
                 // Already detached from window.
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Already detached from window.")
+                if (IS_DEBUG) logD(TAG, "Already detached from window.")
                 return
             }
 
             // Check next.
             if (lastDelta == dXY) {
                 // Correction is already convergent.
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Already position fixed.")
+                if (IS_DEBUG) logD(TAG, "Already position fixed.")
 
                 // Fix position.
                 windowLayoutParams.x = targetWindowXY.x
@@ -142,7 +143,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                     this,
                     WINDOW_ANIMATION_INTERVAL)
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "WindowPositionCorrectionTask.run() : X")
+            if (IS_DEBUG) logD(TAG, "WindowPositionCorrectionTask.run() : X")
         }
     }
 
@@ -163,7 +164,7 @@ class OverlayViewFinderRootView : RelativeLayout {
      * Initialize all of configurations.
      */
     fun initialize() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "initialize() : E")
+        if (IS_DEBUG) logD(TAG, "initialize() : E")
 
         // Cache instance references.
         cacheInstances()
@@ -174,7 +175,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         // Update UI.
         updateTotalUserInterface()
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "initialize() : X")
+        if (IS_DEBUG) logD(TAG, "initialize() : X")
     }
 
     private fun cacheInstances() {
@@ -353,8 +354,8 @@ class OverlayViewFinderRootView : RelativeLayout {
             }
         }
 
-        if (Log.IS_DEBUG) {
-            Log.logDebug(TAG, "updateWindowParams() : X=$winX, Y=$winY, W=$winW, H=$winH")
+        if (IS_DEBUG) {
+            logD(TAG, "updateWindowParams() : X=$winX, Y=$winY, W=$winW, H=$winH")
         }
 
         // Check active.
@@ -655,7 +656,7 @@ class OverlayViewFinderRootView : RelativeLayout {
     private val surfaceTextureListenerImpl = SurfaceTextureListenerImpl()
     private inner class SurfaceTextureListenerImpl : TextureView.SurfaceTextureListener {
         override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG,
+            if (IS_DEBUG) logD(TAG,
                     "onSurfaceTextureAvailable() : [W=$width] [H=$height]")
 
             controller.currentState.onSurfaceCreated()
@@ -664,7 +665,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         }
 
         override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG,
+            if (IS_DEBUG) logD(TAG,
                     "onSurfaceTextureSizeChanged() : [W=$width] [H=$height]")
 
             checkViewFinderAspect(width, height)
@@ -672,7 +673,7 @@ class OverlayViewFinderRootView : RelativeLayout {
 
         private fun checkViewFinderAspect(width: Int, height: Int) {
             if (width == viewfinderWH.w && height == viewfinderWH.h) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "checkViewFinderAspect() : Resize DONE")
+                if (IS_DEBUG) logD(TAG, "checkViewFinderAspect() : Resize DONE")
                 // Resize done.
 
                 // Set touch interceptor.
@@ -689,19 +690,19 @@ class OverlayViewFinderRootView : RelativeLayout {
                 // Notify to device.
                 controller.currentState.onSurfaceReady()
             } else {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "checkViewFinderAspect() : Now on resizing...")
+                if (IS_DEBUG) logD(TAG, "checkViewFinderAspect() : Now on resizing...")
                 // NOP. Now on resizing.
             }
         }
 
         override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceTextureDestroyed()")
+            if (IS_DEBUG) logD(TAG, "onSurfaceTextureDestroyed()")
             controller.currentState.onSurfaceReleased()
             return false
         }
 
         override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
-//            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceTextureUpdated()")
+//            if (IS_DEBUG) logD(TAG, "onSurfaceTextureUpdated()")
 
             if (isResumed && viewfinder.alpha == HIDDEN_ALPHA) {
                 showSurfaceTask.reset()
@@ -736,7 +737,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         protected abstract fun isFadeIn(): Boolean
 
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run()")
+            if (IS_DEBUG) logD(TAG, "run()")
 
             if (!isAttachedToWindow) {
                 // Already released.
@@ -806,7 +807,7 @@ class OverlayViewFinderRootView : RelativeLayout {
 
     private inner class InteractionCallbackImpl : InteractionEngine.InteractionCallback {
         override fun onSingleTouched(point: Point) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG,
+            if (IS_DEBUG) logD(TAG,
                     "onSingleTouched() : [X=${point.x}] [Y=${point.y}]")
 
             // Pre-open.
@@ -829,7 +830,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         }
 
         override fun onSingleMoved(currentPoint: Point, lastPoint: Point, downPoint: Point) {
-//            if (Log.IS_DEBUG) Log.logDebug(TAG,
+//            if (IS_DEBUG) logD(TAG,
 //                    "onSingleMoved() : [X=${currentPoint.x}] [Y=${currentPoint.y}]")
 
             val diffX = currentPoint.x - downPoint.x
@@ -880,13 +881,13 @@ class OverlayViewFinderRootView : RelativeLayout {
         }
 
         override fun onSingleStopped(currentPoint: Point, lastPoint: Point, downPoint: Point) {
-//            if (Log.IS_DEBUG) Log.logDebug(TAG,
+//            if (IS_DEBUG) logD(TAG,
 //                    "onSingleStopped() : [X=${currentPoint.x}] [Y=${currentPoint.y}]")
             // NOP.
         }
 
         override fun onSingleReleased(point: Point) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG,
+            if (IS_DEBUG) logD(TAG,
                     "onSingleReleased() : [X=${point.x}] [Y=${point.y}]")
 
             // Request still capture.
@@ -949,7 +950,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         }
 
         override fun onSingleCanceled() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSingleCanceled()")
+            if (IS_DEBUG) logD(TAG, "onSingleCanceled()")
             // NOP.
         }
 
@@ -998,7 +999,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         }
 
         override fun onSingleTapUp(event: MotionEvent) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSingleTapUp()")
+            if (IS_DEBUG) logD(TAG, "onSingleTapUp()")
         }
     }
 
@@ -1037,15 +1038,15 @@ class OverlayViewFinderRootView : RelativeLayout {
 
                 when (keyEvent.action) {
                     KeyEvent.ACTION_DOWN -> {
-                        if (Log.IS_DEBUG) Log.logDebug(TAG, "dispatchKeyEvent() : [FOCUS DOWN]")
+                        if (IS_DEBUG) logD(TAG, "dispatchKeyEvent() : [FOCUS DOWN]")
                     }
 
                     KeyEvent.ACTION_UP -> {
-                        if (Log.IS_DEBUG) Log.logDebug(TAG, "dispatchKeyEvent() : [FOCUS UP]")
+                        if (IS_DEBUG) logD(TAG, "dispatchKeyEvent() : [FOCUS UP]")
                     }
 
                     else -> {
-                        if (Log.IS_DEBUG) Log.logDebug(TAG, "dispatchKeyEvent() : [FOCUS NO ACT]")
+                        if (IS_DEBUG) logD(TAG, "dispatchKeyEvent() : [FOCUS NO ACT]")
                     }
                 }
                 return true
@@ -1059,19 +1060,19 @@ class OverlayViewFinderRootView : RelativeLayout {
 
                 when (keyEvent.action) {
                     KeyEvent.ACTION_DOWN -> {
-                        if (Log.IS_DEBUG) Log.logDebug(TAG, "dispatchKeyEvent() : [VOLUME- DOWN]")
+                        if (IS_DEBUG) logD(TAG, "dispatchKeyEvent() : [VOLUME- DOWN]")
 
                         controller.currentState.requestStartRec()
                     }
 
                     KeyEvent.ACTION_UP -> {
-                        if (Log.IS_DEBUG) Log.logDebug(TAG, "dispatchKeyEvent() : [VOLUME- UP]")
+                        if (IS_DEBUG) logD(TAG, "dispatchKeyEvent() : [VOLUME- UP]")
 
                         controller.currentState.requestStopRec()
                     }
 
                     else -> {
-                        if (Log.IS_DEBUG) Log.logDebug(TAG, "dispatchKeyEvent() : [VOLUME- NO ACT]")
+                        if (IS_DEBUG) logD(TAG, "dispatchKeyEvent() : [VOLUME- NO ACT]")
                     }
                 }
 
@@ -1080,14 +1081,14 @@ class OverlayViewFinderRootView : RelativeLayout {
 
             else -> {
                 // Un-used key code.
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "dispatchKeyEvent() : [UNUSED KEY]")
+                if (IS_DEBUG) logD(TAG, "dispatchKeyEvent() : [UNUSED KEY]")
                 return false
             }
         }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG,
+        if (IS_DEBUG) logD(TAG,
                 "onConfigurationChanged() : [Config=$newConfig]")
         super.onConfigurationChanged(newConfig)
 

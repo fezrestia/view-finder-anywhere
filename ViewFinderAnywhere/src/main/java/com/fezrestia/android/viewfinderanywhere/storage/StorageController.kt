@@ -6,7 +6,9 @@ import android.content.Context
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Handler
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
+import com.fezrestia.android.lib.util.log.logE
 import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.Constants
 import java.util.Calendar
@@ -51,12 +53,12 @@ class StorageController constructor (
 
     // CONSTRUCTOR.
     init {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR : E")
+        if (IS_DEBUG) logD(TAG, "CONSTRUCTOR : E")
 
         DirFileUtil.createContentsRootDirectory(context)
         backWorker = Executors.newSingleThreadExecutor(BackWorkerThreadFactoryImpl())
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR : X")
+        if (IS_DEBUG) logD(TAG, "CONSTRUCTOR : X")
     }
 
     fun release() {
@@ -88,7 +90,7 @@ class StorageController constructor (
      * @param jpegBuffer JPEG picture data.
      */
     fun storePicture(jpegBuffer: ByteArray) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "storePicture() : E")
+        if (IS_DEBUG) logD(TAG, "storePicture() : E")
 
         // Get target directory/file.
         val targetDirSet: Set<String> = getTargetDirSet()
@@ -98,7 +100,7 @@ class StorageController constructor (
         val fullPathSet = mutableSetOf<String>()
 
         targetDirSet.forEach { eachDir ->
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "eachDir = $eachDir")
+            if (IS_DEBUG) logD(TAG, "eachDir = $eachDir")
 
             // Storage root.
             val rootPath = DirFileUtil.getApplicationStorageRootPath(context)
@@ -113,11 +115,11 @@ class StorageController constructor (
         }
 
         // Task.
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "Task Size = ${fullPathSet.size}")
+        if (IS_DEBUG) logD(TAG, "Task Size = ${fullPathSet.size}")
         fullPathSet.forEach { eachFullPath ->
             // Photo data.
             val photoData = PhotoData(eachFullPath, ByteBuffer(jpegBuffer))
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "PhotoData = $photoData")
+            if (IS_DEBUG) logD(TAG, "PhotoData = $photoData")
 
             // Task.
             val task = SavePictureTask(
@@ -129,7 +131,7 @@ class StorageController constructor (
             backWorker.execute(task)
         }
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "storePicture() : X")
+        if (IS_DEBUG) logD(TAG, "storePicture() : X")
     }
 
     private fun getTargetDirSet(): MutableSet<String> {
@@ -157,13 +159,13 @@ class StorageController constructor (
         private val TAG: String = "SavePictureTask"
 
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E")
+            if (IS_DEBUG) logD(TAG, "run() : E")
 
             // Store.
             val isSuccess = DirFileUtil.byte2file(photoData.jpeg.buffer, photoData.fileFullPath)
 
             if (!isSuccess) {
-                if (Log.IS_DEBUG) Log.logError(TAG, "File can not be stored.")
+                if (IS_DEBUG) logE(TAG, "File can not be stored.")
                 val task = NotifyPhotoStoreDoneTask(false, null)
                 callbackHandler.post(task)
                 return
@@ -185,7 +187,7 @@ class StorageController constructor (
             val task = NotifyPhotoStoreDoneTask(true, notifier.uri)
             callbackHandler.post(task)
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X")
+            if (IS_DEBUG) logD(TAG, "run() : X")
         }
 
         private inner class NotifyPhotoStoreDoneTask constructor(
@@ -215,13 +217,13 @@ class StorageController constructor (
         }
 
         override fun onMediaScannerConnected() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onMediaScannerConnected()")
+            if (IS_DEBUG) logD(TAG, "onMediaScannerConnected()")
             connection.scanFile(path, null)
         }
 
         override fun onScanCompleted(path: String, uri: Uri) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onScanCompleted()")
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "URI = ${uri.path}")
+            if (IS_DEBUG) logD(TAG, "onScanCompleted()")
+            if (IS_DEBUG) logD(TAG, "URI = ${uri.path}")
 
             this.uri = uri
 
@@ -239,7 +241,7 @@ class StorageController constructor (
      * @return Store target video full path.
      */
     fun getVideoFileFullPath(): String {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "getVideoFileFullPath()")
+        if (IS_DEBUG) logD(TAG, "getVideoFileFullPath()")
 
         val targetDir: String = getTargetDirSet().first()
         val targetFileName: String = getTargetFileName()
@@ -252,7 +254,7 @@ class StorageController constructor (
             "$rootPath/$targetDir/$targetFileName${DirFileUtil.MP4_FILE_EXT}"
         }
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "Target Video Full Path = $targetFullPath")
+        if (IS_DEBUG) logD(TAG, "Target Video Full Path = $targetFullPath")
 
         return targetFullPath
     }
@@ -269,13 +271,13 @@ class StorageController constructor (
         }
 
         override fun onMediaScannerConnected() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onMediaScannerConnected()")
+            if (IS_DEBUG) logD(TAG, "onMediaScannerConnected()")
             connection.scanFile(path, null)
         }
 
         override fun onScanCompleted(path: String, uri: Uri) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onScanCompleted()")
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "URI = ${uri.path}")
+            if (IS_DEBUG) logD(TAG, "onScanCompleted()")
+            if (IS_DEBUG) logD(TAG, "URI = ${uri.path}")
 
             connection.disconnect()
         }

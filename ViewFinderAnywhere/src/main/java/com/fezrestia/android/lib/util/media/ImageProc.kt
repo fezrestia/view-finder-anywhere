@@ -6,7 +6,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.graphics.Rect
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 
@@ -28,11 +29,11 @@ object ImageProc {
             rotation: Int,
             cropAspectWH: Float,
             jpegQuality: Int): ByteArray {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "doCropRotJpeg() : E")
+        if (IS_DEBUG) logD(TAG, "doCropRotJpeg() : E")
 
         // Create source bitmap.
         val srcBmp = BitmapFactory.decodeByteArray(srcJpeg, 0, srcJpeg.size)
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## Decode Src Bitmap : DONE")
+        if (IS_DEBUG) logD(TAG, "## Decode Src Bitmap : DONE")
 
         // Create rotated source bitmap.
         val rotator = Matrix()
@@ -48,7 +49,7 @@ object ImageProc {
         if (srcBmp.hashCode() != rotSrcBmp.hashCode()) {
             srcBmp.recycle()
         }
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## Create Rot Src Bitmap : DONE")
+        if (IS_DEBUG) logD(TAG, "## Create Rot Src Bitmap : DONE")
 
         // Create aspect considered bitmap.
         val w = rotSrcBmp.width.toFloat()
@@ -65,13 +66,13 @@ object ImageProc {
 
         val dstRect: Rect
         if ((srcAspectWH * 100).toInt() == (dstAspectWH * 100).toInt()) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "## Src/Dst aspect is same.")
+            if (IS_DEBUG) logD(TAG, "## Src/Dst aspect is same.")
             // Already same aspect.
 
             dstRect = Rect(0, 0, w.toInt(), h.toInt())
         } else {
             if (srcAspectWH < dstAspectWH) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## Cut off top and bottom.")
+                if (IS_DEBUG) logD(TAG, "## Cut off top and bottom.")
                 // Cut off top and bottom.
 
                 val dstH = w / dstAspectWH
@@ -81,7 +82,7 @@ object ImageProc {
                         w.toInt(),
                         ((h - dstH) / 2.0f + dstH).toInt())
             } else {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## Cut off left and right.")
+                if (IS_DEBUG) logD(TAG, "## Cut off left and right.")
                 // Cut off left and right.
 
                 val dstW = h * dstAspectWH
@@ -92,8 +93,8 @@ object ImageProc {
                         h.toInt())
             }
         }
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## Calculate DstRect : DONE")
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## DstRect = ${dstRect.toShortString()}")
+        if (IS_DEBUG) logD(TAG, "## Calculate DstRect : DONE")
+        if (IS_DEBUG) logD(TAG, "## DstRect = ${dstRect.toShortString()}")
 
         // Create destination bitmap.
         val dstBmp = Bitmap.createBitmap(
@@ -105,13 +106,13 @@ object ImageProc {
         if (rotSrcBmp.hashCode() != dstBmp.hashCode()) {
             rotSrcBmp.recycle()
         }
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## Create Dst Bitmap : DONE")
+        if (IS_DEBUG) logD(TAG, "## Create Dst Bitmap : DONE")
 
         // JPEG Encode.
         val os = ByteArrayOutputStream()
         dstBmp.compress(Bitmap.CompressFormat.JPEG, jpegQuality, os)
         val resultJpeg = os.toByteArray()
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## JPEG Encode : DONE")
+        if (IS_DEBUG) logD(TAG, "## JPEG Encode : DONE")
 
         // Release.
         try {
@@ -130,7 +131,7 @@ object ImageProc {
             dstBmp.recycle()
         }
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "doCropRotJpeg() : X")
+        if (IS_DEBUG) logD(TAG, "doCropRotJpeg() : X")
         return resultJpeg
     }
 }

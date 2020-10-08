@@ -20,7 +20,9 @@ import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 
 import com.fezrestia.android.lib.firebase.FirebaseAnalyticsController
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
+import com.fezrestia.android.lib.util.log.logE
 import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.Constants
 import com.fezrestia.android.viewfinderanywhere.R
@@ -101,7 +103,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
         }
 
         override fun onStart() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onStart()")
+            if (IS_DEBUG) logD(TAG, "onStart()")
             super.onStart()
 
             // Setup dynamic preference options.
@@ -131,7 +133,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
         }
 
         override fun onStop() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onStop()")
+            if (IS_DEBUG) logD(TAG, "onStop()")
             super.onStop()
 
             // NOP.
@@ -204,7 +206,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                     SP_KEY_STORAGE_SELECTOR_CREATE_NEW_DIRECTORY -> {
                         val newDir: String = newValue as String
 
-                        if (Log.IS_DEBUG) Log.logDebug(TAG, "NewDirectory = $newDir")
+                        if (IS_DEBUG) logD(TAG, "NewDirectory = $newDir")
 
                         // Validation.
                         if (newDir.isNotEmpty()) {
@@ -217,7 +219,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                                 // Update available list.
                                 updateStorageSelectorSelectableDirectoryList()
                             } else {
-                                if (Log.IS_DEBUG) Log.logDebug(TAG, "New dir creation FAILED")
+                                if (IS_DEBUG) logD(TAG, "New dir creation FAILED")
                             }
                         }
                     }
@@ -229,7 +231,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                         // Add default storage.
                         validDirSet.add(DirFileUtil.DEFAULT_STORAGE_DIR_NAME)
 
-                        if (Log.IS_DEBUG) validDirSet.forEach { dir -> Log.logDebug(TAG, "ValidDir = $dir") }
+                        if (IS_DEBUG) validDirSet.forEach { dir -> logD(TAG, "ValidDir = $dir") }
 
                         // Store.
                         App.sp.edit().putStringSet(
@@ -300,9 +302,9 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
                 plugins.add(plugIn)
 
-                if (Log.IS_DEBUG) {
-                    Log.logDebug(TAG, "UI-PLUG-IN Package = " + plugIn.packageName)
-                    Log.logDebug(TAG, "UI-PLUG-IN Title   = " + plugIn.plugInTitle)
+                if (IS_DEBUG) {
+                    logD(TAG, "UI-PLUG-IN Package = " + plugIn.packageName)
+                    logD(TAG, "UI-PLUG-IN Title   = " + plugIn.plugInTitle)
                 }
             }
 
@@ -311,7 +313,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
         //TODO:This function takes much time.
         fun updateStorageSelectorSelectableDirectoryList() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "updateStorageSelectorSelectableDirectoryList() : E")
+            if (IS_DEBUG) logD(TAG, "updateStorageSelectorSelectableDirectoryList() : E")
 
             // Create root dir.
             DirFileUtil.createContentsRootDirectory(requireContext())
@@ -323,14 +325,14 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             if (fileList == null) {
                 // If before runtime permission process done, fileList is null.
                 // In that case, return here and retry after onActivityResults.
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "contentsRoot.listFiles() == null")
+                if (IS_DEBUG) logD(TAG, "contentsRoot.listFiles() == null")
                 return
             }
 
-            if (Log.IS_DEBUG) {
-                Log.logDebug(TAG, "contentsRoot = ${contentsRoot.path}")
-                Log.logDebug(TAG, "listFiles() DONE")
-//                fileList.forEach { file -> Log.logDebug(TAG, "path = ${file.path}") }
+            if (IS_DEBUG) {
+                logD(TAG, "contentsRoot = ${contentsRoot.path}")
+                logD(TAG, "listFiles() DONE")
+//                fileList.forEach { file -> logD(TAG, "path = ${file.path}") }
             }
 
             // Scan directories.
@@ -340,9 +342,9 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                     dirPathList.add(file.name)
                 }
             }
-            if (Log.IS_DEBUG) {
-                Log.logDebug(TAG, "dirList  DONE")
-                dirPathList.forEach { dirPath -> Log.logDebug(TAG, "dir = $dirPath") }
+            if (IS_DEBUG) {
+                logD(TAG, "dirList  DONE")
+                dirPathList.forEach { dirPath -> logD(TAG, "dir = $dirPath") }
             }
 
             // Existing path is valid for selected values.
@@ -365,7 +367,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             pref.values = validValues
             pref.onPreferenceChangeListener = onChangeListenerImpl
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "updateStorageSelectorSelectableDirectoryList() : X")
+            if (IS_DEBUG) logD(TAG, "updateStorageSelectorSelectableDirectoryList() : X")
         }
 
     }
@@ -375,7 +377,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
     private lateinit var settingFragment: SettingFragment
 
     override fun onCreate(bundle: Bundle?) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onCreate()")
+        if (IS_DEBUG) logD(TAG, "onCreate()")
         super.onCreate(null)
 
         setContentView(R.layout.setting_activity)
@@ -389,16 +391,16 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
     }
 
     override fun onResume() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume()")
+        if (IS_DEBUG) logD(TAG, "onResume()")
         super.onResume()
 
         // Mandatory permission check.
         if (isFinishing) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "App is in finishing sequence.")
+            if (IS_DEBUG) logD(TAG, "App is in finishing sequence.")
             return
         }
         if (checkMandatoryPermissions()) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Return immediately for permission.")
+            if (IS_DEBUG) logD(TAG, "Return immediately for permission.")
             return
         }
 
@@ -410,13 +412,13 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()")
+        if (IS_DEBUG) logD(TAG, "onPause()")
         super.onPause()
         // NOP.
     }
 
     override fun onDestroy() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onDestroy()")
+        if (IS_DEBUG) logD(TAG, "onDestroy()")
         super.onDestroy()
         // NOP.
     }
@@ -457,7 +459,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
      */
     @TargetApi(Build.VERSION_CODES.M)
     private fun checkMandatoryPermissions(): Boolean {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "checkMandatoryPermissions()")
+        if (IS_DEBUG) logD(TAG, "checkMandatoryPermissions()")
 
         if (isRuntimePermissionRequired) {
             if (!isSystemAlertWindowPermissionGranted) {
@@ -499,12 +501,12 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onActivityResult()")
+        if (IS_DEBUG) logD(TAG, "onActivityResult()")
         super.onActivityResult(requestCode, resultCode, intent)
 
         if (requestCode == REQUEST_CODE_MANAGE_OVERLAY_PERMISSION) {
             if (!isSystemAlertWindowPermissionGranted) {
-                Log.logError(TAG, "Overlay permission is not granted yet.")
+                logE(TAG, "Overlay permission is not granted yet.")
                 finish()
             }
         }
@@ -514,19 +516,19 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             requestCode: Int,
             permissions: Array<String>,
             grantResults: IntArray) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onRequestPermissionsResult()")
+        if (IS_DEBUG) logD(TAG, "onRequestPermissionsResult()")
 
         if (requestCode == REQUEST_CODE_MANAGE_PERMISSIONS) {
             if (!isCameraPermissionGranted) {
-                Log.logError(TAG, "Camera permission is not granted yet.")
+                logE(TAG, "Camera permission is not granted yet.")
                 finish()
             }
             if (!isWriteStoragePermissionGranted) {
-                Log.logError(TAG,"Write storage permission is not granted yet.")
+                logE(TAG,"Write storage permission is not granted yet.")
                 finish()
             }
             if (!isReadStoragePermissionGranted) {
-                Log.logError(TAG,"  Read storage permission is not granted yet.")
+                logE(TAG,"  Read storage permission is not granted yet.")
                 finish()
             }
 

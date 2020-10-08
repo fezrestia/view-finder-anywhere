@@ -8,7 +8,8 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.viewfinderanywhere.Constants
 import com.fezrestia.android.viewfinderanywhere.R
 import com.fezrestia.android.viewfinderanywhere.receiver.OverlayViewFinderTriggerReceiver
@@ -33,8 +34,8 @@ class ToggleEnableDisableWidget : AppWidgetProvider() {
     }
 
     private fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "updateAppWidget()")
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## widget ID = $appWidgetId")
+        if (IS_DEBUG) logD(TAG, "updateAppWidget()")
+        if (IS_DEBUG) logD(TAG, "## widget ID = $appWidgetId")
 
         val endisToggleIntent = Intent(context, OverlayViewFinderTriggerReceiver::class.java)
         endisToggleIntent.action = Constants.INTENT_ACTION_TOGGLE_OVERLAY_ENABLE_DISABLE

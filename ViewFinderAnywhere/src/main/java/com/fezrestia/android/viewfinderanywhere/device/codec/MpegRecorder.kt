@@ -15,7 +15,9 @@ import android.os.HandlerThread
 import android.util.Size
 import android.view.OrientationEventListener
 import android.view.Surface
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
+import com.fezrestia.android.lib.util.log.logE
 import java.nio.ByteBuffer
 import java.util.concurrent.CountDownLatch
 
@@ -77,7 +79,7 @@ class MpegRecorder(
      * CONSTRUCTOR.
      */
     init {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR()")
+        if (IS_DEBUG) logD(TAG, "CONSTRUCTOR()")
 
         videoHandlerThread.start()
         videoHandler = Handler(videoHandlerThread.looper)
@@ -106,7 +108,7 @@ class MpegRecorder(
      * Release all resources.
      */
     fun release() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "release()")
+        if (IS_DEBUG) logD(TAG, "release()")
 
         reset()
 
@@ -134,7 +136,7 @@ class MpegRecorder(
      * @param mpegFileFullPath
      */
     fun setup(mpegFileFullPath: String) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "setup()")
+        if (IS_DEBUG) logD(TAG, "setup()")
 
         videoMediaCodec = MediaCodec.createByCodecName(videoEncoderName).apply {
             setCallback(VideoMediaCodecCallbackImpl(), videoHandler)
@@ -182,7 +184,7 @@ class MpegRecorder(
      * setup() -> start() -> stop() -> reset()
      */
     fun start() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "start()")
+        if (IS_DEBUG) logD(TAG, "start()")
 
         val videoEnc = ensure(videoMediaCodec)
         videoEnc.start()
@@ -192,7 +194,7 @@ class MpegRecorder(
 
         val muxer = ensure(mpegMuxer)
         val videoRotHint = ((rotDeg + 45) / 90 * 90) % 360 // Round to 0, 90, 180, 270
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## rotDeg=$rotDeg, videoRotHint=$videoRotHint")
+        if (IS_DEBUG) logD(TAG, "## rotDeg=$rotDeg, videoRotHint=$videoRotHint")
         muxer.setOrientationHint(videoRotHint)
     }
 
@@ -201,7 +203,7 @@ class MpegRecorder(
      * setup() -> start() -> stop() -> reset()
      */
     fun stop() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "stop()")
+        if (IS_DEBUG) logD(TAG, "stop()")
 
         val videoEnc = ensure(videoMediaCodec)
         videoEnc.signalEndOfInputStream()
@@ -215,7 +217,7 @@ class MpegRecorder(
      * setup() -> start() -> stop() -> reset()
      */
     fun reset() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "reset()")
+        if (IS_DEBUG) logD(TAG, "reset()")
 
         videoMediaCodec?.release()
         videoMediaCodec = null
@@ -254,22 +256,22 @@ class MpegRecorder(
         private var startOutBufPresentationTimeUs = 0L
 
         override fun onInputBufferAvailable(codec: MediaCodec, index: Int) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onInputBufferAvailable() : index=$index")
+            if (IS_DEBUG) logD(TAG, "onInputBufferAvailable() : index=$index")
             // NOP.
         }
 
         override fun onOutputBufferAvailable(codec: MediaCodec, index: Int, info: MediaCodec.BufferInfo) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onOutputBufferAvailable() : E")
-            if (Log.IS_DEBUG) {
-                Log.logDebug(TAG, "  index = $index")
-                Log.logDebug(TAG, "  info.size = ${info.size}")
-                Log.logDebug(TAG, "  info.offset = ${info.offset}")
-                Log.logDebug(TAG, "  info.presentationTimeUs = ${info.presentationTimeUs}")
-                Log.logDebug(TAG, "  info.flags = ${info.flags}")
+            if (IS_DEBUG) logD(TAG, "onOutputBufferAvailable() : E")
+            if (IS_DEBUG) {
+                logD(TAG, "  index = $index")
+                logD(TAG, "  info.size = ${info.size}")
+                logD(TAG, "  info.offset = ${info.offset}")
+                logD(TAG, "  info.presentationTimeUs = ${info.presentationTimeUs}")
+                logD(TAG, "  info.flags = ${info.flags}")
             }
 
             if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "FLAG = BUFFER_FLAG_END_OF_STREAM")
+                if (IS_DEBUG) logD(TAG, "FLAG = BUFFER_FLAG_END_OF_STREAM")
 
                 codec.stop()
                 codec.release()
@@ -278,7 +280,7 @@ class MpegRecorder(
                 tryToStopMpegMuxer()
             } else {
                 val outBuf: ByteBuffer = ensure(codec.getOutputBuffer(index))
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "  outBuf.remaining = ${outBuf.remaining()}")
+                if (IS_DEBUG) logD(TAG, "  outBuf.remaining = ${outBuf.remaining()}")
 
                 if (info.presentationTimeUs == 0L) {
                     // NOP, this frame is not video frame.
@@ -291,7 +293,7 @@ class MpegRecorder(
                         info.presentationTimeUs = info.presentationTimeUs - startOutBufPresentationTimeUs
                     }
                 }
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Video Out Buf Revised PresentationTimeUs = ${info.presentationTimeUs}")
+                if (IS_DEBUG) logD(TAG, "Video Out Buf Revised PresentationTimeUs = ${info.presentationTimeUs}")
 
                 val muxer: MediaMuxer = ensure(mpegMuxer)
                 muxer.writeSampleData(videoTrackIndex, outBuf, info)
@@ -299,18 +301,18 @@ class MpegRecorder(
                 codec.releaseOutputBuffer(index, false)
             }
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onOutputBufferAvailable() : X")
+            if (IS_DEBUG) logD(TAG, "onOutputBufferAvailable() : X")
         }
 
         override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) {
-            Log.logError(TAG, "onError() : e=$e")
+            logE(TAG, "onError() : e=$e")
 
             // TODO: Handle error.
 
         }
 
         override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onOutputFormatChanged() : format=$format")
+            if (IS_DEBUG) logD(TAG, "onOutputFormatChanged() : format=$format")
 
             // After first frame encoded, output format is changed to valid.
             // Add video track here with valid format.
@@ -324,9 +326,9 @@ class MpegRecorder(
             val latch = ensure(mpegMuxerStartLatch)
             latch.countDown()
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "## Video Enc Waiting for Muxer start ...")
+            if (IS_DEBUG) logD(TAG, "## Video Enc Waiting for Muxer start ...")
             latch.await()
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "## Video Enc Waiting for Muxer start ... GO")
+            if (IS_DEBUG) logD(TAG, "## Video Enc Waiting for Muxer start ... GO")
         }
     }
 
@@ -334,20 +336,20 @@ class MpegRecorder(
         private val TAG = "AudioRecordCallback"
 
         override fun onMarkerReached(recorder: AudioRecord) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onMarkerReached() : E")
+            if (IS_DEBUG) logD(TAG, "onMarkerReached() : E")
             // NOP.
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onMarkerReached() : X")
+            if (IS_DEBUG) logD(TAG, "onMarkerReached() : X")
         }
 
         override fun onPeriodicNotification(recorder: AudioRecord) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPeriodicNotification() : E")
+            if (IS_DEBUG) logD(TAG, "onPeriodicNotification() : E")
 
             val audioEnc = ensure(audioMediaCodec)
             audioEnc.start()
 
             recorder.setRecordPositionUpdateListener(null)
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPeriodicNotification() : X")
+            if (IS_DEBUG) logD(TAG, "onPeriodicNotification() : X")
         }
     }
 
@@ -369,22 +371,22 @@ class MpegRecorder(
         }
 
         override fun onInputBufferAvailable(codec: MediaCodec, index: Int) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onInputBufferAvailable() : E")
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "## index = $index")
+            if (IS_DEBUG) logD(TAG, "onInputBufferAvailable() : E")
+            if (IS_DEBUG) logD(TAG, "## index = $index")
 
             if (isInputFinished) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Input stream is already finished.")
+                if (IS_DEBUG) logD(TAG, "Input stream is already finished.")
                 return
             }
 
             val inBuf: ByteBuffer = ensure(codec.getInputBuffer(index))
 
             val inBytes = inBuf.remaining()
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "## inBuf.remaining = $inBytes")
+            if (IS_DEBUG) logD(TAG, "## inBuf.remaining = $inBytes")
 
             val maxReadSize = inBytes - (inBytes % audioFrameSize)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "## maxReadSize = $maxReadSize")
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "## audioFrameSize = $audioFrameSize")
+            if (IS_DEBUG) logD(TAG, "## maxReadSize = $maxReadSize")
+            if (IS_DEBUG) logD(TAG, "## audioFrameSize = $audioFrameSize")
 
             val audioRec = ensure(audioRecord)
 
@@ -392,39 +394,39 @@ class MpegRecorder(
             var readSize: Int
             do {
                 presentationTimeUs = System.nanoTime() / 1000
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## presentationTimeUs = $presentationTimeUs")
+                if (IS_DEBUG) logD(TAG, "## presentationTimeUs = $presentationTimeUs")
 
                 readSize = audioRec.read(inBuf, maxReadSize)
                 when (readSize) {
                     AudioRecord.ERROR_INVALID_OPERATION -> {
-                        Log.logError(TAG, "AudioRecord.read() : ERROR_INVALID_OPERATION")
+                        logE(TAG, "AudioRecord.read() : ERROR_INVALID_OPERATION")
                         throw RuntimeException("ERROR_INVALID_OPERATION")
                     }
                     AudioRecord.ERROR_BAD_VALUE -> {
-                        Log.logError(TAG, "AudioRecord.read() : ERROR_BAD_VALUE")
+                        logE(TAG, "AudioRecord.read() : ERROR_BAD_VALUE")
                         throw RuntimeException("ERROR_BAD_VALUE")
                     }
                     AudioRecord.ERROR_DEAD_OBJECT -> {
-                        Log.logError(TAG, "AudioRecord.read() : ERROR_DEAD_OBJECT")
+                        logE(TAG, "AudioRecord.read() : ERROR_DEAD_OBJECT")
                         throw RuntimeException("ERROR_DEAD_OBJECT")
                     }
                     AudioRecord.ERROR -> {
-                        Log.logError(TAG, "AudioRecord.read() : ERROR")
+                        logE(TAG, "AudioRecord.read() : ERROR")
                         throw RuntimeException("ERROR")
                     }
                     0 -> {
-                        Log.logDebug(TAG, "AudioRecord.read() : readSize == 0")
+                        logD(TAG, "AudioRecord.read() : readSize == 0")
 
                         if (audioRec.recordingState == AudioRecord.RECORDSTATE_STOPPED) {
-                            Log.logDebug(TAG, "## Audio recording is already stopped.")
+                            logD(TAG, "## Audio recording is already stopped.")
                             break
                         } else {
-                            Log.logDebug(TAG, "## Wait for next buf ...")
+                            logD(TAG, "## Wait for next buf ...")
                             Thread.sleep(30)
                         }
                     }
                     else -> {
-                        if (Log.IS_DEBUG) Log.logDebug(TAG, "## readSize = $readSize")
+                        if (IS_DEBUG) logD(TAG, "## readSize = $readSize")
                     }
                 }
             } while (readSize <= 0)
@@ -434,11 +436,11 @@ class MpegRecorder(
                 val frameCount: Long = readSize.toLong() / audioFrameSize
                 outputStartDelayUs = frameCount * 1000 * 1000 / audioFormat.sampleRate
 
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## outputStartDelayUs = $outputStartDelayUs")
+                if (IS_DEBUG) logD(TAG, "## outputStartDelayUs = $outputStartDelayUs")
             }
 
             if (audioRec.recordingState == AudioRecord.RECORDSTATE_STOPPED) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## RECORDSTATE_STOPPED")
+                if (IS_DEBUG) logD(TAG, "## RECORDSTATE_STOPPED")
 
                 codec.queueInputBuffer(
                         index,
@@ -450,7 +452,7 @@ class MpegRecorder(
                 isInputFinished = true
 
             } else {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## RECORDSTATE_RECORDING")
+                if (IS_DEBUG) logD(TAG, "## RECORDSTATE_RECORDING")
 
                 codec.queueInputBuffer(
                         index,
@@ -460,21 +462,21 @@ class MpegRecorder(
                         0)
             }
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onInputBufferAvailable() : X")
+            if (IS_DEBUG) logD(TAG, "onInputBufferAvailable() : X")
         }
 
         override fun onOutputBufferAvailable(codec: MediaCodec, index: Int, info: MediaCodec.BufferInfo) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onOutputBufferAvailable() : E")
-            if (Log.IS_DEBUG) {
-                Log.logDebug(TAG, "## index=$index")
-                Log.logDebug(TAG, "## size=${info.size}")
-                Log.logDebug(TAG, "## offset=${info.offset}")
-                Log.logDebug(TAG, "## presentationTimeUs=${info.presentationTimeUs}")
-                Log.logDebug(TAG, "## flags=${info.flags}")
+            if (IS_DEBUG) logD(TAG, "onOutputBufferAvailable() : E")
+            if (IS_DEBUG) {
+                logD(TAG, "## index=$index")
+                logD(TAG, "## size=${info.size}")
+                logD(TAG, "## offset=${info.offset}")
+                logD(TAG, "## presentationTimeUs=${info.presentationTimeUs}")
+                logD(TAG, "## flags=${info.flags}")
             }
 
             val outBuf: ByteBuffer = ensure(codec.getOutputBuffer(index))
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "## outBuf.remaining = ${outBuf.remaining()}")
+            if (IS_DEBUG) logD(TAG, "## outBuf.remaining = ${outBuf.remaining()}")
 
             if (info.presentationTimeUs == 0L) {
                 // NOP, This frame is not related to audio frame.
@@ -488,7 +490,7 @@ class MpegRecorder(
                 }
             }
             info.presentationTimeUs = getValidNextPresentationTimeUs(info.presentationTimeUs)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Audio Out Buf Revised PresentationTimeUs = ${info.presentationTimeUs}")
+            if (IS_DEBUG) logD(TAG, "Audio Out Buf Revised PresentationTimeUs = ${info.presentationTimeUs}")
 
             val muxer: MediaMuxer = ensure(mpegMuxer)
             muxer.writeSampleData(audioTrackIndex, outBuf, info)
@@ -496,7 +498,7 @@ class MpegRecorder(
             codec.releaseOutputBuffer(index, false)
 
             if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## FLAG = BUFFER_FLAG_END_OF_STREAM")
+                if (IS_DEBUG) logD(TAG, "## FLAG = BUFFER_FLAG_END_OF_STREAM")
 
                 codec.stop()
                 codec.release()
@@ -505,19 +507,19 @@ class MpegRecorder(
                 tryToStopMpegMuxer()
             }
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onOutputBufferAvailable() : X")
+            if (IS_DEBUG) logD(TAG, "onOutputBufferAvailable() : X")
         }
 
         override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) {
-            Log.logError(TAG, "onError() : e=$e")
+            logE(TAG, "onError() : e=$e")
 
             // TODO: Handle error.
 
         }
 
         override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onOutputFormatChanged() : E")
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "## format=$format")
+            if (IS_DEBUG) logD(TAG, "onOutputFormatChanged() : E")
+            if (IS_DEBUG) logD(TAG, "## format=$format")
 
             // After first frame encoded, output format is changed to valid.
             // Add audio track here with valid format.
@@ -531,17 +533,17 @@ class MpegRecorder(
             val latch = ensure(mpegMuxerStartLatch)
             latch.countDown()
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "## Audio Enc Waiting for Muxer start ...")
+            if (IS_DEBUG) logD(TAG, "## Audio Enc Waiting for Muxer start ...")
             latch.await()
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "## Audio Enc Waiting for Muxer start ... GO")
+            if (IS_DEBUG) logD(TAG, "## Audio Enc Waiting for Muxer start ... GO")
         }
     }
 
     private fun tryToStartMpegMuxer() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "tryToStartMpegMuxer()")
+        if (IS_DEBUG) logD(TAG, "tryToStartMpegMuxer()")
 
         if (videoTrackIndex != INVALID_TRACK_INDEX && audioTrackIndex != INVALID_TRACK_INDEX) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "tryToStartMpegMuxer() START")
+            if (IS_DEBUG) logD(TAG, "tryToStartMpegMuxer() START")
 
             val muxer = ensure(mpegMuxer)
             muxer.start()
@@ -551,10 +553,10 @@ class MpegRecorder(
     }
 
     private fun tryToStopMpegMuxer() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "tryToStopMpegMuxer()")
+        if (IS_DEBUG) logD(TAG, "tryToStopMpegMuxer()")
 
         if (videoMediaCodec == null && audioMediaCodec == null) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "tryToStopMpegMuxer() STOP")
+            if (IS_DEBUG) logD(TAG, "tryToStopMpegMuxer() STOP")
 
             // Both of video and audio enc are finished.
             val muxer = ensure(mpegMuxer)

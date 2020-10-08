@@ -29,7 +29,9 @@ import android.view.OrientationEventListener
 import android.view.Surface
 import android.view.TextureView
 
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
+import com.fezrestia.android.lib.util.log.logE
 import com.fezrestia.android.lib.util.media.ImageProc
 import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface
 
@@ -184,7 +186,7 @@ class Camera2DeviceDelegated(
     private data class RequestTag(val requestId: Int, val rotationDeg: Int)
 
     init {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR() : E")
+        if (IS_DEBUG) logD(TAG, "CONSTRUCTOR() : E")
 
         // Camera manager.
         camMng = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
@@ -219,16 +221,16 @@ class Camera2DeviceDelegated(
         shutterSound = MediaActionSound()
         shutterSound.load(MediaActionSound.SHUTTER_CLICK)
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR() : X")
+        if (IS_DEBUG) logD(TAG, "CONSTRUCTOR() : X")
     }
 
     override fun prepare() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "prepare()")
+        if (IS_DEBUG) logD(TAG, "prepare()")
         // NOP. Replaced with CONSTRUCTOR.
     }
 
     override fun release() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "release() : E")
+        if (IS_DEBUG) logD(TAG, "release() : E")
 
         fun shutdown(handlerThread: HandlerThread) {
             handlerThread.quitSafely()
@@ -263,13 +265,13 @@ class Camera2DeviceDelegated(
         // Sound.
         shutterSound.release()
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "release() : X")
+        if (IS_DEBUG) logD(TAG, "release() : X")
     }
 
     override fun openAsync(
             evfAspectWH: Float,
             openCallback: CameraPlatformInterface.OpenCallback) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "openAsync()")
+        if (IS_DEBUG) logD(TAG, "openAsync()")
 
         requestHandler.post(OpenTask(evfAspectWH, openCallback))
     }
@@ -284,12 +286,12 @@ class Camera2DeviceDelegated(
         val TAG = "OpenTask"
 
         private fun earlyReturn(msg: String, isSuccess: Boolean) {
-            Log.logError(TAG, msg)
+            logE(TAG, msg)
             clientCallbackHandler.post { clientCallback.onOpened(isSuccess) }
         }
 
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E")
+            if (IS_DEBUG) logD(TAG, "run() : E")
 
             if (camDevice != null) {
                 earlyReturn("Camera is already opened.", true)
@@ -305,24 +307,24 @@ class Camera2DeviceDelegated(
                     earlyReturn("Back camera is not available.", false)
                     return
                 }
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "get Camera ID = $camId : DONE")
+                if (IS_DEBUG) logD(TAG, "get Camera ID = $camId : DONE")
 
                 // Characteristics.
                 camCharacteristics = camMng.getCameraCharacteristics(camId)
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "get Camera Characteristics : DONE")
+                if (IS_DEBUG) logD(TAG, "get Camera Characteristics : DONE")
 
                 // Stream configurations.
                 streamConfigMap = camCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP) ?: run {
                     earlyReturn("Back streamConfigMap == null", false)
                     return
                 }
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "get Camera stream config map : DONE")
+                if (IS_DEBUG) logD(TAG, "get Camera stream config map : DONE")
 
                 sensorOrientation = camCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)!!
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "sensorOrientation = $sensorOrientation")
+                if (IS_DEBUG) logD(TAG, "sensorOrientation = $sensorOrientation")
 
-                if (Log.IS_DEBUG) {
-                    Log.logDebug(TAG, "## Output Image Formats")
+                if (IS_DEBUG) {
+                    logD(TAG, "## Output Image Formats")
                     PDR2.logImageFormats(streamConfigMap)
                     PDR2.logSurfaceTextureOutputSizes(streamConfigMap)
                 }
@@ -338,7 +340,7 @@ class Camera2DeviceDelegated(
             cropRegionRect = PDR2.getAspectConsideredScalerCropRegion(
                     camCharacteristics,
                     viewFinderAspectRatioWH)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Setup parameters : DONE")
+            if (IS_DEBUG) logD(TAG, "Setup parameters : DONE")
 
             // Open.
             cameraStateCallback = CameraStateCallback()
@@ -352,7 +354,7 @@ class Camera2DeviceDelegated(
                 return
             }
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Open request : DONE")
+            if (IS_DEBUG) logD(TAG, "Open request : DONE")
 
             // Create still capture request and image reader.
             // Size.
@@ -368,22 +370,22 @@ class Camera2DeviceDelegated(
             stillImgReader.setOnImageAvailableListener(
                     OnImageAvailableListenerImpl(),
                     callbackHandler)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Still ImageReader : DONE")
+            if (IS_DEBUG) logD(TAG, "Still ImageReader : DONE")
 
             // Orientation.
             orientationEventListenerImpl.enable()
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Orientation : DONE")
+            if (IS_DEBUG) logD(TAG, "Orientation : DONE")
 
             val isSucceeded = cameraStateCallback.waitForOpened()
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Camera open $isSucceeded")
+            if (IS_DEBUG) logD(TAG, "Camera open $isSucceeded")
             clientCallbackHandler.post { clientCallback.onOpened(isSucceeded) }
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X")
+            if (IS_DEBUG) logD(TAG, "run() : X")
         }
     }
 
     override fun closeAsync(closeCallback: CameraPlatformInterface.CloseCallback) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "closeAsync()")
+        if (IS_DEBUG) logD(TAG, "closeAsync()")
 
         requestHandler.post(UnbindSurfaceTask())
         requestHandler.post(CloseTask(closeCallback))
@@ -396,10 +398,10 @@ class Camera2DeviceDelegated(
         val TAG = "CloseTask"
 
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E")
+            if (IS_DEBUG) logD(TAG, "run() : E")
 
             val cam = camDevice ?: run {
-                Log.logError(TAG, "Camera is already closed.")
+                logE(TAG, "Camera is already closed.")
                 clientCallbackHandler.post { clientCallback.onClosed(true) }
                 return
             }
@@ -415,17 +417,17 @@ class Camera2DeviceDelegated(
             orientationEventListenerImpl.disable()
 
             val isSucceeded = cameraStateCallback.waitForClosed()
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Camera close $isSucceeded")
+            if (IS_DEBUG) logD(TAG, "Camera close $isSucceeded")
             clientCallbackHandler.post { clientCallback.onClosed(isSucceeded) }
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X")
+            if (IS_DEBUG) logD(TAG, "run() : X")
         }
     }
 
     override fun bindPreviewSurfaceAsync(
             textureView: TextureView,
             bindSurfaceCallback: CameraPlatformInterface.BindSurfaceCallback) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "bindPreviewSurfaceAsync()")
+        if (IS_DEBUG) logD(TAG, "bindPreviewSurfaceAsync()")
 
         requestHandler.post(BindSurfaceTask(textureView, bindSurfaceCallback))
     }
@@ -440,12 +442,12 @@ class Camera2DeviceDelegated(
         val TAG = "BindSurfaceTask"
 
         private fun earlyReturn(msg: String, isSuccess: Boolean) {
-            Log.logError(TAG, msg)
+            logE(TAG, msg)
             clientCallbackHandler.post { clientCallback.onSurfaceBound(isSuccess) }
         }
 
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E")
+            if (IS_DEBUG) logD(TAG, "run() : E")
 
             if (camSession != null) {
                 earlyReturn("Surface is already bound.", true)
@@ -458,9 +460,9 @@ class Camera2DeviceDelegated(
             val finderWidth = textureView.width
             val finderHeight = textureView.height
 
-            if (Log.IS_DEBUG) {
-                Log.logDebug(TAG, "  Preview Frame Size = $previewWidth x $previewHeight")
-                Log.logDebug(TAG, "  Finder Size = $finderWidth x $finderHeight")
+            if (IS_DEBUG) {
+                logD(TAG, "  Preview Frame Size = $previewWidth x $previewHeight")
+                logD(TAG, "  Finder Size = $finderWidth x $finderHeight")
             }
 
             // Transform matrix.
@@ -506,13 +508,13 @@ class Camera2DeviceDelegated(
             }
 
             val isSucceeded = sessionCallback.waitForOpened()
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Bind surface $isSucceeded")
+            if (IS_DEBUG) logD(TAG, "Bind surface $isSucceeded")
 
             startEvfStream()
 
             clientCallbackHandler.post { clientCallback.onSurfaceBound(isSucceeded) }
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X")
+            if (IS_DEBUG) logD(TAG, "run() : X")
         }
     }
 
@@ -520,10 +522,10 @@ class Camera2DeviceDelegated(
         val TAG = "UnbindSurfaceTask"
 
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E")
+            if (IS_DEBUG) logD(TAG, "run() : E")
 
             val session = camSession ?: run {
-                Log.logError(TAG, "Surface is already unbound.")
+                logE(TAG, "Surface is already unbound.")
                 return
             }
 
@@ -534,14 +536,14 @@ class Camera2DeviceDelegated(
             val callback = ensure(captureSessionStateCallback)
 
             val isSucceeded = callback.waitForClosed()
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Unbind surface $isSucceeded")
+            if (IS_DEBUG) logD(TAG, "Unbind surface $isSucceeded")
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X")
+            if (IS_DEBUG) logD(TAG, "run() : X")
         }
     }
 
     private fun startEvfStream() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "startEvfStream() : E")
+        if (IS_DEBUG) logD(TAG, "startEvfStream() : E")
 
         val cam = ensure(camDevice)
         val session = ensure(camSession)
@@ -587,14 +589,14 @@ class Camera2DeviceDelegated(
             throw RuntimeException("Failed to startEvfStream()")
         }
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "startEvfStream() : X")
+        if (IS_DEBUG) logD(TAG, "startEvfStream() : X")
     }
 
     private fun stopEvfStream() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "stopEvfStream() : E")
+        if (IS_DEBUG) logD(TAG, "stopEvfStream() : E")
 
         val session = camSession ?: run {
-            Log.logError(TAG, "camSession == null")
+            logE(TAG, "camSession == null")
             return
         }
 
@@ -606,11 +608,11 @@ class Camera2DeviceDelegated(
 
         evfReqBuilder = null
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "stopEvfStream() : X")
+        if (IS_DEBUG) logD(TAG, "stopEvfStream() : X")
     }
 
     override fun requestScanAsync(scanCallback: CameraPlatformInterface.ScanCallback) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "requestScanAsync()")
+        if (IS_DEBUG) logD(TAG, "requestScanAsync()")
 
         requestHandler.post(ScanTask(scanCallback))
     }
@@ -622,7 +624,7 @@ class Camera2DeviceDelegated(
         val TAG = "ScanTask"
 
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E")
+            if (IS_DEBUG) logD(TAG, "run() : E")
 
             val builder = ensure(evfReqBuilder)
 
@@ -665,15 +667,15 @@ class Camera2DeviceDelegated(
                 throw RuntimeException("Failed to start scan.")
             }
             val isSucceeded = callback.waitForScanDone()
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Request scan $isSucceeded")
+            if (IS_DEBUG) logD(TAG, "Request scan $isSucceeded")
             clientCallbackHandler.post { clientCallback.onScanDone(isSucceeded) }
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X")
+            if (IS_DEBUG) logD(TAG, "run() : X")
         }
     }
 
     override fun requestCancelScanAsync(cancelScanCallback: CameraPlatformInterface.CancelScanCallback) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "requestCancelScanAsync()")
+        if (IS_DEBUG) logD(TAG, "requestCancelScanAsync()")
 
         requestHandler.post(CancelScanTask(cancelScanCallback))
     }
@@ -685,7 +687,7 @@ class Camera2DeviceDelegated(
         val TAG = "CancelScanTask"
 
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E")
+            if (IS_DEBUG) logD(TAG, "run() : E")
 
             val builder = ensure(evfReqBuilder)
 
@@ -732,12 +734,12 @@ class Camera2DeviceDelegated(
 
             clientCallbackHandler.post { clientCallback.onCancelScanDone() }
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X")
+            if (IS_DEBUG) logD(TAG, "run() : X")
         }
     }
 
     override fun requestStillCaptureAsync(stillCaptureCallback: CameraPlatformInterface.StillCaptureCallback): Int {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStillCaptureAsync()")
+        if (IS_DEBUG) logD(TAG, "requestStillCaptureAsync()")
 
         ++requestId
 
@@ -756,8 +758,8 @@ class Camera2DeviceDelegated(
         val TAG = "StillCaptureTask"
 
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E")
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "  fixedReqId = $fixedReqId")
+            if (IS_DEBUG) logD(TAG, "run() : E")
+            if (IS_DEBUG) logD(TAG, "  fixedReqId = $fixedReqId")
 
             val cam = ensure(camDevice)
 
@@ -796,7 +798,7 @@ class Camera2DeviceDelegated(
                         camCharacteristics,
                         orientationDegree)
                 builder.set(CaptureRequest.JPEG_ORIENTATION, jpegRot)
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "  JPEG Rot = $jpegRot")
+                if (IS_DEBUG) logD(TAG, "  JPEG Rot = $jpegRot")
 
                 // Tag.
                 val reqTag = RequestTag(requestId, jpegRot)
@@ -828,7 +830,7 @@ class Camera2DeviceDelegated(
                 throw RuntimeException("Failed to capture still.")
             }
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X")
+            if (IS_DEBUG) logD(TAG, "run() : X")
         }
     }
 
@@ -842,31 +844,31 @@ class Camera2DeviceDelegated(
         val TAG = "HandleStillCaptureResultTask"
 
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E")
-            if (Log.IS_DEBUG) {
-                Log.logDebug(TAG, "  Request ID = ${reqTag.requestId}")
-                Log.logDebug(TAG, "  Rotation = ${reqTag.rotationDeg}")
+            if (IS_DEBUG) logD(TAG, "run() : E")
+            if (IS_DEBUG) {
+                logD(TAG, "  Request ID = ${reqTag.requestId}")
+                logD(TAG, "  Rotation = ${reqTag.rotationDeg}")
             }
 
             // Get image.
             val img = stillImgReader.acquireNextImage()
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "    acquireLatestImage() : DONE")
-            if (Log.IS_DEBUG) {
-                Log.logDebug(TAG, "    WIDTH  = ${img.width}")
-                Log.logDebug(TAG, "    HEIGHT = ${img.height}")
-                Log.logDebug(TAG, "    CROP   = ${img.cropRect.toShortString()}")
+            if (IS_DEBUG) logD(TAG, "    acquireLatestImage() : DONE")
+            if (IS_DEBUG) {
+                logD(TAG, "    WIDTH  = ${img.width}")
+                logD(TAG, "    HEIGHT = ${img.height}")
+                logD(TAG, "    CROP   = ${img.cropRect.toShortString()}")
             }
 
             val planes = img.planes
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "    getPlanes() : DONE")
-            if (Log.IS_DEBUG) {
-                Log.logDebug(TAG, "    Plane x ${planes.size}")
+            if (IS_DEBUG) logD(TAG, "    getPlanes() : DONE")
+            if (IS_DEBUG) {
+                logD(TAG, "    Plane x ${planes.size}")
             }
 
             val buffer = planes[0].buffer
             val data = ByteArray(buffer.remaining())
             buffer.get(data)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "    buffer.get() : DONE")
+            if (IS_DEBUG) logD(TAG, "    buffer.get() : DONE")
 
             img.close()
 
@@ -879,7 +881,7 @@ class Camera2DeviceDelegated(
 
             clientCallbackHandler.post { clientCallback.onPhotoStoreReady(reqTag.requestId, resultJpeg) }
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X")
+            if (IS_DEBUG) logD(TAG, "run() : X")
         }
     }
 
@@ -889,12 +891,12 @@ class Camera2DeviceDelegated(
         val TAG = "CameraAvailabilityCallback"
 
         override fun onCameraAvailable(cameraId: String) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraAvailable() : ID=$cameraId")
+            if (IS_DEBUG) logD(TAG, "onCameraAvailable() : ID=$cameraId")
             // NOP.
         }
 
         override fun onCameraUnavailable(cameraId: String) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraUnavailable() : ID=$cameraId")
+            if (IS_DEBUG) logD(TAG, "onCameraUnavailable() : ID=$cameraId")
             // NOP.
         }
     }
@@ -906,7 +908,7 @@ class Camera2DeviceDelegated(
         private val closeLatch = CountDownLatch(1)
 
         override fun onOpened(camera: CameraDevice) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onOpened()")
+            if (IS_DEBUG) logD(TAG, "onOpened()")
 
             camDevice = camera
 
@@ -916,7 +918,7 @@ class Camera2DeviceDelegated(
         fun waitForOpened(): Boolean = waitForLatch(openLatch)
 
         override fun onClosed(camera: CameraDevice) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onClosed()")
+            if (IS_DEBUG) logD(TAG, "onClosed()")
 
             camDevice = null
 
@@ -926,7 +928,7 @@ class Camera2DeviceDelegated(
         fun waitForClosed(): Boolean = waitForLatch(closeLatch)
 
         override fun onDisconnected(camera: CameraDevice) {
-            Log.logError(TAG, "onDisconnected()")
+            logE(TAG, "onDisconnected()")
 
             // Already closed.
             closeLatch.countDown()
@@ -936,7 +938,7 @@ class Camera2DeviceDelegated(
         }
 
         override fun onError(camera: CameraDevice, error: Int) {
-            Log.logError(TAG, "onError() : error=$error")
+            logE(TAG, "onError() : error=$error")
 
             // Already closed.
             closeLatch.countDown()
@@ -954,13 +956,13 @@ class Camera2DeviceDelegated(
 
         override fun onActive(session: CameraCaptureSession) {
             super.onActive(session)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onActive()")
+            if (IS_DEBUG) logD(TAG, "onActive()")
             // NOP.
         }
 
         override fun onClosed(session: CameraCaptureSession) {
             super.onClosed(session)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onClosed()")
+            if (IS_DEBUG) logD(TAG, "onClosed()")
 
             camSession = null
             captureCallback = null
@@ -971,7 +973,7 @@ class Camera2DeviceDelegated(
         fun waitForClosed(): Boolean = waitForLatch(closeLatch)
 
         override fun onConfigured(session: CameraCaptureSession) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onConfigured()")
+            if (IS_DEBUG) logD(TAG, "onConfigured()")
 
             camSession = session
             captureCallback = CaptureCallback()
@@ -982,7 +984,7 @@ class Camera2DeviceDelegated(
         fun waitForOpened(): Boolean = waitForLatch(openLatch)
 
         override fun onConfigureFailed(session: CameraCaptureSession) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onConfigureFailed()")
+            if (IS_DEBUG) logD(TAG, "onConfigureFailed()")
 
             camSession = null
 
@@ -991,13 +993,13 @@ class Camera2DeviceDelegated(
 
         override fun onReady(session: CameraCaptureSession) {
             super.onReady(session)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onReady()")
+            if (IS_DEBUG) logD(TAG, "onReady()")
             // NOP.
         }
 
         override fun onSurfacePrepared(session: CameraCaptureSession, surface: Surface) {
             super.onSurfacePrepared(session, surface)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfacePrepared()")
+            if (IS_DEBUG) logD(TAG, "onSurfacePrepared()")
             // NOP.
         }
     }
@@ -1022,22 +1024,22 @@ class Camera2DeviceDelegated(
                 timestamp: Long,
                 frameNumber: Long) {
             super.onCaptureStarted(session, request, timestamp, frameNumber)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureStarted()")
+            if (IS_DEBUG) logD(TAG, "onCaptureStarted()")
 
             latestRequest = request
 
             val intent = request.get(CaptureRequest.CONTROL_CAPTURE_INTENT)
 
             if (intent == null) {
-                if (Log.IS_DEBUG) Log.logError(TAG, "CaptureIntent == null.")
+                if (IS_DEBUG) logE(TAG, "CaptureIntent == null.")
             } else when (intent) {
                 CaptureRequest.CONTROL_CAPTURE_INTENT_PREVIEW -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_PREVIEW")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_PREVIEW")
                     // NOP.
                 }
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_STILL_CAPTURE")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_STILL_CAPTURE")
 
                     // Shutter sound.
 //                    shutterSound.play(MediaActionSound.SHUTTER_CLICK);
@@ -1047,7 +1049,7 @@ class Camera2DeviceDelegated(
                 }
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_RECORD -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_VIDEO_RECORD")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_VIDEO_RECORD")
 
                     if (!isVideoStreamStarted) {
                         isVideoStreamStarted = true
@@ -1058,31 +1060,31 @@ class Camera2DeviceDelegated(
                 // NOT used intent.
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_CUSTOM -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_CUSTOM")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_CUSTOM")
                     // NOP.
                 }
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_MANUAL -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_MANUAL")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_MANUAL")
                     // NOP.
                 }
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_MOTION_TRACKING -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_MOTION_TRACKING")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_MOTION_TRACKING")
                     // NOP.
                 }
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_VIDEO_SNAPSHOT")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_VIDEO_SNAPSHOT")
                     // NOP.
                 }
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_ZERO_SHUTTER_LAG -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_ZERO_SHUTTER_LAG")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_ZERO_SHUTTER_LAG")
                     // NOP.
                 }
 
-                else -> Log.logError(TAG, "  handle unexpected INTENT")
+                else -> logE(TAG, "  handle unexpected INTENT")
             }
         }
 
@@ -1091,58 +1093,58 @@ class Camera2DeviceDelegated(
                 request: CaptureRequest,
                 result: TotalCaptureResult) {
             super.onCaptureCompleted(session, request, result)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureCompleted()")
+            if (IS_DEBUG) logD(TAG, "onCaptureCompleted()")
 
             latestResult = result
 
             val intent = request.get(CaptureRequest.CONTROL_CAPTURE_INTENT)
 
             if (intent == null) {
-                if (Log.IS_DEBUG) Log.logError(TAG, "CaptureIntent == null.")
+                if (IS_DEBUG) logE(TAG, "CaptureIntent == null.")
             } else when (intent) {
                 CaptureRequest.CONTROL_CAPTURE_INTENT_PREVIEW -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_PREVIEW")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_PREVIEW")
                     handlePreviewIntentCaptureCompleted(result)
                 }
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_STILL_CAPTURE")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_STILL_CAPTURE")
                     handleStillIntentCaptureCompleted(request)
                 }
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_RECORD -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_VIDEO_RECORD")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_VIDEO_RECORD")
                     handleVideoIntentCaptureCompleted(request)
                 }
 
                 // NOT used intent.
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_CUSTOM -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_CUSTOM")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_CUSTOM")
                     // NOP.
                 }
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_MANUAL -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_MANUAL")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_MANUAL")
                     // NOP.
                 }
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_MOTION_TRACKING -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_MOTION_TRACKING")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_MOTION_TRACKING")
                     // NOP.
                 }
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_VIDEO_SNAPSHOT")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_VIDEO_SNAPSHOT")
                     // NOP.
                 }
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_ZERO_SHUTTER_LAG -> {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  handle INTENT_ZERO_SHUTTER_LAG")
+                    if (IS_DEBUG) logD(TAG, "  handle INTENT_ZERO_SHUTTER_LAG")
                     // NOP.
                 }
 
-                else -> Log.logError(TAG, "  handle unexpected INTENT")
+                else -> logE(TAG, "  handle unexpected INTENT")
             }
         }
 
@@ -1152,7 +1154,7 @@ class Camera2DeviceDelegated(
             val aeTrigger = result.get(CaptureResult.CONTROL_AE_PRECAPTURE_TRIGGER)
             val afState = result.get(CaptureResult.CONTROL_AF_STATE)
             val aeState = result.get(CaptureResult.CONTROL_AE_STATE)
-            if (Log.IS_DEBUG) {
+            if (IS_DEBUG) {
                 PDR2.logAfTrigger(afTrigger)
                 PDR2.logAfState(afState)
                 PDR2.logAeTrigger(aeTrigger)
@@ -1170,7 +1172,7 @@ class Camera2DeviceDelegated(
             run {
                 val latch = scanDoneLatch
                 if (latch != null) {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  Scan required.")
+                    if (IS_DEBUG) logD(TAG, "  Scan required.")
 
                     if ((isAfLocked || !isAfAvailable) && (isAeLocked || !isAeAvailable)) {
                         latch.countDown()
@@ -1182,7 +1184,7 @@ class Camera2DeviceDelegated(
             run {
                 val latch = cancelScanDoneLatch
                 if (latch != null) {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "  Cancel scan required.")
+                    if (IS_DEBUG) logD(TAG, "  Cancel scan required.")
 
                     if ((!isAfLocked || !isAfAvailable) && (!isAeLocked || !isAeAvailable)) {
                         latch.countDown()
@@ -1266,8 +1268,8 @@ class Camera2DeviceDelegated(
         }
 
         private fun handleVideoIntentCaptureCompleted(request: CaptureRequest) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "handleVideoIntentCaptureCompleted()")
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "## request = $request")
+            if (IS_DEBUG) logD(TAG, "handleVideoIntentCaptureCompleted()")
+            if (IS_DEBUG) logD(TAG, "## request = $request")
             // NOP.
         }
 
@@ -1276,7 +1278,7 @@ class Camera2DeviceDelegated(
                 request: CaptureRequest,
                 failure: CaptureFailure) {
             super.onCaptureFailed(session, request, failure)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureFailed()")
+            if (IS_DEBUG) logD(TAG, "onCaptureFailed()")
 
             // TODO: Handle capture error.
 
@@ -1287,7 +1289,7 @@ class Camera2DeviceDelegated(
                 request: CaptureRequest,
                 partialResult: CaptureResult) {
             super.onCaptureProgressed(session, request, partialResult)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureProgressed()")
+            if (IS_DEBUG) logD(TAG, "onCaptureProgressed()")
             // NOP.
         }
 
@@ -1296,7 +1298,7 @@ class Camera2DeviceDelegated(
                 sequenceId: Int,
                 frameNumber: Long) {
             super.onCaptureSequenceCompleted(session, sequenceId, frameNumber)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureSequenceCompleted()")
+            if (IS_DEBUG) logD(TAG, "onCaptureSequenceCompleted()")
 
             if (sequenceId == videoSequenceId) {
                 clientCallbackHandler.post { videoCallback?.onVideoStreamStopped() }
@@ -1307,7 +1309,7 @@ class Camera2DeviceDelegated(
                 session: CameraCaptureSession,
                 sequenceId: Int) {
             super.onCaptureSequenceAborted(session, sequenceId)
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCaptureSequenceAborted()")
+            if (IS_DEBUG) logD(TAG, "onCaptureSequenceAborted()")
             // NOP.
         }
     }
@@ -1316,7 +1318,7 @@ class Camera2DeviceDelegated(
         val TAG = "OnImageAvailableListenerImpl"
 
         override fun onImageAvailable(reader: ImageReader) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onImageAvailable()")
+            if (IS_DEBUG) logD(TAG, "onImageAvailable()")
             // NOP.
         }
     }
@@ -1326,7 +1328,7 @@ class Camera2DeviceDelegated(
     private var isVideoStreamStarted = false
 
     override fun requestStartVideoStreamAsync(callback: CameraPlatformInterface.VideoCallback) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "startVideoStream()")
+        if (IS_DEBUG) logD(TAG, "startVideoStream()")
 
         videoCallback = callback
         isVideoStreamStarted = false
@@ -1337,7 +1339,7 @@ class Camera2DeviceDelegated(
         private val TAG = "StartVideoStreamTask"
 
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run()")
+            if (IS_DEBUG) logD(TAG, "run()")
 
             val cam = ensure(camDevice)
             val session = ensure(camSession)
@@ -1388,7 +1390,7 @@ class Camera2DeviceDelegated(
     }
 
     override fun requestStopVideoStreamAsync() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "stopVideoStream()")
+        if (IS_DEBUG) logD(TAG, "stopVideoStream()")
 
         requestHandler.post(StopVideoStreamTask())
     }
@@ -1397,7 +1399,7 @@ class Camera2DeviceDelegated(
         val TAG = "StopVideoStreamTask"
 
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run()")
+            if (IS_DEBUG) logD(TAG, "run()")
 
             val session = ensure(camSession)
             session.stopRepeating()
@@ -1439,7 +1441,7 @@ class Camera2DeviceDelegated(
         try {
             val isOk = latch.await(SHUTDOWN_AWAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
             if (!isOk) {
-                Log.logError(TAG, "waitForLatch() : TIMEOUT")
+                logE(TAG, "waitForLatch() : TIMEOUT")
             }
             return isOk
         } catch (e: InterruptedException) {

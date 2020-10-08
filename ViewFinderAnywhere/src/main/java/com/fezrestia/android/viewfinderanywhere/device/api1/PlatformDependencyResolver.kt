@@ -8,7 +8,8 @@ import android.graphics.RectF
 import android.view.Surface
 import android.view.WindowManager
 
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAspect
 
 import java.util.HashSet
@@ -52,7 +53,7 @@ internal object PlatformDependencyResolver {
     fun getOptimalPreviewSizeForStill(
             requiredAspectRatioWH: Float,
             supportedPreviewSizeSet: Set<Size>): Size {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "getOptimalPreviewSize() : E")
+        if (IS_DEBUG) logD(TAG, "getOptimalPreviewSize() : E")
 
         // Check supported.
         require(supportedPreviewSizeSet.isNotEmpty()) { "Supported size set is empty." }
@@ -68,7 +69,7 @@ internal object PlatformDependencyResolver {
             // Near to 16:9.
             ViewFinderAspect.WH_16_9.ratioWH
         }
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "###### Estimated aspect = $estimatedAspectWH")
+        if (IS_DEBUG) logD(TAG, "###### Estimated aspect = $estimatedAspectWH")
 
         // Check aspect ratio.
         val aspectAcceptable = HashSet<Size>()
@@ -78,7 +79,7 @@ internal object PlatformDependencyResolver {
                 // Valid.
                 aspectAcceptable.add(eachSize)
 
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Aspect acceptable : $eachSize")
+                if (IS_DEBUG) logD(TAG, "Aspect acceptable : $eachSize")
             }
         }
 
@@ -99,15 +100,15 @@ internal object PlatformDependencyResolver {
                 }
             }
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Size acceptable : $eachSize")
+            if (IS_DEBUG) logD(TAG, "Size acceptable : $eachSize")
         }
 
         // Check result.
         val ret = acceptableMaxSize ?: supportedPreviewSizeSet.single()
 
-        if (Log.IS_DEBUG) {
-            Log.logDebug(TAG, "Result : $ret")
-            Log.logDebug(TAG, "getOptimalPreviewSize() : X")
+        if (IS_DEBUG) {
+            logD(TAG, "Result : $ret")
+            logD(TAG, "getOptimalPreviewSize() : X")
         }
         return ret
     }
@@ -122,7 +123,7 @@ internal object PlatformDependencyResolver {
     fun getOptimalPictureSize(
             requiredAspectRatioWH: Float,
             supportedPictureSizeSet: Set<Size>): Size {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "getOptimalPictureSize() : E")
+        if (IS_DEBUG) logD(TAG, "getOptimalPictureSize() : E")
 
         // Check supported.
         require(supportedPictureSizeSet.isNotEmpty()) { "Supported size set is empty." }
@@ -138,7 +139,7 @@ internal object PlatformDependencyResolver {
             // Near to 16:9.
             ViewFinderAspect.WH_16_9.ratioWH
         }
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "###### Estimated aspect = $estimatedAspectWH")
+        if (IS_DEBUG) logD(TAG, "###### Estimated aspect = $estimatedAspectWH")
 
         // Check aspect ratio.
         val aspectAcceptable = HashSet<Size>()
@@ -148,7 +149,7 @@ internal object PlatformDependencyResolver {
                 // Valid.
                 aspectAcceptable.add(eachSize)
 
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Aspect acceptable : $eachSize")
+                if (IS_DEBUG) logD(TAG, "Aspect acceptable : $eachSize")
             }
         }
 
@@ -157,13 +158,13 @@ internal object PlatformDependencyResolver {
         for (eachSize in aspectAcceptable) {
             if (eachSize.width == 3840 && eachSize.height == 2160) {
                 // 8MP 16:9
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "######   Recommended 8MP 16:9")
+                if (IS_DEBUG) logD(TAG, "######   Recommended 8MP 16:9")
                 maxSize = eachSize
                 break
             }
             if (eachSize.width == 3264 && eachSize.height == 2448) {
                 // 8MP 4:3
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "######   Recommended 8MP 4:3")
+                if (IS_DEBUG) logD(TAG, "######   Recommended 8MP 4:3")
                 maxSize = eachSize
                 break
             }
@@ -177,9 +178,9 @@ internal object PlatformDependencyResolver {
         // Check result.
         val ret = if (maxSize.width != 0) maxSize else supportedPictureSizeSet.single()
 
-        if (Log.IS_DEBUG) {
-            Log.logDebug(TAG, "Result : $ret")
-            Log.logDebug(TAG, "getOptimalPictureSize() : X")
+        if (IS_DEBUG) {
+            logD(TAG, "Result : $ret")
+            logD(TAG, "getOptimalPictureSize() : X")
         }
         return ret
     }
@@ -200,21 +201,21 @@ internal object PlatformDependencyResolver {
             bufferHeight: Int,
             finderWidth: Int,
             finderHeight: Int): Matrix {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "getTextureViewTransformMatrix() : E")
+        if (IS_DEBUG) logD(TAG, "getTextureViewTransformMatrix() : E")
 
         // Display rotation.
         val winMng = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         val rotation = Objects.requireNonNull(winMng).defaultDisplay.rotation
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## rotation = $rotation")
+        if (IS_DEBUG) logD(TAG, "## rotation = $rotation")
 
         val matrix = Matrix()
         matrix.reset()
 
         val bufferRect = RectF(0f, 0f, bufferWidth.toFloat(), bufferHeight.toFloat())
         val finderRect = RectF(0f, 0f, finderWidth.toFloat(), finderHeight.toFloat())
-        if (Log.IS_DEBUG) {
-            Log.logDebug(TAG, "## BufferRect = " + bufferRect.toShortString())
-            Log.logDebug(TAG, "## FinderRect = " + finderRect.toShortString())
+        if (IS_DEBUG) {
+            logD(TAG, "## BufferRect = " + bufferRect.toShortString())
+            logD(TAG, "## FinderRect = " + finderRect.toShortString())
         }
         val centerX = finderRect.centerX()
         val centerY = finderRect.centerY()
@@ -233,19 +234,19 @@ internal object PlatformDependencyResolver {
             else -> throw IllegalStateException("Rotation is not valid.")
         }
         val finderAspect = finderRect.width() / finderRect.height()
-        if (Log.IS_DEBUG) {
-            Log.logDebug(TAG, "## BufferAspect = $bufferAspect")
-            Log.logDebug(TAG, "## FinderAspect = $finderAspect")
+        if (IS_DEBUG) {
+            logD(TAG, "## BufferAspect = $bufferAspect")
+            logD(TAG, "## FinderAspect = $finderAspect")
         }
 
         // Check aspect.
         if ((bufferAspect * 100).toInt() != (finderAspect * 100).toInt()) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "#### Aspect is not matched")
+            if (IS_DEBUG) logD(TAG, "#### Aspect is not matched")
             // Not matched.
 
             if (bufferAspect < finderAspect) {
                 // Black area is available on right and left based on buffer coordinates.
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## Fit buffer right and left to finder.")
+                if (IS_DEBUG) logD(TAG, "## Fit buffer right and left to finder.")
 
                 matrix.postScale(
                         1.0f,
@@ -254,7 +255,7 @@ internal object PlatformDependencyResolver {
                         centerY)
             } else {
                 // Black area is available on top and bottom based on buffer coordinates.
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## Fit buffer top and bottom to finder")
+                if (IS_DEBUG) logD(TAG, "## Fit buffer top and bottom to finder")
 
                 matrix.postScale(
                         bufferAspect / finderAspect,
@@ -264,7 +265,7 @@ internal object PlatformDependencyResolver {
             }
         }
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "getTextureViewTransformMatrix() : X")
+        if (IS_DEBUG) logD(TAG, "getTextureViewTransformMatrix() : X")
         return matrix
     }
 }

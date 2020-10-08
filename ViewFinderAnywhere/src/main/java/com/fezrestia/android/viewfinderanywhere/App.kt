@@ -8,13 +8,14 @@ import android.os.Handler
 import androidx.preference.PreferenceManager
 
 import com.fezrestia.android.lib.firebase.FirebaseAnalyticsController
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.viewfinderanywhere.plugin.ui.CustomizableResourceContainer
 
 class App : Application() {
 
     override fun onCreate() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR : E")
+        if (IS_DEBUG) logD(TAG, "CONSTRUCTOR : E")
         super.onCreate()
 
         // Total UI thread handler.
@@ -40,16 +41,16 @@ class App : Application() {
         customResContainer = CustomizableResourceContainer()
 
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR : X")
+        if (IS_DEBUG) logD(TAG, "CONSTRUCTOR : X")
     }
 
     override fun onTerminate() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onTerminate() : E")
+        if (IS_DEBUG) logD(TAG, "onTerminate() : E")
         super.onTerminate()
 
         // NOP.
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onTerminate() : X")
+        if (IS_DEBUG) logD(TAG, "onTerminate() : X")
     }
 
 

@@ -20,7 +20,9 @@ import android.view.WindowManager
 import android.widget.RelativeLayout
 import android.widget.TextView
 
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
+import com.fezrestia.android.lib.util.log.logE
 import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.R
 import com.fezrestia.android.viewfinderanywhere.Constants
@@ -61,7 +63,7 @@ class StorageSelectorRootView : RelativeLayout {
     private val onStorageItemTouchListenerImpl = OnStorageItemTouchListenerImpl()
 
     init {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR")
+        if (IS_DEBUG) logD(TAG, "CONSTRUCTOR")
         // NOP.
     }
 
@@ -69,7 +71,7 @@ class StorageSelectorRootView : RelativeLayout {
      * Initialize all of configurations.
      */
     fun initialize() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "initialize() : E")
+        if (IS_DEBUG) logD(TAG, "initialize() : E")
 
         // Load setting.
         loadPreferences()
@@ -83,7 +85,7 @@ class StorageSelectorRootView : RelativeLayout {
         // Update UI.
         updateTotalUserInterface()
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "initialize() : X")
+        if (IS_DEBUG) logD(TAG, "initialize() : X")
     }
 
     private fun loadPreferences() {
@@ -101,7 +103,7 @@ class StorageSelectorRootView : RelativeLayout {
             if (dir.isDirectory && dir.exists()) {
                 availableStorageList.add(eachDirName)
             } else {
-                Log.logError(TAG, "loadPreferences() : Directory is not existing.")
+                logE(TAG, "loadPreferences() : Directory is not existing.")
             }
         }
         availableStorageList.sort()
@@ -222,15 +224,15 @@ class StorageSelectorRootView : RelativeLayout {
         }
 
         private fun updateTargetStorage(view: View) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "updateTargetStorage() : E")
+            if (IS_DEBUG) logD(TAG, "updateTargetStorage() : E")
 
             val targetStorage = view.tag as String
 
             if (view.isSelected) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Selected : $targetStorage")
+                if (IS_DEBUG) logD(TAG, "Selected : $targetStorage")
                 targetStorageSet.add(targetStorage)
             } else {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "De-Selected : $targetStorage")
+                if (IS_DEBUG) logD(TAG, "De-Selected : $targetStorage")
                 targetStorageSet.remove(targetStorage)
             }
 
@@ -243,7 +245,7 @@ class StorageSelectorRootView : RelativeLayout {
                     targetStorageSet)
                     .apply()
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "updateTargetStorage() : X")
+            if (IS_DEBUG) logD(TAG, "updateTargetStorage() : X")
         }
 
         fun checkSelectedStatus() {
@@ -419,15 +421,15 @@ class StorageSelectorRootView : RelativeLayout {
             }
         }
 
-        if (Log.IS_DEBUG) {
-            Log.logDebug(TAG, "updateLayoutParams() : X=$winX, Y=$winY, W=$totalWidth, H=$totalHeight")
+        if (IS_DEBUG) {
+            logD(TAG, "updateLayoutParams() : X=$winX, Y=$winY, W=$totalWidth, H=$totalHeight")
         }
 
         total_container.layoutParams = params
     }
 
     public override fun onConfigurationChanged(newConfig: Configuration) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onConfigurationChanged() : Config=$newConfig")
+        if (IS_DEBUG) logD(TAG, "onConfigurationChanged() : Config=$newConfig")
         super.onConfigurationChanged(newConfig)
 
         // Update UI.

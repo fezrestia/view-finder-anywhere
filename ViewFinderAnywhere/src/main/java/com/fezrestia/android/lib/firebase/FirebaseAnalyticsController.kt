@@ -5,7 +5,8 @@ package com.fezrestia.android.lib.firebase
 import android.content.Context
 import android.os.Bundle
 
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
 import com.google.firebase.analytics.FirebaseAnalytics
 
 /**
@@ -66,11 +67,11 @@ class FirebaseAnalyticsController(context: Context) {
     }
 
     init {
-        if (IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR : E")
+        if (IS_DEBUG) logD(TAG, "CONSTRUCTOR : E")
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(context)
 
-        if (IS_DEBUG) Log.logDebug(TAG, "CONSTRUCTOR : X")
+        if (IS_DEBUG) logD(TAG, "CONSTRUCTOR : X")
     }
 
     /**
@@ -82,8 +83,6 @@ class FirebaseAnalyticsController(context: Context) {
 
     companion object {
         const val TAG = "FirebaseAnalyticsController"
-
-        private const val IS_DEBUG = false or Log.IS_DEBUG
 
         /**
          * Get last package name for Firebase param value.

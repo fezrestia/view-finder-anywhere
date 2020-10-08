@@ -5,7 +5,8 @@ package com.fezrestia.android.viewfinderanywhere.plugin.ui
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Resources
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.viewfinderanywhere.App
 
 /**
@@ -15,7 +16,7 @@ import com.fezrestia.android.viewfinderanywhere.App
  * @param customPackage Customized UI res package.
  */
 fun loadCustomizedUiResources(context: Context, customPackage: String?) {
-    if (Log.IS_DEBUG) Log.logDebug(App.TAG, "loadCustomizedUiResources() : E")
+    if (IS_DEBUG) logD(App.TAG, "loadCustomizedUiResources() : E")
 
     App.customResContainer.resetResources(context)
 
@@ -31,7 +32,7 @@ fun loadCustomizedUiResources(context: Context, customPackage: String?) {
                 customPackage,
                 Context.CONTEXT_RESTRICTED)
     } catch (e: PackageManager.NameNotFoundException) {
-        if (Log.IS_DEBUG) Log.logDebug(App.TAG, "Plug-IN package can not be accessed.")
+        if (IS_DEBUG) logD(App.TAG, "Plug-IN package can not be accessed.")
         return
     }
 
@@ -130,8 +131,8 @@ fun loadCustomizedUiResources(context: Context, customPackage: String?) {
 
     } catch (e: Resources.NotFoundException) {
         e.printStackTrace()
-        if (Log.IS_DEBUG) Log.logDebug(App.TAG, "UI Plug-IN version conflicted.")
+        if (IS_DEBUG) logD(App.TAG, "UI Plug-IN version conflicted.")
     }
 
-    if (Log.IS_DEBUG) Log.logDebug(App.TAG, "loadCustomizedUiResources() : X")
+    if (IS_DEBUG) logD(App.TAG, "loadCustomizedUiResources() : X")
 }

@@ -12,7 +12,9 @@ import android.content.Intent
 import android.os.IBinder
 import android.view.View
 
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
+import com.fezrestia.android.lib.util.log.logE
 import com.fezrestia.android.viewfinderanywhere.R
 import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.Constants
@@ -45,7 +47,7 @@ class OverlayViewFinderService : Service() {
     override fun onBind(intent: Intent): IBinder? = null
 
     override fun onCreate() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onCreate() : E")
+        if (IS_DEBUG) logD(TAG, "onCreate() : E")
         super.onCreate()
 
         App.isOverlayServiceActive = true
@@ -84,7 +86,7 @@ class OverlayViewFinderService : Service() {
         // On foreground.
         startForeground(ONGOING_NOTIFICATION_ID, notification)
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onCreate() : X")
+        if (IS_DEBUG) logD(TAG, "onCreate() : X")
     }
 
     private fun setupCoreInstances() {
@@ -109,14 +111,14 @@ class OverlayViewFinderService : Service() {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onStartCommand() : E")
+        if (IS_DEBUG) logD(TAG, "onStartCommand() : E")
 
         val action = intent.action
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "ACTION = $action")
+        if (IS_DEBUG) logD(TAG, "ACTION = $action")
 
         if (action == null) {
-            Log.logError(TAG, "ACTION = NULL")
+            logE(TAG, "ACTION = NULL")
         } else when (action) {
             Constants.INTENT_ACTION_REQUEST_START_SERVICE -> {
                 controller.ready()
@@ -147,12 +149,12 @@ class OverlayViewFinderService : Service() {
             else -> throw RuntimeException("Unexpected ACTION")
         }
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onStartCommand() : X")
+        if (IS_DEBUG) logD(TAG, "onStartCommand() : X")
         return START_NOT_STICKY
     }
 
     override fun onDestroy() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onDestroy() : E")
+        if (IS_DEBUG) logD(TAG, "onDestroy() : E")
 
         // Stop foreground.
         stopForeground(true)
@@ -162,7 +164,7 @@ class OverlayViewFinderService : Service() {
         App.isOverlayServiceActive = false
 
         super.onDestroy()
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onDestroy() : X")
+        if (IS_DEBUG) logD(TAG, "onDestroy() : X")
     }
 
     private fun releaseCoreInstances() {

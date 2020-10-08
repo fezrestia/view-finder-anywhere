@@ -5,7 +5,8 @@ package com.fezrestia.android.viewfinderanywhere.control
 import android.content.Context
 import android.content.Intent
 
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.viewfinderanywhere.Constants
 import com.fezrestia.android.viewfinderanywhere.service.OverlayViewFinderService
 
@@ -22,9 +23,9 @@ object OnOffTrigger {
         service.setClass(appContext, OverlayViewFinderService::class.java)
         val component = appContext.startForegroundService(service)
 
-        if (Log.IS_DEBUG) {
+        if (IS_DEBUG) {
             if (component == null) {
-                Log.logDebug(TAG, "notifyToService() : FAILED action=$action")
+                logD(TAG, "notifyToService() : FAILED action=$action")
             }
         }
     }

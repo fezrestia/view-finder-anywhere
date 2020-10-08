@@ -20,7 +20,8 @@ import android.util.Size
 import android.view.Surface
 import android.view.WindowManager
 
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAspect
 
 import java.util.ArrayList
@@ -44,14 +45,14 @@ internal object PDR2 {
     @Throws(CameraAccessException::class)
     fun getBackCameraId(camMng: CameraManager): String? {
         camMng.cameraIdList.forEach { id ->
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "ID = $id")
+            if (IS_DEBUG) logD(TAG, "ID = $id")
 
             val charas = camMng.getCameraCharacteristics(id)
 
-            if (Log.IS_DEBUG) {
-                Log.logError(TAG, "#### AVAILABLE KEYS")
+            if (IS_DEBUG) {
+                logD(TAG, "#### AVAILABLE KEYS")
                 charas.keys.forEach { key ->
-                    Log.logError(TAG, "## KEY = $key")
+                    logD(TAG, "## KEY = $key")
                 }
             }
 
@@ -67,93 +68,93 @@ internal object PDR2 {
     }
 
     fun logImageFormats(streamConfigMap: StreamConfigurationMap) {
-        Log.logError(TAG, "#### SUPPORTED IMAGE FORMATS")
+        logD(TAG, "#### SUPPORTED IMAGE FORMATS")
         val formats = streamConfigMap.outputFormats
         for (format in formats) {
             when (format) {
-                ImageFormat.DEPTH16             -> Log.logError(TAG, "## FORMAT = DEPTH16")
-                ImageFormat.DEPTH_POINT_CLOUD   -> Log.logError(TAG, "## FORMAT = DEPTH_POINT_CLOUD")
-                ImageFormat.FLEX_RGBA_8888      -> Log.logError(TAG, "## FORMAT = FLEX_RGBA_8888")
-                ImageFormat.FLEX_RGB_888        -> Log.logError(TAG, "## FORMAT = FLEX_RGB_888")
-                ImageFormat.JPEG                -> Log.logError(TAG, "## FORMAT = JPEG")
-                ImageFormat.NV16                -> Log.logError(TAG, "## FORMAT = NV16")
-                ImageFormat.NV21                -> Log.logError(TAG, "## FORMAT = NV21")
-                ImageFormat.PRIVATE             -> Log.logError(TAG, "## FORMAT = PRIVATE")
-                ImageFormat.RAW10               -> Log.logError(TAG, "## FORMAT = RAW10")
-                ImageFormat.RAW12               -> Log.logError(TAG, "## FORMAT = RAW12")
-                ImageFormat.RAW_SENSOR          -> Log.logError(TAG, "## FORMAT = RAW_SENSOR")
-                ImageFormat.RGB_565             -> Log.logError(TAG, "## FORMAT = RGB_565")
-                ImageFormat.UNKNOWN             -> Log.logError(TAG, "## FORMAT = UNKNOWN")
-                ImageFormat.YUV_420_888         -> Log.logError(TAG, "## FORMAT = YUV_420_888")
-                ImageFormat.YUV_422_888         -> Log.logError(TAG, "## FORMAT = YUV_422_888")
-                ImageFormat.YUV_444_888         -> Log.logError(TAG, "## FORMAT = YUV_444_888")
-                ImageFormat.YUY2                -> Log.logError(TAG, "## FORMAT = YUY2")
-                ImageFormat.YV12                -> Log.logError(TAG, "## FORMAT = YV12")
-                else                            -> Log.logError(TAG, "## FORMAT = default : $format")
+                ImageFormat.DEPTH16             -> logD(TAG, "## FORMAT = DEPTH16")
+                ImageFormat.DEPTH_POINT_CLOUD   -> logD(TAG, "## FORMAT = DEPTH_POINT_CLOUD")
+                ImageFormat.FLEX_RGBA_8888      -> logD(TAG, "## FORMAT = FLEX_RGBA_8888")
+                ImageFormat.FLEX_RGB_888        -> logD(TAG, "## FORMAT = FLEX_RGB_888")
+                ImageFormat.JPEG                -> logD(TAG, "## FORMAT = JPEG")
+                ImageFormat.NV16                -> logD(TAG, "## FORMAT = NV16")
+                ImageFormat.NV21                -> logD(TAG, "## FORMAT = NV21")
+                ImageFormat.PRIVATE             -> logD(TAG, "## FORMAT = PRIVATE")
+                ImageFormat.RAW10               -> logD(TAG, "## FORMAT = RAW10")
+                ImageFormat.RAW12               -> logD(TAG, "## FORMAT = RAW12")
+                ImageFormat.RAW_SENSOR          -> logD(TAG, "## FORMAT = RAW_SENSOR")
+                ImageFormat.RGB_565             -> logD(TAG, "## FORMAT = RGB_565")
+                ImageFormat.UNKNOWN             -> logD(TAG, "## FORMAT = UNKNOWN")
+                ImageFormat.YUV_420_888         -> logD(TAG, "## FORMAT = YUV_420_888")
+                ImageFormat.YUV_422_888         -> logD(TAG, "## FORMAT = YUV_422_888")
+                ImageFormat.YUV_444_888         -> logD(TAG, "## FORMAT = YUV_444_888")
+                ImageFormat.YUY2                -> logD(TAG, "## FORMAT = YUY2")
+                ImageFormat.YV12                -> logD(TAG, "## FORMAT = YV12")
+                else                            -> logD(TAG, "## FORMAT = default : $format")
             }
 
             val outputSizes = streamConfigMap.getOutputSizes(format)
             outputSizes.forEach { size ->
-                Log.logError(TAG, "## SIZE = $size")
+                logD(TAG, "## SIZE = $size")
             }
         }
     }
 
     fun logSurfaceTextureOutputSizes(configMap: StreamConfigurationMap) {
-        Log.logError(TAG, "#### SurfaceTexture OUTPUT SIZES")
+        logD(TAG, "#### SurfaceTexture OUTPUT SIZES")
         configMap.getOutputSizes(SurfaceTexture::class.java).forEach { size ->
-            Log.logError(TAG, "## SIZE = $size")
+            logD(TAG, "## SIZE = $size")
         }
     }
 
     fun logAfTrigger(afTrigger: Int?) {
         if (afTrigger == null) {
-            Log.logError(TAG, "#### AF Trigger == NULL")
+            logD(TAG, "#### AF Trigger == NULL")
         } else when (afTrigger) {
-            CaptureResult.CONTROL_AF_TRIGGER_CANCEL -> Log.logError(TAG, "## AF Trigger == CANCEL")
-            CaptureResult.CONTROL_AF_TRIGGER_IDLE   -> Log.logError(TAG, "## AF Trigger == IDLE")
-            CaptureResult.CONTROL_AF_TRIGGER_START  -> Log.logError(TAG, "## AF Trigger == START")
-            else                                    -> Log.logError(TAG, "## AF Trigger == default")
+            CaptureResult.CONTROL_AF_TRIGGER_CANCEL -> logD(TAG, "## AF Trigger == CANCEL")
+            CaptureResult.CONTROL_AF_TRIGGER_IDLE   -> logD(TAG, "## AF Trigger == IDLE")
+            CaptureResult.CONTROL_AF_TRIGGER_START  -> logD(TAG, "## AF Trigger == START")
+            else                                    -> logD(TAG, "## AF Trigger == default")
         }
     }
 
     fun logAfState(afState: Int?) {
         if (afState == null) {
-            Log.logError(TAG, "#### AF State == NULL")
+            logD(TAG, "#### AF State == NULL")
         } else when (afState) {
-            CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN          -> Log.logError(TAG, "## AF State == ACTIVE_SCAN")
-            CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED       -> Log.logError(TAG, "## AF State == FOCUSED_LOCKED")
-            CaptureResult.CONTROL_AF_STATE_INACTIVE             -> Log.logError(TAG, "## AF State == INACTIVE")
-            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED   -> Log.logError(TAG, "## AF State == NOT_FOCUSED_LOCKED")
-            CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED      -> Log.logError(TAG, "## AF State == PASSIVE_FOCUSED")
-            CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN         -> Log.logError(TAG, "## AF State == PASSIVE_SCAN")
-            CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED    -> Log.logError(TAG, "## AF State == PASSIVE_UNFOCUSED")
-            else                                                -> Log.logError(TAG, "## AF State == default")
+            CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN          -> logD(TAG, "## AF State == ACTIVE_SCAN")
+            CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED       -> logD(TAG, "## AF State == FOCUSED_LOCKED")
+            CaptureResult.CONTROL_AF_STATE_INACTIVE             -> logD(TAG, "## AF State == INACTIVE")
+            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED   -> logD(TAG, "## AF State == NOT_FOCUSED_LOCKED")
+            CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED      -> logD(TAG, "## AF State == PASSIVE_FOCUSED")
+            CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN         -> logD(TAG, "## AF State == PASSIVE_SCAN")
+            CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED    -> logD(TAG, "## AF State == PASSIVE_UNFOCUSED")
+            else                                                -> logD(TAG, "## AF State == default")
         }
     }
 
     fun logAeTrigger(aeTrigger: Int?) {
         if (aeTrigger == null) {
-            Log.logError(TAG, "#### AE Trigger == NULL")
+            logD(TAG, "#### AE Trigger == NULL")
         } else when (aeTrigger) {
-            CaptureResult.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL  -> Log.logError(TAG, "## AE Trigger == CANCEL")
-            CaptureResult.CONTROL_AE_PRECAPTURE_TRIGGER_IDLE    -> Log.logError(TAG, "## AE Trigger == IDLE")
-            CaptureResult.CONTROL_AE_PRECAPTURE_TRIGGER_START   -> Log.logError(TAG, "## AE Trigger == START")
-            else                                                -> Log.logError(TAG, "## AE Trigger == default")
+            CaptureResult.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL  -> logD(TAG, "## AE Trigger == CANCEL")
+            CaptureResult.CONTROL_AE_PRECAPTURE_TRIGGER_IDLE    -> logD(TAG, "## AE Trigger == IDLE")
+            CaptureResult.CONTROL_AE_PRECAPTURE_TRIGGER_START   -> logD(TAG, "## AE Trigger == START")
+            else                                                -> logD(TAG, "## AE Trigger == default")
         }
     }
 
     fun logAeState(aeState: Int?) {
         if (aeState == null) {
-            Log.logError(TAG, "#### AE State == NULL")
+            logD(TAG, "#### AE State == NULL")
         } else when (aeState) {
-            CaptureResult.CONTROL_AE_STATE_CONVERGED        -> Log.logError(TAG, "## AE State == CONVERGED")
-            CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED   -> Log.logError(TAG, "## AE State == FLASH_REQUIRED")
-            CaptureResult.CONTROL_AE_STATE_INACTIVE         -> Log.logError(TAG, "## AE State == INACTIVE")
-            CaptureResult.CONTROL_AE_STATE_LOCKED           -> Log.logError(TAG, "## AE State == LOCKED")
-            CaptureResult.CONTROL_AE_STATE_PRECAPTURE       -> Log.logError(TAG, "## AE State == PRECAPTURE")
-            CaptureResult.CONTROL_AE_STATE_SEARCHING        -> Log.logError(TAG, "## AE State == SEARCHING")
-            else                                            -> Log.logError(TAG, "## AE State == default")
+            CaptureResult.CONTROL_AE_STATE_CONVERGED        -> logD(TAG, "## AE State == CONVERGED")
+            CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED   -> logD(TAG, "## AE State == FLASH_REQUIRED")
+            CaptureResult.CONTROL_AE_STATE_INACTIVE         -> logD(TAG, "## AE State == INACTIVE")
+            CaptureResult.CONTROL_AE_STATE_LOCKED           -> logD(TAG, "## AE State == LOCKED")
+            CaptureResult.CONTROL_AE_STATE_PRECAPTURE       -> logD(TAG, "## AE State == PRECAPTURE")
+            CaptureResult.CONTROL_AE_STATE_SEARCHING        -> logD(TAG, "## AE State == SEARCHING")
+            else                                            -> logD(TAG, "## AE State == default")
         }
     }
 
@@ -203,7 +204,7 @@ internal object PDR2 {
             bufferHeight: Int,
             finderWidth: Int,
             finderHeight: Int): Matrix {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "getTextureViewTransformMatrix() : E")
+        if (IS_DEBUG) logD(TAG, "getTextureViewTransformMatrix() : E")
 
         // Display rotation.
         val winMng = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -213,9 +214,9 @@ internal object PDR2 {
         matrix.reset()
         val bufferRect = RectF(0f, 0f, bufferWidth.toFloat(), bufferHeight.toFloat())
         val finderRect = RectF(0f, 0f, finderWidth.toFloat(), finderHeight.toFloat())
-        if (Log.IS_DEBUG) {
-            Log.logDebug(TAG, "## BufferRect = ${bufferRect.toShortString()}")
-            Log.logDebug(TAG, "## FinderRect = ${finderRect.toShortString()}")
+        if (IS_DEBUG) {
+            logD(TAG, "## BufferRect = ${bufferRect.toShortString()}")
+            logD(TAG, "## FinderRect = ${finderRect.toShortString()}")
         }
         val centerX = finderRect.centerX()
         val centerY = finderRect.centerY()
@@ -231,18 +232,18 @@ internal object PDR2 {
         } else {
             finderRect.height() / finderRect.width()
         }
-        if (Log.IS_DEBUG) {
-            Log.logDebug(TAG, "## BufferAspect = $bufferAspect")
-            Log.logDebug(TAG, "## FinderAspect = $finderAspect")
+        if (IS_DEBUG) {
+            logD(TAG, "## BufferAspect = $bufferAspect")
+            logD(TAG, "## FinderAspect = $finderAspect")
         }
 
         when (rotation) {
             Surface.ROTATION_0, Surface.ROTATION_180 -> {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "#### ROTATION_0,180")
+                if (IS_DEBUG) logD(TAG, "#### ROTATION_0,180")
 
                 // Align aspect.
                 if (bufferAspect < finderAspect) {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "## Scale vertical.")
+                    if (IS_DEBUG) logD(TAG, "## Scale vertical.")
                     matrix.postScale(
                             1.0f,
                             bufferAspect / finderAspect,
@@ -250,7 +251,7 @@ internal object PDR2 {
                             centerY)
 
                 } else {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "## Scale horizontal.")
+                    if (IS_DEBUG) logD(TAG, "## Scale horizontal.")
                     matrix.postScale(
                             finderAspect / bufferAspect,
                             1.0f,
@@ -262,7 +263,7 @@ internal object PDR2 {
             }
 
             Surface.ROTATION_90, Surface.ROTATION_270 -> {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "#### ROTATION_90,270")
+                if (IS_DEBUG) logD(TAG, "#### ROTATION_90,270")
 
                 // Convert landscape/portrait.
                 val finderLand = RectF(0f, 0f, finderRect.width(), finderRect.height())
@@ -272,7 +273,7 @@ internal object PDR2 {
 
                 // Align aspect.
                 if (bufferAspect < finderAspect) {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "## Scale vertical.")
+                    if (IS_DEBUG) logD(TAG, "## Scale vertical.")
                     matrix.postScale(
                             1.0f,
                             bufferAspect / finderAspect,
@@ -280,7 +281,7 @@ internal object PDR2 {
                             centerY)
 
                 } else {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "## Scale portrait.")
+                    if (IS_DEBUG) logD(TAG, "## Scale portrait.")
                     matrix.postScale(
                             finderAspect / bufferAspect,
                             1.0f,
@@ -297,12 +298,12 @@ internal object PDR2 {
 
         // Check aspect.
         if ((bufferAspect * 100).toInt() != (finderAspect * 100).toInt()) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "#### Aspect is not matched")
+            if (IS_DEBUG) logD(TAG, "#### Aspect is not matched")
             // Not matched.
 
             if (bufferAspect < finderAspect) {
                 // Black area is available on right and left based on buffer coordinates.
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## Fit buffer right and left to finder.")
+                if (IS_DEBUG) logD(TAG, "## Fit buffer right and left to finder.")
 
                 matrix.postScale(
                         finderAspect / bufferAspect,
@@ -311,7 +312,7 @@ internal object PDR2 {
                         centerY)
             } else {
                 // Black area is available on top and bottom based on buffer coordinates.
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## Fit buffer top and bottom to finder")
+                if (IS_DEBUG) logD(TAG, "## Fit buffer top and bottom to finder")
 
                 matrix.postScale(
                         bufferAspect / finderAspect,
@@ -321,7 +322,7 @@ internal object PDR2 {
             }
         }
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "getTextureViewTransformMatrix() : X")
+        if (IS_DEBUG) logD(TAG, "getTextureViewTransformMatrix() : X")
         return matrix
     }
 
@@ -333,14 +334,14 @@ internal object PDR2 {
      */
     // TODO: Consider display size ?
     fun getPreviewStreamFrameSize(charas: CameraCharacteristics): Size {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "getPreviewStreamFrameSize()")
+        if (IS_DEBUG) logD(TAG, "getPreviewStreamFrameSize()")
 
         // Sensor aspect.
         val fullSize = charas.get(CameraCharacteristics.SENSOR_INFO_PIXEL_ARRAY_SIZE)!!
         var fullAspectWH = fullSize.width.toFloat() / fullSize.height.toFloat()
-        if (Log.IS_DEBUG) {
-            Log.logDebug(TAG, "## PixelArraySize = $fullSize")
-            Log.logDebug(TAG, "## Full Size Aspect = $fullAspectWH")
+        if (IS_DEBUG) {
+            logD(TAG, "## PixelArraySize = $fullSize")
+            logD(TAG, "## Full Size Aspect = $fullAspectWH")
         }
 
         // Estimate full aspect.
@@ -353,7 +354,7 @@ internal object PDR2 {
             // Near to 16:9.
             ViewFinderAspect.WH_16_9.ratioWH
         }
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## Estimated full Size Aspect = $fullAspectWH")
+        if (IS_DEBUG) logD(TAG, "## Estimated full Size Aspect = $fullAspectWH")
 
         // Supported size.
         val configMap = charas.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!
@@ -362,27 +363,27 @@ internal object PDR2 {
         // Match aspect.
         var optimalSize = Size(0, 0)
         sizes.forEach { size ->
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "#### EachSize = $size")
+            if (IS_DEBUG) logD(TAG, "#### EachSize = $size")
 
             //TODO: Consider display size ?
             if (1920 < size.width) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## Ignore. Over than 1920")
+                if (IS_DEBUG) logD(TAG, "## Ignore. Over than 1920")
                 // NOP.
             } else {
                 // Target aspect.
                 val eachAspectWH = size.width.toFloat() / size.height.toFloat()
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## Each Aspect = $eachAspectWH")
+                if (IS_DEBUG) logD(TAG, "## Each Aspect = $eachAspectWH")
 
                 if ((fullAspectWH * 100).toInt() == (eachAspectWH * 100).toInt()) {
                     if (optimalSize.width < size.width) {
-                        if (Log.IS_DEBUG) Log.logDebug(TAG, "## Update optimal size")
+                        if (IS_DEBUG) logD(TAG, "## Update optimal size")
                         optimalSize = size
                     }
                 }
             }
         }
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "#### PreviewFrameSize = $optimalSize")
+        if (IS_DEBUG) logD(TAG, "#### PreviewFrameSize = $optimalSize")
         return optimalSize
     }
 
@@ -394,21 +395,21 @@ internal object PDR2 {
      * @return Optimal JPEG frame size.
      */
     fun getOptimalJpegFrameSize(map: StreamConfigurationMap, devicePreviewSize: Size): Size {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "getOptimalJpegFrameSize()")
+        if (IS_DEBUG) logD(TAG, "getOptimalJpegFrameSize()")
 
         val jpegSizes = map.getOutputSizes(ImageFormat.JPEG)
 
         val previewAspectRatioWHx100 = (devicePreviewSize.width.toFloat() / devicePreviewSize.height.toFloat() * 100.0f).toInt()
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## PreviewAspect = $previewAspectRatioWHx100")
+        if (IS_DEBUG) logD(TAG, "## PreviewAspect = $previewAspectRatioWHx100")
 
         val capableSizes = ArrayList<Size>()
         jpegSizes.forEach { jpegSize ->
             val aspectWHx100 = (jpegSize.width.toFloat() / jpegSize.height.toFloat() * 100.0f).toInt()
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "## EachAspect = $aspectWHx100")
+            if (IS_DEBUG) logD(TAG, "## EachAspect = $aspectWHx100")
 
             if (previewAspectRatioWHx100 == aspectWHx100) {
                 // Aspect matched.
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## Capable = $jpegSize")
+                if (IS_DEBUG) logD(TAG, "## Capable = $jpegSize")
                 capableSizes.add(jpegSize)
             }
         }
@@ -418,13 +419,13 @@ internal object PDR2 {
         capableSizes.forEach { capableSize ->
             if (capableSize.width == 3840 && capableSize.height == 2160) {
                 // 8MP 16:9
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## Recommended 8MP 16:9")
+                if (IS_DEBUG) logD(TAG, "## Recommended 8MP 16:9")
                 maxSize = capableSize
                 return@forEach
             }
             if (capableSize.width == 3264 && capableSize.height == 2448) {
                 // 8MP 4:3
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "## Recommended 8MP 4:3")
+                if (IS_DEBUG) logD(TAG, "## Recommended 8MP 4:3")
                 maxSize = capableSize
                 return@forEach
             }
@@ -435,7 +436,7 @@ internal object PDR2 {
             }
         }
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## JPEG Size = $maxSize")
+        if (IS_DEBUG) logD(TAG, "## JPEG Size = $maxSize")
         return maxSize
     }
 
@@ -455,9 +456,9 @@ internal object PDR2 {
         // Max zoom.
         val maxZoom = charas.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM)!!
 
-        if (Log.IS_DEBUG) {
-            Log.logDebug(TAG, "## ActiveArraySize = ${fullRect}, w=${fullRect.width()}, h=${fullRect.height()}")
-            Log.logDebug(TAG, "## MAX Zoom = $maxZoom")
+        if (IS_DEBUG) {
+            logD(TAG, "## ActiveArraySize = ${fullRect}, w=${fullRect.width()}, h=${fullRect.height()}")
+            logD(TAG, "## MAX Zoom = $maxZoom")
         }
 
         // Crop rect.
@@ -476,7 +477,7 @@ internal object PDR2 {
             cropHeight = (cropWidth / aspectWH).toInt()
         }
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## CropSize = $cropWidth x $cropHeight")
+        if (IS_DEBUG) logD(TAG, "## CropSize = $cropWidth x $cropHeight")
 
         val cropRect = Rect(
                 (fullRect.width() - cropWidth) / 2,
@@ -487,7 +488,7 @@ internal object PDR2 {
                 fullRect.centerX() - cropRect.centerX(),
                 fullRect.centerY() - cropRect.centerY())
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## CropRect = $cropRect, w=${cropRect.width()}, h=${cropRect.height()}")
+        if (IS_DEBUG) logD(TAG, "## CropRect = $cropRect, w=${cropRect.width()}, h=${cropRect.height()}")
 
         return cropRect
     }

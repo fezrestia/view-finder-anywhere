@@ -7,7 +7,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.Constants
 import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger
@@ -37,8 +38,8 @@ class OverlayViewFinderTriggerReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "onReceive()")
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "ACTION = ${intent.action}")
+        if (IS_DEBUG) logD(TAG, "onReceive()")
+        if (IS_DEBUG) logD(TAG, "ACTION = ${intent.action}")
 
         when (intent.action) {
             Constants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY -> {

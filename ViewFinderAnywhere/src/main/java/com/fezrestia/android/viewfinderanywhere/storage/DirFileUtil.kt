@@ -5,7 +5,9 @@ package com.fezrestia.android.viewfinderanywhere.storage
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Environment
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
+import com.fezrestia.android.lib.util.log.logE
 import com.fezrestia.android.viewfinderanywhere.BuildConfig
 import java.io.File
 import java.io.FileNotFoundException
@@ -46,22 +48,22 @@ object DirFileUtil {
     @JvmStatic
     fun getApplicationStorageRootPath(context: Context): String {
         val extDir = context.getExternalFilesDir(null)?.absolutePath
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## ExtFilesDir = $extDir")
+        if (IS_DEBUG) logD(TAG, "## ExtFilesDir = $extDir")
 
         val root = if (extDir != null) {
             extDir.replace(LOCAL_STORAGE_REL_PATH, "")
         } else {
-            Log.logError(TAG, "## extDir == null")
+            logE(TAG, "## extDir == null")
             throw RuntimeException("Ext.Storage is NOT writable.")
         }
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "## root = $root")
+        if (IS_DEBUG) logD(TAG, "## root = $root")
 
-        if (Log.IS_DEBUG) {
+        if (IS_DEBUG) {
             @Suppress("DEPRECATION") val oldExtRoot = Environment.getExternalStorageDirectory().path
-            Log.logDebug(TAG, "## Environment.getExternalStorageDirectory() = $oldExtRoot")
-            Log.logDebug(TAG, "## ExtFilesDiffs")
+            logD(TAG, "## Environment.getExternalStorageDirectory() = $oldExtRoot")
+            logD(TAG, "## ExtFilesDiffs")
             val dirs = context.getExternalFilesDirs(null)
-            dirs.forEach { Log.logDebug(TAG, "dir = $it") }
+            dirs.forEach { logD(TAG, "dir = $it") }
         }
 
         return "$root/$ROOT_DIR_PATH"
@@ -98,10 +100,10 @@ object DirFileUtil {
                 // If directory is not exist, create a new directory.
                 isSuccess = dir.mkdirs()
             } else {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Directory is already exists.")
+                if (IS_DEBUG) logD(TAG, "Directory is already exists.")
             }
         } catch (e: SecurityException) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "createDirectory() : FAILED")
+            if (IS_DEBUG) logD(TAG, "createDirectory() : FAILED")
             e.printStackTrace()
         }
 
@@ -124,7 +126,7 @@ object DirFileUtil {
             fos = FileOutputStream(fileName)
         } catch (e: FileNotFoundException) {
             e.printStackTrace()
-            if (Log.IS_DEBUG) Log.logError(TAG, "File not found.")
+            if (IS_DEBUG) logE(TAG, "File not found.")
             return false
         }
 
@@ -134,14 +136,14 @@ object DirFileUtil {
             fos.close()
         } catch (e: IOException) {
             e.printStackTrace()
-            if (Log.IS_DEBUG) Log.logError(TAG, "File output stream I/O error.")
+            if (IS_DEBUG) logE(TAG, "File output stream I/O error.")
 
             // Close.
             try {
                 fos.close()
             } catch (e: IOException) {
                 e.printStackTrace()
-                if (Log.IS_DEBUG) Log.logError(TAG, "File output stream I/O error.")
+                if (IS_DEBUG) logE(TAG, "File output stream I/O error.")
                 return false
             }
             return false

@@ -11,7 +11,9 @@ import android.os.SystemClock
 import android.util.Size
 import android.view.Surface
 import android.view.TextureView
-import com.fezrestia.android.lib.util.log.Log
+import com.fezrestia.android.lib.util.log.IS_DEBUG
+import com.fezrestia.android.lib.util.log.logD
+import com.fezrestia.android.lib.util.log.logE
 import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.Constants
 import com.fezrestia.android.viewfinderanywhere.config.ConfigManager
@@ -68,19 +70,19 @@ class OverlayViewFinderController(private val context: Context) {
      * Start overlay view finder.
      */
     fun ready() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "ready() : E")
+        if (IS_DEBUG) logD(TAG, "ready() : E")
 
         handler.post(ReadyTask())
 
         resume()
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "ready() : X")
+        if (IS_DEBUG) logD(TAG, "ready() : X")
     }
 
     private inner class ReadyTask : Runnable {
         private val TAG = "ReadyTask"
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E")
+            if (IS_DEBUG) logD(TAG, "run() : E")
 
             currentState.onConstructed()
 
@@ -102,7 +104,7 @@ class OverlayViewFinderController(private val context: Context) {
 
             nativeOnCreated()
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X")
+            if (IS_DEBUG) logD(TAG, "run() : X")
         }
     }
 
@@ -110,21 +112,21 @@ class OverlayViewFinderController(private val context: Context) {
      * Resume overlay view finder.
      */
     fun resume() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "resume() : E")
+        if (IS_DEBUG) logD(TAG, "resume() : E")
 
         handler.post(ResumeTask())
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "resume() : X")
+        if (IS_DEBUG) logD(TAG, "resume() : X")
     }
 
     private inner class ResumeTask : Runnable {
         private val TAG = "ResumeTask"
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E")
+            if (IS_DEBUG) logD(TAG, "run() : E")
 
             currentState.onResume()
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X")
+            if (IS_DEBUG) logD(TAG, "run() : X")
         }
     }
 
@@ -132,21 +134,21 @@ class OverlayViewFinderController(private val context: Context) {
      * Pause overlay view finder.
      */
     fun pause() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "pause() : E")
+        if (IS_DEBUG) logD(TAG, "pause() : E")
 
         handler.post(PauseTask())
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "pause() : X")
+        if (IS_DEBUG) logD(TAG, "pause() : X")
     }
 
     private inner class PauseTask : Runnable {
         private val TAG = "PauseTask"
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E")
+            if (IS_DEBUG) logD(TAG, "run() : E")
 
             currentState.onPause()
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X")
+            if (IS_DEBUG) logD(TAG, "run() : X")
         }
     }
 
@@ -154,27 +156,27 @@ class OverlayViewFinderController(private val context: Context) {
      * Stop overlay view finder and release all references.
      */
     fun release() {
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "release() : E")
+        if (IS_DEBUG) logD(TAG, "release() : E")
 
         pause()
 
         handler.post(ReleaseTask())
 
 
-        if (Log.IS_DEBUG) Log.logDebug(TAG, "release() : X")
+        if (IS_DEBUG) logD(TAG, "release() : X")
     }
 
     private inner class ReleaseTask : Runnable {
         private val TAG = "ReleaseTask"
         override fun run() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : E")
+            if (IS_DEBUG) logD(TAG, "run() : E")
 
             // Wait for state converged to not active (StateReady).
             while (currentState.isActive) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Waiting for StateReady ...")
+                if (IS_DEBUG) logD(TAG, "Waiting for StateReady ...")
                 Thread.sleep(100)
             }
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Waiting for StateReady ... DONE")
+            if (IS_DEBUG) logD(TAG, "Waiting for StateReady ... DONE")
 
             currentState.onDestructed()
 
@@ -186,7 +188,7 @@ class OverlayViewFinderController(private val context: Context) {
             // Release camera.
             camera.release()
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "run() : X")
+            if (IS_DEBUG) logD(TAG, "run() : X")
         }
     }
 
@@ -250,134 +252,134 @@ class OverlayViewFinderController(private val context: Context) {
 
         override val isActive: Boolean
             get() {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "isActive() : NOP")
+                if (IS_DEBUG) logD(TAG, "isActive() : NOP")
                 return true
             }
 
         override fun entry() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "entry() : NOP")
+            if (IS_DEBUG) logD(TAG, "entry() : NOP")
         }
 
         override fun exit() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "exit() : NOP")
+            if (IS_DEBUG) logD(TAG, "exit() : NOP")
         }
 
         override fun onConstructed() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onConstructed() : NOP")
+            if (IS_DEBUG) logD(TAG, "onConstructed() : NOP")
         }
 
         override fun onResume() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume() : NOP")
+            if (IS_DEBUG) logD(TAG, "onResume() : NOP")
         }
 
         override fun onPause() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause() : NOP")
+            if (IS_DEBUG) logD(TAG, "onPause() : NOP")
         }
 
         override fun onDestructed() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onDestructed() : NOP")
+            if (IS_DEBUG) logD(TAG, "onDestructed() : NOP")
         }
 
         override fun onToggleShowHideRequired() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onToggleShowHideRequired() : NOP")
+            if (IS_DEBUG) logD(TAG, "onToggleShowHideRequired() : NOP")
         }
 
         override fun onPreOpenRequested() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenRequested() : NOP")
+            if (IS_DEBUG) logD(TAG, "onPreOpenRequested() : NOP")
         }
 
         override fun onPreOpenCanceled() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenCanceled() : NOP")
+            if (IS_DEBUG) logD(TAG, "onPreOpenCanceled() : NOP")
         }
 
         override fun onSurfaceCreated() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceCreated() : NOP")
+            if (IS_DEBUG) logD(TAG, "onSurfaceCreated() : NOP")
         }
 
         override fun onSurfaceReady() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady() : NOP")
+            if (IS_DEBUG) logD(TAG, "onSurfaceReady() : NOP")
         }
 
         override fun onSurfaceReleased() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReleased() : NOP")
+            if (IS_DEBUG) logD(TAG, "onSurfaceReleased() : NOP")
         }
 
         override fun onCameraOpened(isSuccess: Boolean) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraOpened() : NOP")
+            if (IS_DEBUG) logD(TAG, "onCameraOpened() : NOP")
         }
 
         override fun onCameraClosed() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraClosed() : NOP")
+            if (IS_DEBUG) logD(TAG, "onCameraClosed() : NOP")
         }
 
         override fun onSurfaceBound() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceBound() : NOP")
+            if (IS_DEBUG) logD(TAG, "onSurfaceBound() : NOP")
         }
 
         override fun requestScan() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestScan() : NOP")
+            if (IS_DEBUG) logD(TAG, "requestScan() : NOP")
         }
 
         override fun requestCancelScan() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestCancelScan() : NOP")
+            if (IS_DEBUG) logD(TAG, "requestCancelScan() : NOP")
         }
 
         override fun requestStillCapture() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStillCapture() : NOP")
+            if (IS_DEBUG) logD(TAG, "requestStillCapture() : NOP")
         }
 
         override fun requestStartRec() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStartRec() : NOP")
+            if (IS_DEBUG) logD(TAG, "requestStartRec() : NOP")
         }
 
         override fun requestStopRec() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStopRec() : NOP")
+            if (IS_DEBUG) logD(TAG, "requestStopRec() : NOP")
         }
 
         override fun onScanDone(isSuccess: Boolean) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onScanDone() : NOP")
+            if (IS_DEBUG) logD(TAG, "onScanDone() : NOP")
         }
 
         override fun onCancelScanDone() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCancelScanDone() : NOP")
+            if (IS_DEBUG) logD(TAG, "onCancelScanDone() : NOP")
         }
 
         override fun onShutterDone() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onShutterDone() : NOP")
+            if (IS_DEBUG) logD(TAG, "onShutterDone() : NOP")
         }
 
         override fun onStillCaptureDone() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onStillCaptureDone() : NOP")
+            if (IS_DEBUG) logD(TAG, "onStillCaptureDone() : NOP")
         }
 
         override fun onPhotoStoreReady(data: ByteArray) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPhotoStoreReady() : NOP")
+            if (IS_DEBUG) logD(TAG, "onPhotoStoreReady() : NOP")
         }
 
         override fun onPhotoStoreDone(isSuccess: Boolean, uri: Uri?) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPhotoStoreDone() : NOP")
+            if (IS_DEBUG) logD(TAG, "onPhotoStoreDone() : NOP")
         }
 
         override fun onVideoStreamStarted() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onVideoStreamStarted() : NOP")
+            if (IS_DEBUG) logD(TAG, "onVideoStreamStarted() : NOP")
         }
 
         override fun onVideoStreamStopped() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onVideoStreamStopped() : NOP")
+            if (IS_DEBUG) logD(TAG, "onVideoStreamStopped() : NOP")
         }
 
         override fun onRecStarted() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStarted() : NOP")
+            if (IS_DEBUG) logD(TAG, "onRecStarted() : NOP")
         }
 
         override fun onRecStopped() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStopped() : NOP")
+            if (IS_DEBUG) logD(TAG, "onRecStopped() : NOP")
         }
     }
 
     @Synchronized
     private fun changeStateTo(next: State) {
-        if (Log.IS_DEBUG) Log.logDebug(TAG,"changeStateTo() : NEXT=${next::class.simpleName}")
+        if (IS_DEBUG) logD(TAG,"changeStateTo() : NEXT=${next::class.simpleName}")
 
         currentState.exit()
         currentState = next
@@ -388,9 +390,9 @@ class OverlayViewFinderController(private val context: Context) {
         private val TAG = "StateNone"
 
         override fun onConstructed() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onConstructed()")
+            if (IS_DEBUG) logD(TAG, "onConstructed()")
 
-            changeStateTo(StateReady(false, false))
+            changeStateTo(StateReady(isSurfaceReady = false, isCameraReady = false))
         }
     }
 
@@ -402,54 +404,54 @@ class OverlayViewFinderController(private val context: Context) {
         override val isActive = false
 
         override fun entry() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "entry() : surface=$isSurfaceReady, camera=$isCameraReady")
+            if (IS_DEBUG) logD(TAG, "entry() : surface=$isSurfaceReady, camera=$isCameraReady")
             // NOP.
         }
 
         override fun exit() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "exit()")
+            if (IS_DEBUG) logD(TAG, "exit()")
             // NOP.
         }
 
         override fun onResume() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume()")
+            if (IS_DEBUG) logD(TAG, "onResume()")
 
             changeStateTo(StateStarting(isSurfaceReady, isCameraReady))
         }
 
         override fun onPreOpenRequested() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenRequested()")
+            if (IS_DEBUG) logD(TAG, "onPreOpenRequested()")
 
             camera.openAsync(configManager.evfAspect.ratioWH, OpenCallbackImpl())
         }
 
         override fun onPreOpenCanceled() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPreOpenCanceled()")
+            if (IS_DEBUG) logD(TAG, "onPreOpenCanceled()")
 
             camera.closeAsync(CloseCallbackImpl())
         }
 
         override fun onCameraOpened(isSuccess: Boolean) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraOpened()")
+            if (IS_DEBUG) logD(TAG, "onCameraOpened()")
 
             if (isSuccess) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Success to open camera.")
+                if (IS_DEBUG) logD(TAG, "Success to open camera.")
 
                 isCameraReady = true
             } else {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Failed to open camera.")
+                if (IS_DEBUG) logD(TAG, "Failed to open camera.")
                 // NOP.
             }
         }
 
         override fun onCameraClosed() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraClosed()")
+            if (IS_DEBUG) logD(TAG, "onCameraClosed()")
 
             isCameraReady = false
         }
 
         override fun onToggleShowHideRequired() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onToggleShowHideRequired()")
+            if (IS_DEBUG) logD(TAG, "onToggleShowHideRequired()")
 
             if (cameraView.isOverlayShown()) {
                 cameraView.hide()
@@ -459,13 +461,13 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         override fun onDestructed() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onDestructed()")
+            if (IS_DEBUG) logD(TAG, "onDestructed()")
 
             App.ui.post { cameraView.removeFromOverlayWindow() }
         }
 
         override fun onSurfaceReleased() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReleased()")
+            if (IS_DEBUG) logD(TAG, "onSurfaceReleased()")
 
             isSurfaceReady = false
 
@@ -483,7 +485,7 @@ class OverlayViewFinderController(private val context: Context) {
         private var isPauseRequested = false
 
         override fun entry() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "entry() : surface=$isSurfaceReady, camera=$isCameraReady")
+            if (IS_DEBUG) logD(TAG, "entry() : surface=$isSurfaceReady, camera=$isCameraReady")
 
             if (!isCameraReady) {
                 camera.openAsync(configManager.evfAspect.ratioWH, OpenCallbackImpl())
@@ -497,33 +499,33 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         override fun exit() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "exit()")
+            if (IS_DEBUG) logD(TAG, "exit()")
             // NOP.
         }
 
         override fun onResume() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume()")
+            if (IS_DEBUG) logD(TAG, "onResume()")
 
             isPauseRequested = false
         }
 
         override fun onPause() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()")
+            if (IS_DEBUG) logD(TAG, "onPause()")
 
             isPauseRequested = true
         }
 
         override fun onCameraOpened(isSuccess: Boolean) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraOpened()")
+            if (IS_DEBUG) logD(TAG, "onCameraOpened()")
 
             if (isSuccess) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Success to open camera")
+                if (IS_DEBUG) logD(TAG, "Success to open camera")
 
                 isCameraReady = true
 
                 checkCameraAndSurfaceAndStartViewFinder()
             } else {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Failed to open camera")
+                if (IS_DEBUG) logD(TAG, "Failed to open camera")
 
                 // TODO: Handle camera not open error.
 
@@ -531,7 +533,7 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         override fun onSurfaceCreated() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceCreated()")
+            if (IS_DEBUG) logD(TAG, "onSurfaceCreated()")
 
             // Start initialization of native GL/EGL related.
             val uiSurface = Surface(cameraView.getViewFinderSurface().surfaceTexture)
@@ -540,7 +542,7 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         override fun onSurfaceReady() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceReady()")
+            if (IS_DEBUG) logD(TAG, "onSurfaceReady()")
 
             isSurfaceReady = true
 
@@ -548,10 +550,10 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         private fun checkCameraAndSurfaceAndStartViewFinder() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "checkCameraAndSurfaceAndStartViewFinder()")
+            if (IS_DEBUG) logD(TAG, "checkCameraAndSurfaceAndStartViewFinder()")
 
             if (isCameraReady && isSurfaceReady) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Camera and surface are ready.")
+                if (IS_DEBUG) logD(TAG, "Camera and surface are ready.")
 
                 // Camera stream surface.
                 run {
@@ -572,7 +574,7 @@ class OverlayViewFinderController(private val context: Context) {
                     val videoSize = calcVideoSize(
                             camera.getPreviewStreamSize(),
                             configManager.evfAspect.ratioWH)
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "## Video Size = $videoSize")
+                    if (IS_DEBUG) logD(TAG, "## Video Size = $videoSize")
 
                     mpegRecorder = MpegRecorder(
                             context,
@@ -582,12 +584,12 @@ class OverlayViewFinderController(private val context: Context) {
                 }
 
             } else {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Not camera and surface are ready yet.")
+                if (IS_DEBUG) logD(TAG, "Not camera and surface are ready yet.")
             }
         }
 
         override fun onSurfaceBound() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onSurfaceBound()")
+            if (IS_DEBUG) logD(TAG, "onSurfaceBound()")
 
             if (isPauseRequested) {
                 changeStateTo(StateStopping())
@@ -608,7 +610,7 @@ class OverlayViewFinderController(private val context: Context) {
         private val TAG = "StateStopping"
 
         override fun entry() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "entry()")
+            if (IS_DEBUG) logD(TAG, "entry()")
 
             cameraSurfaceTexture?.setOnFrameAvailableListener(null)
 
@@ -620,7 +622,7 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         override fun onCameraClosed() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCameraClosed()")
+            if (IS_DEBUG) logD(TAG, "onCameraClosed()")
 
             cameraSurfaceTexture?.release()
             cameraSurfaceTexture = null
@@ -628,7 +630,7 @@ class OverlayViewFinderController(private val context: Context) {
             mpegRecorder?.release()
             mpegRecorder = null
 
-            changeStateTo(StateReady(true, false))
+            changeStateTo(StateReady(isSurfaceReady = true, isCameraReady = false))
         }
     }
 
@@ -636,19 +638,19 @@ class OverlayViewFinderController(private val context: Context) {
         private val TAG = "StateIdle"
 
         override fun entry() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "entry()")
+            if (IS_DEBUG) logD(TAG, "entry()")
 
             App.ui.post(VisualFeedbackClearTask())
         }
 
         override fun onPause() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()")
+            if (IS_DEBUG) logD(TAG, "onPause()")
 
             changeStateTo(StateStopping())
         }
 
         override fun requestScan() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestScan()")
+            if (IS_DEBUG) logD(TAG, "requestScan()")
 
             camera.requestScanAsync(ScanCallbackImpl())
 
@@ -656,7 +658,7 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         override fun requestStartRec() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStartRec()")
+            if (IS_DEBUG) logD(TAG, "requestStartRec()")
 
             changeStateTo(StateRec())
         }
@@ -669,25 +671,25 @@ class OverlayViewFinderController(private val context: Context) {
         private var isPauseRequested = false
 
         override fun entry() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "entry()")
+            if (IS_DEBUG) logD(TAG, "entry()")
 
             App.ui.post(VisualFeedbackOnScanStartedTask())
         }
 
         override fun onResume() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume()")
+            if (IS_DEBUG) logD(TAG, "onResume()")
 
             isPauseRequested = false
         }
 
         override fun onPause() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()")
+            if (IS_DEBUG) logD(TAG, "onPause()")
 
             isPauseRequested = true
         }
 
         override fun requestCancelScan() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestCancelScan()")
+            if (IS_DEBUG) logD(TAG, "requestCancelScan()")
 
             if (!isPauseRequested) {
                 camera.requestCancelScanAsync(CancelScanCallbackImpl())
@@ -697,7 +699,7 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         override fun onScanDone(isSuccess: Boolean) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onScanDone()")
+            if (IS_DEBUG) logD(TAG, "onScanDone()")
 
             if (isPauseRequested) {
                 changeStateTo(StateStopping())
@@ -715,7 +717,7 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         override fun requestStillCapture() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStillCapture()")
+            if (IS_DEBUG) logD(TAG, "requestStillCapture()")
 
             isStillCaptureAlreadyRequested = true
         }
@@ -727,19 +729,19 @@ class OverlayViewFinderController(private val context: Context) {
         private var isPauseRequested = false
 
         override fun onResume() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume()")
+            if (IS_DEBUG) logD(TAG, "onResume()")
 
             isPauseRequested = false
         }
 
         override fun onPause() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()")
+            if (IS_DEBUG) logD(TAG, "onPause()")
 
             isPauseRequested = true
         }
 
         override fun onCancelScanDone() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onCancelScanDone()")
+            if (IS_DEBUG) logD(TAG, "onCancelScanDone()")
 
             if (isPauseRequested) {
                 changeStateTo(StateStopping())
@@ -753,19 +755,19 @@ class OverlayViewFinderController(private val context: Context) {
         private val TAG = "StateScanDone"
 
         override fun entry() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "entry()")
+            if (IS_DEBUG) logD(TAG, "entry()")
 
             App.ui.post(VisualFeedbackOnScanDoneTask(isSuccess))
         }
 
         override fun onPause() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()")
+            if (IS_DEBUG) logD(TAG, "onPause()")
 
             changeStateTo(StateStopping())
         }
 
         override fun requestCancelScan() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestCancelScan()")
+            if (IS_DEBUG) logD(TAG, "requestCancelScan()")
 
             camera.requestCancelScanAsync(CancelScanCallbackImpl())
 
@@ -773,7 +775,7 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         override fun requestStillCapture() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStillCapture()")
+            if (IS_DEBUG) logD(TAG, "requestStillCapture()")
 
             camera.requestStillCaptureAsync(StillCaptureCallbackImpl())
 
@@ -787,26 +789,26 @@ class OverlayViewFinderController(private val context: Context) {
         private var isPauseRequested = false
 
         override fun onResume() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume()")
+            if (IS_DEBUG) logD(TAG, "onResume()")
 
             isPauseRequested = false
         }
 
         override fun onPause() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()")
+            if (IS_DEBUG) logD(TAG, "onPause()")
 
             isPauseRequested = true
         }
 
         override fun onShutterDone() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onShutterDone()")
+            if (IS_DEBUG) logD(TAG, "onShutterDone()")
 
             App.ui.post(VisualFeedbackClearTask())
             App.ui.post(VisualFeedbackOnShutterDoneTask())
         }
 
         override fun onStillCaptureDone() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onStillCaptureDone()")
+            if (IS_DEBUG) logD(TAG, "onStillCaptureDone()")
 
             if (isPauseRequested) {
                 // NOP, Wait for photo store done, after then start stopping.
@@ -817,7 +819,7 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         override fun onPhotoStoreDone(isSuccess: Boolean, uri: Uri?) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPhotoStoreDone()")
+            if (IS_DEBUG) logD(TAG, "onPhotoStoreDone()")
 
             changeStateTo(StateStopping())
         }
@@ -835,7 +837,7 @@ class OverlayViewFinderController(private val context: Context) {
         var isWaitingForStopRec = false
 
         override fun entry() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "entry()")
+            if (IS_DEBUG) logD(TAG, "entry()")
 
             mpegRecorder?.let {
                 it.setup(mpegFileFullPath)
@@ -845,12 +847,12 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         override fun exit() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "exit()")
+            if (IS_DEBUG) logD(TAG, "exit()")
             // NOP.
         }
 
         override fun onResume() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onResume()")
+            if (IS_DEBUG) logD(TAG, "onResume()")
 
             // If pause/resume action is done in Rec state,
             // recording will be stopped and return to Idle state.
@@ -858,18 +860,18 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         override fun onPause() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onPause()")
+            if (IS_DEBUG) logD(TAG, "onPause()")
 
             // If pause action is done in Rec state,
             // stop recording immediately and return to Finalized state.
             isPauseRequested = true
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Auto requestStopRec()")
+            if (IS_DEBUG) logD(TAG, "Auto requestStopRec()")
             requestStopRec()
         }
 
         override fun onVideoStreamStarted() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onVideoStreamStarted()")
+            if (IS_DEBUG) logD(TAG, "onVideoStreamStarted()")
 
             cameraView.getVisualFeedbackTrigger().onRecStarted()
 
@@ -879,29 +881,29 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         override fun onVideoStreamStopped() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onVideoStreamStopped()")
+            if (IS_DEBUG) logD(TAG, "onVideoStreamStopped()")
 
             mpegRecorder?.stop()
         }
 
         override fun onRecStarted() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStarted()")
+            if (IS_DEBUG) logD(TAG, "onRecStarted()")
 
             if (isWaitingForStopRec) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStarted() stop immediately")
+                if (IS_DEBUG) logD(TAG, "onRecStarted() stop immediately")
 
                 App.ui.postDelayed(
                         { doStopRec() },
                         MIN_REC_DURATION_MILLIS)
             } else {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStarted() cache start timestamp")
+                if (IS_DEBUG) logD(TAG, "onRecStarted() cache start timestamp")
 
                 startRecUptimeMillis = SystemClock.uptimeMillis()
             }
         }
 
         override fun onRecStopped() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onRecStopped()")
+            if (IS_DEBUG) logD(TAG, "onRecStopped()")
 
             storageController.notifyToMediaScanner(mpegFileFullPath)
 
@@ -919,10 +921,10 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         override fun requestStopRec() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "requestStopRec()")
+            if (IS_DEBUG) logD(TAG, "requestStopRec()")
 
             if (isWaitingForStopRec) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "Already waiting for stop recording")
+                if (IS_DEBUG) logD(TAG, "Already waiting for stop recording")
                 return
             }
 
@@ -936,7 +938,7 @@ class OverlayViewFinderController(private val context: Context) {
 
                 val recTimeMillis = SystemClock.uptimeMillis() - startRecUptimeMillis
                 if (recTimeMillis < MIN_REC_DURATION_MILLIS) {
-                    if (Log.IS_DEBUG) Log.logDebug(TAG, "recTimeMillis=$recTimeMillis is too short.")
+                    if (IS_DEBUG) logD(TAG, "recTimeMillis=$recTimeMillis is too short.")
 
                     // If rec time is less than min rec duration,
                     // delay stop recording still min duration.
@@ -951,7 +953,7 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         private fun doStopRec() {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "doStopRec()")
+            if (IS_DEBUG) logD(TAG, "doStopRec()")
 
             nativeStopVideoEncode()
             camera.requestStopVideoStreamAsync()
@@ -1066,29 +1068,29 @@ class OverlayViewFinderController(private val context: Context) {
     private fun prepareCameraStreamTexture(
             frameSize: Size,
             frameOrientation: Int) {
-        if (Log.IS_DEBUG) {
-            Log.logDebug(TAG, "## frameSize = $frameSize")
-            Log.logDebug(TAG, "## frameOrientation = $frameOrientation")
+        if (IS_DEBUG) {
+            logD(TAG, "## frameSize = $frameSize")
+            logD(TAG, "## frameOrientation = $frameOrientation")
         }
 
         cameraSurfaceTexture?.let {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "cameraSurfaceTexture exists")
+            if (IS_DEBUG) logD(TAG, "cameraSurfaceTexture exists")
             // NOP.
         } ?: run {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "cameraSurfaceTexture N/A")
+            if (IS_DEBUG) logD(TAG, "cameraSurfaceTexture N/A")
 
             val cameraAspect = frameSize.width.toFloat() / frameSize.height.toFloat()
             nativeSetCameraStreamAspectWH(cameraAspect)
 
             nativePrepareCameraStreamTexture()
             val texId = nativeGetCameraStreamTextureId()
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "Camera Stream Tex ID = $texId")
+            if (IS_DEBUG) logD(TAG, "Camera Stream Tex ID = $texId")
 
             cameraSurfaceTexture = SurfaceTexture(texId)
             cameraSurfaceTexture?.setOnFrameAvailableListener(CameraSurfaceTextureCallback())
 
             val displayRot = getDisplayRotDeg()
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "displayRot = $displayRot")
+            if (IS_DEBUG) logD(TAG, "displayRot = $displayRot")
 
             nativeSetCameraStreamRotDeg(displayRot)
         }
@@ -1123,10 +1125,10 @@ class OverlayViewFinderController(private val context: Context) {
     private inner class CameraSurfaceTextureCallback : SurfaceTexture.OnFrameAvailableListener {
         val TAG = "CameraSurfaceTextureCallback"
         override fun onFrameAvailable(surfaceTexture: SurfaceTexture) {
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onFrameAvailable() : E")
+            if (IS_DEBUG) logD(TAG, "onFrameAvailable() : E")
 
             if (surfaceTexture.isReleased) {
-                if (Log.IS_DEBUG) Log.logDebug(TAG, "SurfaceTexture is already released.")
+                logE(TAG, "SurfaceTexture is already released.")
                 return
             }
 
@@ -1143,7 +1145,7 @@ class OverlayViewFinderController(private val context: Context) {
 
             nativeUnbindAppEglContext()
 
-            if (Log.IS_DEBUG) Log.logDebug(TAG, "onFrameAvailable() : X")
+            if (IS_DEBUG) logD(TAG, "onFrameAvailable() : X")
         }
     }
 
