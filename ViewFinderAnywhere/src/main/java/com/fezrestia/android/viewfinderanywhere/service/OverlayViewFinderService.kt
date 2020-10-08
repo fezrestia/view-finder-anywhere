@@ -10,7 +10,6 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
-import android.view.View
 
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
@@ -18,12 +17,9 @@ import com.fezrestia.android.lib.util.log.logE
 import com.fezrestia.android.viewfinderanywhere.R
 import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.Constants
-import com.fezrestia.android.viewfinderanywhere.config.ConfigManager
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController
 import com.fezrestia.android.viewfinderanywhere.plugin.ui.loadCustomizedUiResources
 import com.fezrestia.android.viewfinderanywhere.receiver.OverlayViewFinderTriggerReceiver
-import com.fezrestia.android.viewfinderanywhere.view.OverlayViewFinderRootView
-import com.fezrestia.android.viewfinderanywhere.view.StorageSelectorRootView
 
 /**
  * Fore-ground service for overlay view finder stand by.
@@ -38,11 +34,8 @@ class OverlayViewFinderService : Service() {
     private val ONGOING_NOTIFICATION_ID = 100
 
     // Core instances.
-    private lateinit var configManager: ConfigManager
-    private lateinit var controller: OverlayViewFinderController
-    private lateinit var cameraView: OverlayViewFinderRootView
-    private lateinit var triggerReceiver: OverlayViewFinderTriggerReceiver
-    private lateinit var storageView: StorageSelectorRootView
+    private var controller: OverlayViewFinderController? = null
+    private var triggerReceiver: OverlayViewFinderTriggerReceiver? = null
 
     override fun onBind(intent: Intent): IBinder? = null
 
@@ -57,8 +50,9 @@ class OverlayViewFinderService : Service() {
         val customPackage = App.sp.getString(Constants.SP_KEY_UI_PLUGIN_PACKAGE, null)
         loadCustomizedUiResources(this, customPackage)
 
-        // Create and dependency injection.
-        setupCoreInstances()
+        // Core instances.
+        controller = OverlayViewFinderController(this)
+        triggerReceiver = OverlayViewFinderTriggerReceiver()
 
         // Visibility toggle intent.
         val visibilityToggle = Intent(Constants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY)
@@ -89,27 +83,6 @@ class OverlayViewFinderService : Service() {
         if (IS_DEBUG) logD(TAG, "onCreate() : X")
     }
 
-    private fun setupCoreInstances() {
-        // Config.
-        configManager = ConfigManager()
-
-        // Controller.
-        controller = OverlayViewFinderController(this)
-
-        // Root view.
-        cameraView = View.inflate(this, R.layout.overlay_view_finder_root, null) as OverlayViewFinderRootView
-
-        // Receiver.
-        triggerReceiver = OverlayViewFinderTriggerReceiver()
-
-        // Storage selector view.
-        storageView = View.inflate(this, R.layout.storage_selector_root, null) as StorageSelectorRootView
-
-        // Set up dependency injection.
-        controller.setCoreInstances(cameraView, storageView, configManager)
-        cameraView.setCoreInstances(controller, configManager)
-    }
-
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         if (IS_DEBUG) logD(TAG, "onStartCommand() : E")
 
@@ -121,19 +94,19 @@ class OverlayViewFinderService : Service() {
             logE(TAG, "ACTION = NULL")
         } else when (action) {
             Constants.INTENT_ACTION_REQUEST_START_SERVICE -> {
-                controller.ready()
-                triggerReceiver.register(this)
+                controller?.ready()
+                triggerReceiver?.register(this)
             }
 
             Constants.INTENT_ACTION_REQUEST_STOP_SERVICE -> {
-                triggerReceiver.unregister(this)
-                controller.release()
+                triggerReceiver?.unregister(this)
+                controller?.release()
 
                 stopSelf()
             }
 
             Constants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY -> {
-                controller.currentState.onToggleShowHideRequired()
+                controller?.currentState?.onToggleShowHideRequired()
             }
 
             Intent.ACTION_SCREEN_ON -> {
@@ -142,8 +115,7 @@ class OverlayViewFinderService : Service() {
 
             Intent.ACTION_SCREEN_OFF -> {
                 // Close overlay window.
-                controller.currentState.onPause()
-                cameraView.hide()
+                controller?.forcePauseAndClose()
             }
 
             else -> throw RuntimeException("Unexpected ACTION")
@@ -159,19 +131,13 @@ class OverlayViewFinderService : Service() {
         // Stop foreground.
         stopForeground(true)
 
-        releaseCoreInstances()
+        // Release core instances
+        controller = null
+        triggerReceiver = null
 
         App.isOverlayServiceActive = false
 
         super.onDestroy()
         if (IS_DEBUG) logD(TAG, "onDestroy() : X")
     }
-
-    private fun releaseCoreInstances() {
-        configManager.release()
-        cameraView.release()
-        storageView.release()
-
-    }
-
 }

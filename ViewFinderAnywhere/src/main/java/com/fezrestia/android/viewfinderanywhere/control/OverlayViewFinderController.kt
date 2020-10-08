@@ -11,11 +11,13 @@ import android.os.SystemClock
 import android.util.Size
 import android.view.Surface
 import android.view.TextureView
+import android.view.View
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.lib.util.log.logE
 import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.Constants
+import com.fezrestia.android.viewfinderanywhere.R
 import com.fezrestia.android.viewfinderanywhere.config.ConfigManager
 import com.fezrestia.android.viewfinderanywhere.config.options.CameraApiLevel
 import com.fezrestia.android.viewfinderanywhere.device.CameraPlatformInterface
@@ -51,22 +53,6 @@ class OverlayViewFinderController(private val context: Context) {
     private var mpegRecorder: MpegRecorder? = null
 
     /**
-     * Set core instance dependency.
-     *
-     * @param cameraView Camera overlay view
-     * @param storageView Storage selector overlay view
-     * @param configManager ConfigManager
-     */
-    fun setCoreInstances(
-            cameraView: OverlayViewFinderRootView,
-            storageView: StorageSelectorRootView,
-            configManager: ConfigManager) {
-        this.cameraView = cameraView
-        this.storageView = storageView
-        this.configManager = configManager
-    }
-
-    /**
      * Start overlay view finder.
      */
     fun ready() {
@@ -86,8 +72,14 @@ class OverlayViewFinderController(private val context: Context) {
 
             currentState.onConstructed()
 
+            // Config.
+            configManager = ConfigManager()
+
             // View.
+            cameraView = View.inflate(context, R.layout.overlay_view_finder_root, null) as OverlayViewFinderRootView
+            cameraView.setCoreInstances(this@OverlayViewFinderController, configManager)
             cameraView.initialize()
+            storageView = View.inflate(context, R.layout.storage_selector_root, null) as StorageSelectorRootView
 
             // Camera.
             camera = when (configManager.camApiLv) {
@@ -180,6 +172,15 @@ class OverlayViewFinderController(private val context: Context) {
 
             currentState.onDestructed()
 
+            // Wait for state converged to NONE (StateNone).
+            while (currentState != NO_STATE) {
+                if (IS_DEBUG) logD(TAG, "Waiting for StateNone ...")
+                Thread.sleep(100)
+            }
+            if (IS_DEBUG) logD(TAG, "Waiting for StateNone ... DONE")
+
+            // All state return to static zero.
+
             nativeOnDestroyed()
 
             // Storage.
@@ -188,8 +189,24 @@ class OverlayViewFinderController(private val context: Context) {
             // Release camera.
             camera.release()
 
+            // View.
+            cameraView.release()
+            storageView.release()
+
+            // Config.
+            configManager.release()
+
             if (IS_DEBUG) logD(TAG, "run() : X")
         }
+    }
+
+    /**
+     * Pause controller and close overlay view.
+     */
+    fun forcePauseAndClose() {
+        if (IS_DEBUG) logD(TAG, "forcePauseAndClose()")
+        currentState.onPause()
+        cameraView.hide()
     }
 
     private interface StateInternalInterface {

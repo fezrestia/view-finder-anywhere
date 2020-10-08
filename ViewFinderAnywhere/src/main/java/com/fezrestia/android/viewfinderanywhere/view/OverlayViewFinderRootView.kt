@@ -698,7 +698,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
             if (IS_DEBUG) logD(TAG, "onSurfaceTextureDestroyed()")
             controller.currentState.onSurfaceReleased()
-            return false
+            return true
         }
 
         override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
