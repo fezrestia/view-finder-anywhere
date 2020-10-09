@@ -8,7 +8,6 @@ import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.hardware.Camera
 import android.hardware.SensorManager
-import android.os.Handler
 import android.util.Size
 import android.view.OrientationEventListener
 import android.view.Surface
@@ -37,10 +36,6 @@ import java.util.concurrent.TimeUnit
  * @param context Master context.
  */
 class Camera1Device(private val context: Context) : CameraPlatformInterface {
-
-    // UI thread handler.
-    private var uiWorker: Handler? = null
-
     // Target device ID.
     private val cameraId = Camera.CameraInfo.CAMERA_FACING_BACK
 
@@ -94,15 +89,11 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
     }
 
     override fun prepare() {
-        uiWorker = App.ui
-
         generateBackWorker()
     }
 
     override fun release() {
         shutdownBackWorker()
-
-        uiWorker = null
     }
 
     override fun openAsync(evfAspectWH: Float, openCallback: CameraPlatformInterface.OpenCallback) {
@@ -132,7 +123,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
                     // TODO:Re-Try ?
 
                     // Notify.
-                    openCallback.onOpened(false)
+                    App.ui.post { openCallback.onOpened(false) }
                 } else {
                     // Parameters.
                     if (IS_DEBUG) logD(TAG, "Camera.getParameters() : E")
@@ -206,11 +197,11 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
                     if (IS_DEBUG) logD(TAG, "Create OrientationListenerImpl : X")
 
                     // Notify.
-                    openCallback.onOpened(true)
+                    App.ui.post { openCallback.onOpened(true) }
                 }
             } else {
                 // Notify. Already opened.
-                openCallback.onOpened(true)
+                App.ui.post { openCallback.onOpened(true) }
             }
             if (IS_DEBUG) logD(TAG, "OpenTask.run() : X")
         }
@@ -265,7 +256,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
             }
 
             // Notify.
-            closeCallback.onClosed(true)
+            App.ui.post { closeCallback.onClosed(true) }
 
             if (IS_DEBUG) logD(TAG, "CloseTask.run() : X")
         }
@@ -294,7 +285,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
                 finderHeight)
 
         val uiTask = SetTextureViewTransformTask(textureView, matrix)
-        uiWorker?.post(uiTask)
+        App.ui.post(uiTask)
 
         val task = BindSurfaceTask(textureView.surfaceTexture, bindSurfaceCallback)
         backWorker?.execute(task)
@@ -350,13 +341,13 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
                 } catch (e: IOException) {
                     e.printStackTrace()
 
-                    bindSurfaceCallback.onSurfaceBound(false)
+                    App.ui.post { bindSurfaceCallback.onSurfaceBound(false) }
                 }
 
-                bindSurfaceCallback.onSurfaceBound(true)
+                App.ui.post { bindSurfaceCallback.onSurfaceBound(true) }
             } ?: run {
                 if (IS_DEBUG) logE(TAG, "Error. Camera is already released.")
-                bindSurfaceCallback.onSurfaceBound(false)
+                App.ui.post { bindSurfaceCallback.onSurfaceBound(false) }
             }
 
             if (IS_DEBUG) logD(TAG, "SetSurfaceTask.run() : X")
@@ -407,7 +398,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
                     }
                     c.parameters = params
 
-                    scanCallback.onScanDone(focusCallbackImpl.isSuccess)
+                    App.ui.post { scanCallback.onScanDone(focusCallbackImpl.isSuccess) }
                 }
             } ?: run {
                 if (IS_DEBUG) logE(TAG, "Error. Camera is already released.")
@@ -442,7 +433,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
 
             doCancelScan()
 
-            cancelScanCallback.onCancelScanDone()
+            App.ui.post { cancelScanCallback.onCancelScanDone() }
 
             if (IS_DEBUG) logD(TAG, "CancelScanTask.run() : X")
         }
@@ -552,14 +543,14 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
                 if (IS_DEBUG) logD(TAG, "onPictureTaken()")
 
                 // Notify to controller.
-                stillCaptureCallback.onShutterDone(requestId)
+                App.ui.post { stillCaptureCallback.onShutterDone(requestId) }
 
                 this.jpegBuffer = jpegBuffer
 
                 latch.countDown()
 
                 // Notify to controller.
-                stillCaptureCallback.onCaptureDone(requestId)
+                App.ui.post { stillCaptureCallback.onCaptureDone(requestId) }
             }
         }
 
@@ -579,7 +570,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
                         cropAspectWH,
                         jpegQuality)
 
-                uiWorker?.post(NotifyResultJpegTask())
+                App.ui.post(NotifyResultJpegTask())
 
                 if (IS_DEBUG) logD(TAG, "HandleJpegTask.run() : X")
             }
@@ -587,7 +578,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
             private inner class NotifyResultJpegTask : Runnable {
                 override fun run() {
                     // Notify to controller.
-                    stillCaptureCallback.onPhotoStoreReady(requestId, resultJpeg)
+                    App.ui.post { stillCaptureCallback.onPhotoStoreReady(requestId, resultJpeg) }
                 }
             }
         }
@@ -604,11 +595,19 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
         override fun run() {
             if (IS_DEBUG) logD(TAG, "StartRecTask.run() : E")
 
+            camera?.let {
+                it.stopPreview()
 
+                val params = it.parameters.apply {
+                    setRecordingHint(true)
+                    focusMode = Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO
+                }
+                it.parameters = params
 
+                it.startPreview()
+            }
 
-
-            videoCallback?.onVideoStreamStarted()
+            App.ui.post { videoCallback?.onVideoStreamStarted() }
 
             if (IS_DEBUG) logD(TAG, "StartRecTask.run() : X")
         }
@@ -622,11 +621,19 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
         override fun run() {
             if (IS_DEBUG) logD(TAG, "StopRecTask.run() : E")
 
+            camera?.let {
+                it.stopPreview()
 
+                val params = it.parameters.apply {
+                    setRecordingHint(false)
+                    focusMode = Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE
+                }
+                it.parameters = params
 
+                it.startPreview()
+            }
 
-
-            videoCallback?.onVideoStreamStopped()
+            App.ui.post { videoCallback?.onVideoStreamStopped() }
 
             if (IS_DEBUG) logD(TAG, "StopRecTask.run() : X")
         }
