@@ -200,15 +200,6 @@ class OverlayViewFinderController(private val context: Context) {
         }
     }
 
-    /**
-     * Pause controller and close overlay view.
-     */
-    fun forcePauseAndClose() {
-        if (IS_DEBUG) logD(TAG, "forcePauseAndClose()")
-        currentState.onPause()
-        cameraView.hide()
-    }
-
     private interface StateInternalInterface {
         val isActive: Boolean
         fun entry()
@@ -470,10 +461,12 @@ class OverlayViewFinderController(private val context: Context) {
         override fun onToggleShowHideRequired() {
             if (IS_DEBUG) logD(TAG, "onToggleShowHideRequired()")
 
-            if (cameraView.isOverlayShown()) {
-                cameraView.hide()
-            } else {
-                cameraView.show()
+            if (currentState.isActive) {
+                if (cameraView.isVisible()) {
+                    cameraView.invisible()
+                } else {
+                    cameraView.close()
+                }
             }
         }
 
@@ -975,6 +968,13 @@ class OverlayViewFinderController(private val context: Context) {
             nativeStopVideoEncode()
             camera.requestStopVideoStreamAsync()
         }
+    }
+
+    /**
+     * Close overlay window without user intneraction.
+     */
+    fun forceClose() {
+        cameraView.close()
     }
 
     private inner class VisualFeedbackOnScanStartedTask : Runnable {

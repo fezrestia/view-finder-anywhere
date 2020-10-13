@@ -114,8 +114,10 @@ class OverlayViewFinderService : Service() {
             }
 
             Intent.ACTION_SCREEN_OFF -> {
-                // Close overlay window.
-                controller?.forcePauseAndClose()
+                // Close overlay window if active.
+                if (controller?.currentState?.isActive == true) {
+                    controller?.forceClose()
+                }
             }
 
             else -> throw RuntimeException("Unexpected ACTION")

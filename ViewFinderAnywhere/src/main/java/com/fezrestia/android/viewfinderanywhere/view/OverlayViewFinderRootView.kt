@@ -927,15 +927,7 @@ class OverlayViewFinderRootView : RelativeLayout {
             } else {
                 target = windowDisabledXY
 
-                // Pause controller.
-                if (isResumed) {
-                    isResumed = false
-
-                    // Hide surface.
-                    clearSurface()
-
-                    controller.pause()
-                }
+                pauseController()
             }
 
             if (!isResumed) {
@@ -1004,28 +996,52 @@ class OverlayViewFinderRootView : RelativeLayout {
     }
 
     /**
-     * Overlay window is shown or not.
+     * Overlay window is visible (OPEN or CLOSE state) or not.
      *
-     * @return Overlay window is shown or not
+     * @return Visible or not
      */
-    fun isOverlayShown(): Boolean = windowLayoutParams.x != WINDOW_HIDDEN_POS_X
+    fun isVisible(): Boolean = windowLayoutParams.x != WINDOW_INVISIBLE_POS_X
+
+//    /**
+//     * Change overlay window position to OPEN state.
+//     */
+//    fun open() {
+//        windowLayoutParams.x = windowEnabledXY.x
+//        windowLayoutParams.y = windowEnabledXY.y
+//        windowManager.updateViewLayout(this, windowLayoutParams)
+//    }
 
     /**
-     * Show overlay window.
+     * Change overlay window position to CLOSE state.
      */
-    fun show() {
+    fun close() {
         windowLayoutParams.x = windowDisabledXY.x
         windowLayoutParams.y = windowDisabledXY.y
         windowManager.updateViewLayout(this, windowLayoutParams)
+
+        pauseController()
     }
 
     /**
-     * Hide overlay window.
+     * Change overlay window position to INVISIBLE state.
      */
-    fun hide() {
-        windowLayoutParams.x = WINDOW_HIDDEN_POS_X
+    fun invisible() {
+        windowLayoutParams.x = WINDOW_INVISIBLE_POS_X
         windowLayoutParams.y = windowDisabledXY.y
         windowManager.updateViewLayout(this, windowLayoutParams)
+
+        pauseController()
+    }
+
+    private fun pauseController() {
+        if (isResumed) {
+            isResumed = false
+
+            // Hide surface.
+            clearSurface()
+
+            controller.pause()
+        }
     }
 
     override fun dispatchKeyEvent(keyEvent: KeyEvent): Boolean {
@@ -1101,13 +1117,15 @@ class OverlayViewFinderRootView : RelativeLayout {
         // Hide grip when configuration is landscape.
         if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
             // Landscape always.
-            hide()
+            invisible()
         } else {
             // Changed from landscape to portrait.
             if (lastOrientation == Configuration.ORIENTATION_LANDSCAPE) {
-                hide()
+                close()
             }
         }
+
+        pauseController()
     }
 
     /**
@@ -1205,7 +1223,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         private const val WINDOW_ANIMATION_INTERVAL = 16L
 
         // Hidden window position.
-        private const val WINDOW_HIDDEN_POS_X = -5000
+        private const val WINDOW_INVISIBLE_POS_X = -5000
 
         // Alpha definitions.
         private const val SHOWN_ALPHA = 1.0f
