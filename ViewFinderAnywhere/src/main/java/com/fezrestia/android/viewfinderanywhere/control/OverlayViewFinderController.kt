@@ -5,13 +5,17 @@ package com.fezrestia.android.viewfinderanywhere.control
 import android.content.Context
 import android.graphics.SurfaceTexture
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.SystemClock
 import android.util.Size
+import android.view.Display
 import android.view.Surface
 import android.view.TextureView
 import android.view.View
+
+import com.fezrestia.android.lib.util.currentDisplayRot
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.lib.util.log.logE
@@ -567,16 +571,20 @@ class OverlayViewFinderController(private val context: Context) {
 
                 // Camera stream surface.
                 run {
-                    prepareCameraStreamTexture(
-                            camera.getPreviewStreamSize(),
-                            camera.getSensorOrientation())
+                    cameraSurfaceTexture?.let {
+                        prepareCameraStreamTexture(
+                                camera.getPreviewStreamSize(),
+                                camera.getSensorOrientation())
 
-                    val texView = TextureView(context)
-                    texView.surfaceTexture = cameraSurfaceTexture
+                        val texView = TextureView(context)
+                        texView.setSurfaceTexture(it)
 
-                    camera.bindPreviewSurfaceAsync(
-                            texView,
-                            BindSurfaceCallbackImpl())
+                        camera.bindPreviewSurfaceAsync(
+                                texView,
+                                BindSurfaceCallbackImpl())
+                    } ?: run {
+                        logE(TAG, "cameraSurfaceTexture is null")
+                    }
                 }
 
                 // Video.
@@ -1114,7 +1122,7 @@ class OverlayViewFinderController(private val context: Context) {
     }
 
     private fun getDisplayRotDeg(): Int {
-        return when (cameraView.windowManager.defaultDisplay.rotation) {
+        return when (currentDisplayRot(context, cameraView.windowManager)) {
             Surface.ROTATION_0 -> 0
             Surface.ROTATION_90 -> 90
             Surface.ROTATION_180 -> 180

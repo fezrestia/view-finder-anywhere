@@ -29,6 +29,7 @@ import android.view.OrientationEventListener
 import android.view.Surface
 import android.view.TextureView
 
+import com.fezrestia.android.lib.util.ensure
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.lib.util.log.logE
@@ -134,8 +135,6 @@ class Camera2DeviceDelegated(
     private var camMng: CameraManager
     private lateinit var camCharacteristics: CameraCharacteristics
     private lateinit var stillImgReader: ImageReader
-
-    fun <T : Any> ensure(nullable: T?): T = nullable ?: throw Exception("Ensure FAIL")
 
     private var camDevice: CameraDevice? = null
     private var evfSurface: Surface? = null
@@ -474,7 +473,7 @@ class Camera2DeviceDelegated(
                     finderHeight)
             textureView.setTransform(matrix)
 
-            val surfaceTexture = textureView.surfaceTexture
+            val surfaceTexture = ensure(textureView.surfaceTexture)
             surfaceTexture.setDefaultBufferSize(
                     previewStreamFrameSize.width,
                     previewStreamFrameSize.height)
@@ -497,6 +496,7 @@ class Camera2DeviceDelegated(
                     cam.createCaptureSession(sessionConfig)
                 } else {
                     val outputs = listOf(evf, stillImgReader.surface)
+                    @Suppress("DEPRECATION")
                     cam.createCaptureSession(
                             outputs,
                             sessionCallback,
@@ -1433,9 +1433,7 @@ class Camera2DeviceDelegated(
         }
     }
 
-    override fun getSensorOrientation(): Int {
-        return sensorOrientation
-    }
+    override fun getSensorOrientation(): Int = sensorOrientation
 
     private fun waitForLatch(latch: CountDownLatch): Boolean {
         try {

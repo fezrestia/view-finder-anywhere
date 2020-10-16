@@ -5,6 +5,7 @@ package com.fezrestia.android.viewfinderanywhere
 import android.app.Application
 import android.content.SharedPreferences
 import android.os.Handler
+import android.os.Looper
 import androidx.preference.PreferenceManager
 
 import com.fezrestia.android.lib.firebase.FirebaseAnalyticsController
@@ -19,7 +20,7 @@ class App : Application() {
         super.onCreate()
 
         // Total UI thread handler.
-        ui = Handler()
+        ui = Handler(Looper.getMainLooper())
 
         // Create shared preferences accessor.
         sp = PreferenceManager.getDefaultSharedPreferences(this)

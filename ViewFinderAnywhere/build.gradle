@@ -9,13 +9,13 @@ apply plugin: 'com.google.firebase.crashlytics'
 import java.util.regex.Pattern
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
     buildToolsVersion '30.0.2'
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere"
         minSdkVersion 26
-        targetSdkVersion 29
+        targetSdkVersion 30
     }
 
     compileOptions {
@@ -99,6 +99,8 @@ android {
             path "src/main/cpp/Android.mk"
         }
     }
+
+    ndkVersion '21.3.6528147'
 }
 
 dependencies {

@@ -8,12 +8,12 @@ import android.graphics.RectF
 import android.view.Surface
 import android.view.WindowManager
 
+import com.fezrestia.android.lib.util.currentDisplayRot
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAspect
 
 import java.util.HashSet
-import java.util.Objects
 import kotlin.math.abs
 
 internal object PlatformDependencyResolver {
@@ -203,9 +203,8 @@ internal object PlatformDependencyResolver {
             finderHeight: Int): Matrix {
         if (IS_DEBUG) logD(TAG, "getTextureViewTransformMatrix() : E")
 
-        // Display rotation.
         val winMng = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val rotation = Objects.requireNonNull(winMng).defaultDisplay.rotation
+        val rotation = currentDisplayRot(context, winMng)
         if (IS_DEBUG) logD(TAG, "## rotation = $rotation")
 
         val matrix = Matrix()

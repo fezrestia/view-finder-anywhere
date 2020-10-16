@@ -14,6 +14,7 @@ import android.view.Surface
 import android.view.TextureView
 import android.view.WindowManager
 
+import com.fezrestia.android.lib.util.ensure
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.lib.util.log.logE
@@ -266,6 +267,8 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
             textureView: TextureView,
             bindSurfaceCallback: CameraPlatformInterface.BindSurfaceCallback) {
 
+        val surface = ensure(textureView.surfaceTexture)
+
         val previewWidth = previewSize.width
         val previewHeight = previewSize.height
         val finderWidth = textureView.width
@@ -287,7 +290,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
         val uiTask = SetTextureViewTransformTask(textureView, matrix)
         App.ui.post(uiTask)
 
-        val task = BindSurfaceTask(textureView.surfaceTexture, bindSurfaceCallback)
+        val task = BindSurfaceTask(surface, bindSurfaceCallback)
         backWorker?.execute(task)
     }
 
@@ -663,9 +666,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
         }
     }
 
-    override fun getSensorOrientation(): Int {
-        return info.orientation
-    }
+    override fun getSensorOrientation(): Int = info.orientation
 
     companion object {
         // Log tag.

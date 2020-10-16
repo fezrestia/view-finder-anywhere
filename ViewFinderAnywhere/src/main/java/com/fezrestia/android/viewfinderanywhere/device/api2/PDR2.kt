@@ -20,6 +20,7 @@ import android.util.Size
 import android.view.Surface
 import android.view.WindowManager
 
+import com.fezrestia.android.lib.util.currentDisplayRot
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAspect
@@ -208,7 +209,7 @@ internal object PDR2 {
 
         // Display rotation.
         val winMng = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val rotation = winMng.defaultDisplay.rotation
+        val rotation = currentDisplayRot(context, winMng)
 
         val matrix = Matrix()
         matrix.reset()

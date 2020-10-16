@@ -19,6 +19,7 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.RelativeLayout
 import android.widget.TextView
+import com.fezrestia.android.lib.util.currentDisplayRect
 
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
@@ -355,13 +356,8 @@ class StorageSelectorRootView : RelativeLayout {
     }
 
     private fun calculateScreenConfiguration() {
-        // Get display size.
-        val display = windowManager.defaultDisplay
-        val screenSize = Point()
-        display.getSize(screenSize)
-        val width = screenSize.x
-        val height = screenSize.y
-        displayShortLineLength = min(width, height)
+        val rect = currentDisplayRect(windowManager)
+        displayShortLineLength = min(rect.width(), rect.height())
 
         // Get display orientation.
         orientation = if (height < width) {

@@ -27,6 +27,7 @@ import android.widget.LinearLayout
 import android.widget.RelativeLayout
 
 import com.fezrestia.android.lib.interaction.InteractionEngine
+import com.fezrestia.android.lib.util.currentDisplayRect
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.lib.util.math.IntXY
@@ -405,12 +406,8 @@ class OverlayViewFinderRootView : RelativeLayout {
 
     private fun calculateScreenConfiguration() {
         // Get display size.
-        val display = windowManager.defaultDisplay
-        val screenSize = Point()
-        display.getSize(screenSize)
-        val width = screenSize.x
-        val height = screenSize.y
-        displayWH.set(width, height)
+        val rect = currentDisplayRect(windowManager)
+        displayWH.set(rect.width(), rect.height())
 
         // Get display orientation.
         orientation = if (height < width) {
