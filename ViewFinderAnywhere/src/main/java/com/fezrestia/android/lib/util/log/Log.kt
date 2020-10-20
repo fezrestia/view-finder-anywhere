@@ -1,7 +1,5 @@
 package com.fezrestia.android.lib.util.log
 
-import android.os.SystemClock
-
 // Total log level.
 const val IS_DEBUG = false
 

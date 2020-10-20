@@ -571,11 +571,11 @@ class OverlayViewFinderController(private val context: Context) {
 
                 // Camera stream surface.
                 run {
-                    cameraSurfaceTexture?.let {
-                        prepareCameraStreamTexture(
-                                camera.getPreviewStreamSize(),
-                                camera.getSensorOrientation())
+                    prepareCameraStreamTexture(
+                            camera.getPreviewStreamSize(),
+                            camera.getSensorOrientation())
 
+                    cameraSurfaceTexture?.let {
                         val texView = TextureView(context)
                         texView.setSurfaceTexture(it)
 

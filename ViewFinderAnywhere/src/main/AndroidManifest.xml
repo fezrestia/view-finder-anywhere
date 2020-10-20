@@ -6,8 +6,8 @@
 
     package="com.fezrestia.android.viewfinderanywhere"
 
-    android:versionCode="801"
-    android:versionName="5.5.0-801"
+    android:versionCode="808"
+    android:versionName="5.5.1-808"
 >
 <!--                     | | | |-> incremental build count
                          | | |-> patch
@@ -19,8 +19,10 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <!-- Storage permission will be granted by runtime permission. -->
-<!--    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
+    <uses-permission
+            android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+            tools:ignore="ScopedStorage"
+    />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
@@ -80,5 +82,11 @@
         </receiver>
 
     </application>
+
+    <queries>
+        <intent>
+            <action android:name="com.fezrestia.android.viewfinderanywhere.intent.ACTION_REGISTER_UI_PLUG_IN" />
+        </intent>
+    </queries>
 
 </manifest>
