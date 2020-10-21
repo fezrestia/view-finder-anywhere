@@ -16,6 +16,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
+import java.util.concurrent.TimeUnit
 
 /**
  * Handle storing data to file.
@@ -63,6 +64,7 @@ class StorageController constructor (
 
     fun release() {
         backWorker.shutdown()
+        backWorker.awaitTermination(5000, TimeUnit.MILLISECONDS)
     }
 
     class ByteBuffer(val buffer: ByteArray) {

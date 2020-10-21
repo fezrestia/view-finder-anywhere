@@ -825,21 +825,17 @@ class OverlayViewFinderController(private val context: Context) {
             App.ui.post(VisualFeedbackOnShutterDoneTask())
         }
 
-        override fun onStillCaptureDone() {
-            if (IS_DEBUG) logD(TAG, "onStillCaptureDone()")
+        override fun onPhotoStoreReady(data: ByteArray) {
+            if (IS_DEBUG) logD(TAG, "onPhotoStoreReady()")
+
+            // Request store.
+            storageController.storePicture(data)
 
             if (isPauseRequested) {
-                // NOP, Wait for photo store done, after then start stopping.
+                changeStateTo(StateStopping())
             } else {
-                // Normal sequence.
                 changeStateTo(StateIdle())
             }
-        }
-
-        override fun onPhotoStoreDone(isSuccess: Boolean, uri: Uri?) {
-            if (IS_DEBUG) logD(TAG, "onPhotoStoreDone()")
-
-            changeStateTo(StateStopping())
         }
     }
 
@@ -1057,9 +1053,6 @@ class OverlayViewFinderController(private val context: Context) {
         }
 
         override fun onPhotoStoreReady(requestId: Int, data: ByteArray) {
-            // Request store.
-            storageController.storePicture(data)
-
             currentState.onPhotoStoreReady(data)
         }
     }
