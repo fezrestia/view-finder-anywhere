@@ -84,6 +84,7 @@ class OverlayViewFinderController(private val context: Context) {
             cameraView.setCoreInstances(this@OverlayViewFinderController, configManager)
             cameraView.initialize()
             storageView = View.inflate(context, R.layout.storage_selector_root, null) as StorageSelectorRootView
+            storageView.initialize()
 
             // Camera.
             camera = when (configManager.camApiLv) {
@@ -616,7 +617,6 @@ class OverlayViewFinderController(private val context: Context) {
 
                 if (App.isStorageSelectorEnabled) {
                     App.ui.post {
-                        storageView.initialize()
                         storageView.addToOverlayWindow()
                     }
                 }
