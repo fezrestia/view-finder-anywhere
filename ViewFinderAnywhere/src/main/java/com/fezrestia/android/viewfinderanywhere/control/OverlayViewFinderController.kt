@@ -627,6 +627,8 @@ class OverlayViewFinderController(private val context: Context) {
     private inner class StateStopping : State() {
         private val TAG = "StateStopping"
 
+        private var isResumeRequested = false
+
         override fun entry() {
             if (IS_DEBUG) logD(TAG, "entry()")
 
@@ -639,6 +641,18 @@ class OverlayViewFinderController(private val context: Context) {
             }
         }
 
+        override fun onResume() {
+            if (IS_DEBUG) logD(TAG, "onResume()")
+
+            isResumeRequested = true
+        }
+
+        override fun onPause() {
+            if (IS_DEBUG) logD(TAG, "onPause()")
+
+            isResumeRequested = false
+        }
+
         override fun onCameraClosed() {
             if (IS_DEBUG) logD(TAG, "onCameraClosed()")
 
@@ -648,7 +662,11 @@ class OverlayViewFinderController(private val context: Context) {
             mpegRecorder?.release()
             mpegRecorder = null
 
-            changeStateTo(StateReady(isSurfaceReady = true, isCameraReady = false))
+            if (isResumeRequested) {
+                changeStateTo(StateStarting(isSurfaceReady = true, isCameraReady = false))
+            } else {
+                changeStateTo(StateReady(isSurfaceReady = true, isCameraReady = false))
+            }
         }
     }
 
