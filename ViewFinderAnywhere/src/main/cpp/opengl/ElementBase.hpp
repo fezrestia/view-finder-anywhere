@@ -1,3 +1,4 @@
+#pragma ide diagnostic ignored "UnusedGlobalDeclarationInspection"
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 
 #ifndef VIEW_FINDER_ANYWHERE_ELEMENTBASE_HPP
@@ -121,7 +122,7 @@ namespace fezrestia {
         float mSequencedLocalMatrix[16] {};
 
         /** Visibility flag. */
-        GLboolean mIsVisible = true;
+        GLboolean mIsVisible = GL_TRUE;
 
     };
 

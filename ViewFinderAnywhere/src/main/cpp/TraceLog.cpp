@@ -4,7 +4,7 @@ namespace fezrestia {
 
     const bool IS_ENABLED = false;
 
-    private void log(const std::string& level, const std::string& tag, const std::string& msg) {
+    void log(const std::string& level, const std::string& tag, const std::string& msg) {
         char name[32];
         pthread_getname_np(pthread_self(), name, sizeof(name));
 
@@ -25,6 +25,7 @@ namespace fezrestia {
     #pragma clang diagnostic push
     #pragma ide diagnostic ignored "OCSimplifyInspection"
     #pragma ide diagnostic ignored "OCDFAInspection"
+    #pragma ide diagnostic ignored "UnreachableCode"
     void TraceLog(const std::string& tag, const std::string& msg) {
         if (IS_ENABLED) {
             fezrestia::log("DBG", tag, msg);

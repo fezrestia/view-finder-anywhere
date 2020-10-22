@@ -1,4 +1,4 @@
-#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
+#pragma ide diagnostic ignored "UnusedGlobalDeclarationInspection"
 
 #include "opengl/util/opengl_matrix.hpp"
 
@@ -180,9 +180,9 @@ void Matrix4x4_Rotate(float* matrix, float deg, float x, float y, float z) {
     matrix[13]= 0;
     matrix[14]= 0;
     matrix[15]= 1;
-    float rad =  deg * (float) (PI / 180.0f);
-    auto s = (float) sin(rad);
-    auto c = (float) cos(rad);
+    float rad =  deg * PI / 180.0f;
+    float s = sin(rad);
+    float c = cos(rad);
     if (x == 1.0f && y == 0.0f && z == 0.0f) {
         matrix[5] = c;   matrix[10]= c;
         matrix[6] = s;   matrix[9] = -s;
@@ -202,7 +202,7 @@ void Matrix4x4_Rotate(float* matrix, float deg, float x, float y, float z) {
         matrix[8] = 0;   matrix[9] = 0;
         matrix[10]= 1;
     } else {
-        auto len = (float) sqrt(x * x + y * y + z * z);
+        float len = sqrt(x * x + y * y + z * z);
         if (len != 1.0f) {
             float recipLen = 1.0f / len;
             x *= recipLen;

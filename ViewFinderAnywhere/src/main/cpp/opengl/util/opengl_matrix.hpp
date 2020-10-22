@@ -1,4 +1,4 @@
-#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
+#pragma ide diagnostic ignored "UnusedGlobalDeclarationInspection"
 
 #ifndef VIEW_FINDER_ANYWHERE_OPENGL_MATRIX_HPP
 #define VIEW_FINDER_ANYWHERE_OPENGL_MATRIX_HPP
