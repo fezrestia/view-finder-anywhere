@@ -29,90 +29,100 @@ object ImageProc {
             rotation: Int,
             cropAspectWH: Float,
             jpegQuality: Int): ByteArray {
-        if (IS_DEBUG) logD(TAG, "doCropRotJpeg() : E")
+        if (IS_DEBUG) {
+            logD(TAG, "doCropRotJpeg() : E")
+            logD(TAG, "#### ARGs")
+            logD(TAG, "## rotation = $rotation")
+            logD(TAG, "## cropAspectWH = $cropAspectWH")
+            logD(TAG, "## jpegQuality = $jpegQuality")
+        }
+
+        // Src JPEG size.
+        val options = BitmapFactory.Options().apply {
+            inJustDecodeBounds = true
+        }
+        BitmapFactory.decodeByteArray(srcJpeg, 0, srcJpeg.size, options)
+        val srcW = options.outWidth
+        val srcH = options.outHeight
+        val srcMime = options.outMimeType
+        val srcColor = options.outColorSpace
+        val srcConfig = options.outConfig
+        val srcAspectWH = srcW.toFloat() / srcH.toFloat()
+        if (IS_DEBUG) {
+            logD(TAG, "#### SRC bitmap params")
+            logD(TAG, "## srcW = $srcW")
+            logD(TAG, "## srcH = $srcH")
+            logD(TAG, "## srcMime = $srcMime")
+            logD(TAG, "## srcColor = $srcColor")
+            logD(TAG, "## srcConfig = $srcConfig")
+            logD(TAG, "## srcAspectWH = $srcAspectWH")
+        }
 
         // Create source bitmap.
         val srcBmp = BitmapFactory.decodeByteArray(srcJpeg, 0, srcJpeg.size)
-        if (IS_DEBUG) logD(TAG, "## Decode Src Bitmap : DONE")
+        if (IS_DEBUG) logD(TAG, "#### Decode Src Bitmap : DONE")
 
-        // Create rotated source bitmap.
-        val rotator = Matrix()
-        rotator.postRotate(rotation.toFloat())
-        val rotSrcBmp = Bitmap.createBitmap(
-                srcBmp,
-                0,
-                0,
-                srcBmp.width,
-                srcBmp.height,
-                rotator,
-                true)
-        if (srcBmp.hashCode() != rotSrcBmp.hashCode()) {
-            srcBmp.recycle()
-        }
-        if (IS_DEBUG) logD(TAG, "## Create Rot Src Bitmap : DONE")
-
-        // Create aspect considered bitmap.
-        val w = rotSrcBmp.width.toFloat()
-        val h = rotSrcBmp.height.toFloat()
-        val srcAspectWH = w / h
-        val dstAspectWH: Float
-        dstAspectWH = if (1.0f < srcAspectWH) {
-            // Horizontal.
+        // Align aspect direction.
+        val revisedCropAspectWH = if (
+                (srcAspectWH < 1.0 && cropAspectWH < 1.0)
+                || (1.0 < srcAspectWH && 1.0 < cropAspectWH)) {
+            // Picture and crop is same direction.
             cropAspectWH
         } else {
-            // Vertical.
+            // Picture and crop is different direction. Align direction.
             1.0f / cropAspectWH
         }
+        if (IS_DEBUG) logD(TAG, "## revisedCropAspectWH = $revisedCropAspectWH")
 
-        val dstRect: Rect
-        if ((srcAspectWH * 100).toInt() == (dstAspectWH * 100).toInt()) {
-            if (IS_DEBUG) logD(TAG, "## Src/Dst aspect is same.")
-            // Already same aspect.
-
-            dstRect = Rect(0, 0, w.toInt(), h.toInt())
+        // Calc crop rect.
+        val cropRect: Rect? = if (isSameAspect(srcAspectWH, revisedCropAspectWH)) {
+            // Crop not necessary.
+            null
         } else {
-            if (srcAspectWH < dstAspectWH) {
-                if (IS_DEBUG) logD(TAG, "## Cut off top and bottom.")
-                // Cut off top and bottom.
-
-                val dstH = w / dstAspectWH
-                dstRect = Rect(
-                        0,
-                        ((h - dstH) / 2.0f).toInt(),
-                        w.toInt(),
-                        ((h - dstH) / 2.0f + dstH).toInt())
-            } else {
-                if (IS_DEBUG) logD(TAG, "## Cut off left and right.")
-                // Cut off left and right.
-
-                val dstW = h * dstAspectWH
-                dstRect = Rect(
-                        ((w - dstW) / 2.0f).toInt(),
-                        0,
-                        ((w - dstW) / 2.0f + dstW).toInt(),
-                        h.toInt())
-            }
+            getCropRect(srcW, srcH, revisedCropAspectWH)
         }
-        if (IS_DEBUG) logD(TAG, "## Calculate DstRect : DONE")
-        if (IS_DEBUG) logD(TAG, "## DstRect = ${dstRect.toShortString()}")
+        if (IS_DEBUG) logD(TAG, "## cropRect = $cropRect")
 
-        // Create destination bitmap.
+        // Create cropped bitmap.
+        val cropBmp = if (cropRect != null) {
+            Bitmap.createBitmap(
+                    srcBmp,
+                    cropRect.left,
+                    cropRect.top,
+                    cropRect.width(),
+                    cropRect.height())
+        } else {
+            // Crop not necessary.
+            srcBmp
+        }
+        if (IS_DEBUG) {
+            logD(TAG, "#### Create Cropped Bitmap : DONE")
+            logD(TAG, "## cropBmp.width  = ${cropBmp.width}")
+            logD(TAG, "## cropBmp.height = ${cropBmp.height}")
+        }
+
+        // Create rotated cropped bitmap, it is dst bitmap.
+        val rotator = Matrix()
+        rotator.postRotate(rotation.toFloat())
         val dstBmp = Bitmap.createBitmap(
-                rotSrcBmp,
-                dstRect.left,
-                dstRect.top,
-                dstRect.width(),
-                dstRect.height())
-        if (rotSrcBmp.hashCode() != dstBmp.hashCode()) {
-            rotSrcBmp.recycle()
+                cropBmp,
+                0,
+                0,
+                cropBmp.width,
+                cropBmp.height,
+                rotator,
+                true)
+        if (IS_DEBUG) {
+            logD(TAG, "#### Create Cropped Rotated, Dst Bitmap : DONE")
+            logD(TAG, "## dstBmp.width  = ${dstBmp.width}")
+            logD(TAG, "## dstBmp.height = ${dstBmp.height}")
         }
-        if (IS_DEBUG) logD(TAG, "## Create Dst Bitmap : DONE")
 
         // JPEG Encode.
         val os = ByteArrayOutputStream()
         dstBmp.compress(Bitmap.CompressFormat.JPEG, jpegQuality, os)
         val resultJpeg = os.toByteArray()
-        if (IS_DEBUG) logD(TAG, "## JPEG Encode : DONE")
+        if (IS_DEBUG) logD(TAG, "#### JPEG Encode : DONE")
 
         // Release.
         try {
@@ -120,12 +130,11 @@ object ImageProc {
         } catch (e: IOException) {
             e.printStackTrace()
         }
-
         if (!srcBmp.isRecycled) {
             srcBmp.recycle()
         }
-        if (!rotSrcBmp.isRecycled) {
-            rotSrcBmp.recycle()
+        if (!cropBmp.isRecycled) {
+            cropBmp.recycle()
         }
         if (!dstBmp.isRecycled) {
             dstBmp.recycle()
@@ -133,5 +142,31 @@ object ImageProc {
 
         if (IS_DEBUG) logD(TAG, "doCropRotJpeg() : X")
         return resultJpeg
+    }
+
+    private fun isSameAspect(aspectA: Float, aspectB: Float): Boolean
+            = (aspectA * 100).toInt() == (aspectB * 100).toInt()
+
+    @Suppress("UnnecessaryVariable")
+    private fun getCropRect(srcW: Int, srcH: Int, cropAspectWH: Float): Rect {
+        val srcAspectWH = srcW.toFloat() / srcH.toFloat()
+
+        if (srcAspectWH < cropAspectWH) {
+            // Crop top/bottom.
+
+            val dstW = srcW
+            val dstH = (dstW / cropAspectWH).toInt()
+            val cropH = (srcH - dstH) / 2
+
+            return Rect(0, cropH, dstW, cropH + dstH)
+        } else {
+            // Crop left/right.
+
+            val dstH = srcH
+            val dstW = (dstH * cropAspectWH).toInt()
+            val cropW = (srcW - dstW) / 2
+
+            return Rect(cropW, 0, cropW + dstW, dstH)
+        }
     }
 }
