@@ -42,10 +42,12 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
 
     // Camera API 1.0 related.
     private var camera: Camera? = null
-    private var evfAspectWH = 1.0f
     private var scanTask: ScanTask? = null
     private lateinit var previewSize: PlatformDependencyResolver.Size
     private var info = Camera.CameraInfo()
+
+    // Surface.
+    private var evfAspectWH = 1.0f
 
     // Snapshot request ID.
     private var requestId = 0
@@ -98,12 +100,13 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
     }
 
     override fun openAsync(evfAspectWH: Float, openCallback: CameraPlatformInterface.OpenCallback) {
-        this.evfAspectWH = evfAspectWH
-        val task = OpenTask(openCallback)
+        val task = OpenTask(evfAspectWH, openCallback)
         backWorker?.execute(task)
     }
 
-    private inner class OpenTask(private val openCallback: CameraPlatformInterface.OpenCallback) : Runnable {
+    private inner class OpenTask(
+            private val aspectWH: Float,
+            private val openCallback: CameraPlatformInterface.OpenCallback) : Runnable {
         override fun run() {
             if (IS_DEBUG) logD(TAG, "OpenTask.run() : E")
 
@@ -144,7 +147,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
                         }
                     }
                     previewSize = PlatformDependencyResolver.getOptimalPreviewSizeForStill(
-                            evfAspectWH,
+                            aspectWH,
                             supportedSizes)
 
                     // Picture size.
@@ -158,7 +161,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
                         }
                     }
                     val pictureSize = PlatformDependencyResolver.getOptimalPictureSize(
-                            evfAspectWH,
+                            aspectWH,
                             supportedSizes)
 
                     // Parameters.
@@ -279,6 +282,8 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
             logD(TAG, "  Finder Size = $finderWidth x $finderHeight")
         }
 
+        evfAspectWH = finderWidth.toFloat() / finderHeight.toFloat()
+
         // Transform matrix.
         val matrix = PlatformDependencyResolver.getTextureViewTransformMatrix(
                 context,
@@ -315,15 +320,14 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
                 val camInfo = Camera.CameraInfo()
                 Camera.getCameraInfo(cameraId, camInfo)
                 val winMng = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-                val rotation = winMng.defaultDisplay.rotation
-                val degrees: Int
-                degrees = when (rotation) {
+                val degrees: Int = when (winMng.defaultDisplay.rotation) {
                     Surface.ROTATION_0 -> 0
                     Surface.ROTATION_90 -> 90
                     Surface.ROTATION_180 -> 180
                     Surface.ROTATION_270 -> 270
                     else -> throw IllegalStateException("Unexpected rotation.")
                 }
+
                 var resultRotation: Int
                 when (camInfo.facing) {
                     Camera.CameraInfo.CAMERA_FACING_BACK -> {
@@ -354,6 +358,62 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
             }
 
             if (IS_DEBUG) logD(TAG, "SetSurfaceTask.run() : X")
+        }
+    }
+
+    override fun bindPreviewSurfaceTextureAsync(
+            surfaceTexture: SurfaceTexture,
+            width: Int,
+            height: Int,
+            bindSurfaceCallback: CameraPlatformInterface.BindSurfaceCallback) {
+        evfAspectWH = width.toFloat() / height.toFloat()
+
+        val task = BindSurfaceTextureTask(surfaceTexture, bindSurfaceCallback)
+        backWorker?.execute(task)
+    }
+
+    private inner class BindSurfaceTextureTask(
+            private val surface: SurfaceTexture,
+            private val bindSurfaceCallback: CameraPlatformInterface.BindSurfaceCallback)
+            : Runnable {
+        override fun run() {
+            if (IS_DEBUG) logD(TAG, "BindSurfaceTextureTask.run() : E")
+
+            camera?.let { c ->
+                val camInfo = Camera.CameraInfo()
+                Camera.getCameraInfo(cameraId, camInfo)
+
+                // In SurfaceTexture use case, orientation will be done in GL/EGL layer.
+                val displayOrientationDeg = 0
+                val resultRotation = when (camInfo.facing) {
+                    Camera.CameraInfo.CAMERA_FACING_BACK -> {
+                        (camInfo.orientation - displayOrientationDeg + 360) % 360
+                    }
+
+                    Camera.CameraInfo.CAMERA_FACING_FRONT -> {
+                        val rot = (camInfo.orientation + displayOrientationDeg) % 360
+                        (360 - rot) % 360
+                    }
+
+                    else -> throw IllegalStateException("Unexpected facing.")
+                }
+                c.setDisplayOrientation(resultRotation)
+
+                try {
+                    c.setPreviewTexture(surface)
+                } catch (e: IOException) {
+                    e.printStackTrace()
+
+                    App.ui.post { bindSurfaceCallback.onSurfaceBound(false) }
+                }
+
+                App.ui.post { bindSurfaceCallback.onSurfaceBound(true) }
+            } ?: run {
+                if (IS_DEBUG) logE(TAG, "Error. Camera is already released.")
+                App.ui.post { bindSurfaceCallback.onSurfaceBound(false) }
+            }
+
+            if (IS_DEBUG) logD(TAG, "BindSurfaceTextureTask.run() : X")
         }
     }
 

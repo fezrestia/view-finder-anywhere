@@ -2,6 +2,7 @@
 #define VIEW_FINDER_ANYWHERE_VIEWFINDERANYWHERE_HPP
 
 #include <jni.h>
+#include <cmath>
 
 #include <EGL/egl.h>
 #include <EGL/eglext.h>

@@ -1,5 +1,6 @@
 package com.fezrestia.android.viewfinderanywhere.device
 
+import android.graphics.SurfaceTexture
 import android.util.Size
 import android.view.TextureView
 
@@ -66,6 +67,20 @@ interface CameraPlatformInterface {
      * @param bindSurfaceCallback Callback.
      */
     fun bindPreviewSurfaceAsync(textureView: TextureView, bindSurfaceCallback: BindSurfaceCallback)
+
+    /**
+     * Bind SurfaceTexture as preview stream.
+     *
+     * @param surfaceTexture
+     * @param width
+     * @param height
+     * @param bindSurfaceCallback
+     */
+    fun bindPreviewSurfaceTextureAsync(
+            surfaceTexture: SurfaceTexture,
+            width: Int,
+            height: Int,
+            bindSurfaceCallback: BindSurfaceCallback)
 
     /**
      * Callback for camera and surface binding.

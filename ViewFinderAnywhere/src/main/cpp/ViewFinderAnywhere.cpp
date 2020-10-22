@@ -430,30 +430,73 @@ namespace fezrestia {
         Matrix4x4_Multiply(globalMatrix, gViewMatrix, globalMatrix);
         Matrix4x4_Multiply(globalMatrix, gProjectionMatrix, globalMatrix);
 
-        // Calc optimal through size.
-        const float uiAspectWH = (float) gSurfaceUiWidth / (float) gSurfaceUiHeight;
-        float scaleW = 1.0;
-        float scaleH = 1.0;
-        if (uiAspectWH < gCameraStreamAspectWH) {
-            scaleW = gCameraStreamAspectWH / uiAspectWH;
-        } else {
-            scaleH = uiAspectWH / gCameraStreamAspectWH;
-        }
-        TraceLog(TAG, "## uiAspectWH =");
-        TraceLog(TAG, std::to_string(uiAspectWH));
-        TraceLog(TAG, "## gCameraStreamAspectWH =");
-        TraceLog(TAG, std::to_string(gCameraStreamAspectWH));
-        TraceLog(TAG, "## scaleW =");
-        TraceLog(TAG, std::to_string(scaleW));
-        TraceLog(TAG, "## scaleH =");
-        TraceLog(TAG, std::to_string(scaleH));
-
         // Render.
         gSurfaceTextureFrame->setTextureId(gTextureCameraStreams[0]);
         gSurfaceTextureFrame->setAlpha(1.0f);
         gSurfaceTextureFrame->setGlobalMatrix(globalMatrix);
         gSurfaceTextureFrame->rotate((float) gCameraStreamRotDeg, 0, 0, 1);
-        gSurfaceTextureFrame->scale(scaleW, scaleH, 1.0f);
+
+        // Camera frame area ratio.
+        float cameraW;
+        float cameraH;
+        if (gCameraStreamAspectWH < 1.0f) {
+            // Square -> Portrait.
+            cameraW = gCameraStreamAspectWH;
+            cameraH = 1.0f;
+        } else {
+            // Square -> Landscape.
+            cameraW = 1.0f;
+            cameraH = 1.0f / gCameraStreamAspectWH;
+        }
+        TraceLog(TAG, "## cameraW =");
+        TraceLog(TAG, std::to_string(cameraW));
+        TraceLog(TAG, "## cameraH =");
+        TraceLog(TAG, std::to_string(cameraH));
+        gSurfaceTextureFrame->scale(cameraW, cameraH, 1.0f);
+
+        // Finder area ratio.
+        const float uiAspectWH = (float) gSurfaceUiWidth / (float) gSurfaceUiHeight;
+        float finderW;
+        float finderH;
+        if (uiAspectWH < gCameraStreamAspectWH) {
+            // Crop left/right.
+            finderH = cameraH;
+            finderW = finderH * uiAspectWH;
+        } else {
+            // Crop top/bottom.
+            finderW = cameraW;
+            finderH = finderW / uiAspectWH;
+        }
+        TraceLog(TAG, "## finderW =");
+        TraceLog(TAG, std::to_string(finderW));
+        TraceLog(TAG, "## finderH =");
+        TraceLog(TAG, std::to_string(finderH));
+
+        // UI surface ratio.
+        float uiW;
+        float uiH;
+        if (uiAspectWH < 1.0f) {
+            // UI portrait.
+            uiH = 1.0f;
+            uiW = uiH * uiAspectWH;
+        } else {
+            // UI landscape.
+            uiW = 1.0f;
+            uiH = uiW / uiAspectWH;
+        }
+
+        // Total scale.
+        float scaleW = uiW / finderW;
+        float scaleH = uiH / finderH;
+        float totalScale = std::max(scaleW, scaleH);
+        TraceLog(TAG, "## scaleW =");
+        TraceLog(TAG, std::to_string(scaleW));
+        TraceLog(TAG, "## scaleH =");
+        TraceLog(TAG, std::to_string(scaleH));
+        TraceLog(TAG, "## totalScale =");
+        TraceLog(TAG, std::to_string(totalScale));
+        gSurfaceTextureFrame->scale(totalScale, totalScale, 1.0f);
+
         gSurfaceTextureFrame->render();
 
         if (checkGlError(TAG) != GL_NO_ERROR) {
@@ -617,6 +660,17 @@ namespace fezrestia {
         TraceLog(TAG, std::to_string(gSurfaceEncoderWidth));
         TraceLog(TAG, "## gSurfaceEncoderHeight =");
         TraceLog(TAG, std::to_string(gSurfaceEncoderHeight));
+
+        // Set GL view port.
+        if (height < width) {
+            // Landscape.
+            EGLint verticalOffset = (width - height) / 2;
+            glViewport(0, -1 * verticalOffset, width, width); // Square.
+        } else {
+            // This is Portrait.
+            EGLint horizontalOffset = (height - width) / 2;
+            glViewport(-1 * horizontalOffset, 0, height, height); // Square.
+        }
 
         // Return EGL to system default.
         returnEglToSystemDefault();

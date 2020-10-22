@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.graphics.ImageFormat
 import android.graphics.Rect
+import android.graphics.SurfaceTexture
 import android.hardware.SensorManager
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCaptureSession
@@ -82,6 +83,15 @@ class Camera2Device(
         d.bindPreviewSurfaceAsync(textureView, bindSurfaceCallback)
     }
 
+    override fun bindPreviewSurfaceTextureAsync(
+            surfaceTexture: SurfaceTexture,
+            width: Int,
+            height: Int,
+            bindSurfaceCallback: CameraPlatformInterface.BindSurfaceCallback) {
+        val d = delegated ?: throw error()
+        d.bindPreviewSurfaceTextureAsync(surfaceTexture, width, height, bindSurfaceCallback)
+    }
+
     override fun requestScanAsync(scanCallback: CameraPlatformInterface.ScanCallback) {
         val d = delegated ?: throw error()
         d.requestScanAsync(scanCallback)
@@ -138,6 +148,7 @@ class Camera2DeviceDelegated(
 
     private var camDevice: CameraDevice? = null
     private var evfSurface: Surface? = null
+    private var evfAspectWH: Float = 1.0f
     private var camSession: CameraCaptureSession? = null
     private var evfReqBuilder: CaptureRequest.Builder? = null
 
@@ -428,6 +439,8 @@ class Camera2DeviceDelegated(
             bindSurfaceCallback: CameraPlatformInterface.BindSurfaceCallback) {
         if (IS_DEBUG) logD(TAG, "bindPreviewSurfaceAsync()")
 
+        evfAspectWH = textureView.width.toFloat() / textureView.height.toFloat()
+
         requestHandler.post(BindSurfaceTask(textureView, bindSurfaceCallback))
     }
 
@@ -480,28 +493,11 @@ class Camera2DeviceDelegated(
             val evf = Surface(surfaceTexture)
             evfSurface = evf
 
-            // Outputs.
             val sessionCallback = CaptureSessionStateCallback()
             captureSessionStateCallback = sessionCallback
-            try {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                    val evfOutputConfig = OutputConfiguration(evf)
-                    val stillOutputConfig = OutputConfiguration(stillImgReader.surface)
 
-                    val sessionConfig = SessionConfiguration(
-                            SessionConfiguration.SESSION_REGULAR,
-                            listOf(evfOutputConfig, stillOutputConfig),
-                            { task -> callbackHandler.post(task) }, // Executor.
-                            sessionCallback)
-                    cam.createCaptureSession(sessionConfig)
-                } else {
-                    val outputs = listOf(evf, stillImgReader.surface)
-                    @Suppress("DEPRECATION")
-                    cam.createCaptureSession(
-                            outputs,
-                            sessionCallback,
-                            callbackHandler)
-                }
+            try {
+                configureOutputs(cam, evf, sessionCallback)
             } catch (e: CameraAccessException) {
                 earlyReturn("Failed to configure outputs.", false)
                 return
@@ -515,6 +511,96 @@ class Camera2DeviceDelegated(
             clientCallbackHandler.post { clientCallback.onSurfaceBound(isSucceeded) }
 
             if (IS_DEBUG) logD(TAG, "run() : X")
+        }
+    }
+
+    override fun bindPreviewSurfaceTextureAsync(
+            surfaceTexture: SurfaceTexture,
+            width: Int,
+            height: Int,
+            bindSurfaceCallback: CameraPlatformInterface.BindSurfaceCallback) {
+        if (IS_DEBUG) logD(TAG, "bindPreviewSurfaceTextureAsync()")
+
+        evfAspectWH = width.toFloat() / height.toFloat()
+
+        requestHandler.post(BindSurfaceTextureTask(surfaceTexture, bindSurfaceCallback))
+    }
+
+    private inner class BindSurfaceTextureTask(
+            val surfaceTexture: SurfaceTexture,
+            val clientCallback: CameraPlatformInterface.BindSurfaceCallback) : Runnable {
+        val TAG = "BindSurfaceTextureTask"
+
+        private fun earlyReturn(msg: String, isSuccess: Boolean) {
+            logE(TAG, msg)
+            clientCallbackHandler.post { clientCallback.onSurfaceBound(isSuccess) }
+        }
+
+        override fun run() {
+            if (IS_DEBUG) logD(TAG, "run() : E")
+
+            if (camSession != null) {
+                earlyReturn("Surface is already bound.", true)
+                return
+            }
+            val cam = ensure(camDevice)
+
+            val previewWidth = previewStreamFrameSize.width
+            val previewHeight = previewStreamFrameSize.height
+
+            if (IS_DEBUG) {
+                logD(TAG, "  Preview Frame Size = $previewWidth x $previewHeight")
+            }
+
+            surfaceTexture.setDefaultBufferSize(
+                    previewStreamFrameSize.width,
+                    previewStreamFrameSize.height)
+            val evf = Surface(surfaceTexture)
+            evfSurface = evf
+
+            val sessionCallback = CaptureSessionStateCallback()
+            captureSessionStateCallback = sessionCallback
+
+            try {
+                configureOutputs(cam, evf, sessionCallback)
+            } catch (e: CameraAccessException) {
+                earlyReturn("Failed to configure outputs.", false)
+                return
+            }
+
+            val isSucceeded = sessionCallback.waitForOpened()
+            if (IS_DEBUG) logD(TAG, "Bind surface $isSucceeded")
+
+            startEvfStream()
+
+            clientCallbackHandler.post { clientCallback.onSurfaceBound(isSucceeded) }
+
+            if (IS_DEBUG) logD(TAG, "run() : X")
+        }
+    }
+
+    private fun configureOutputs(
+            cam: CameraDevice,
+            evf: Surface,
+            sessionCallback: CaptureSessionStateCallback) {
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            val evfOutputConfig = OutputConfiguration(evf)
+            val stillOutputConfig = OutputConfiguration(stillImgReader.surface)
+
+            val sessionConfig = SessionConfiguration(
+                    SessionConfiguration.SESSION_REGULAR,
+                    listOf(evfOutputConfig, stillOutputConfig),
+                    { task -> callbackHandler.post(task) }, // Executor.
+                    sessionCallback)
+            cam.createCaptureSession(sessionConfig)
+        } else {
+            val outputs = listOf(evf, stillImgReader.surface)
+            @Suppress("DEPRECATION")
+            cam.createCaptureSession(
+                    outputs,
+                    sessionCallback,
+                    callbackHandler)
         }
     }
 
@@ -876,7 +962,7 @@ class Camera2DeviceDelegated(
             val resultJpeg = ImageProc.doCropRotJpeg(
                     data,
                     reqTag.rotationDeg,
-                    cropRegionRect.width().toFloat() / cropRegionRect.height().toFloat(),
+                    evfAspectWH,
                     JPEG_QUALITY)
 
             clientCallbackHandler.post { clientCallback.onPhotoStoreReady(reqTag.requestId, resultJpeg) }

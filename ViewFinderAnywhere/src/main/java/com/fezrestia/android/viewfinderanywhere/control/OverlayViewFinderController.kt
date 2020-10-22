@@ -3,6 +3,7 @@
 package com.fezrestia.android.viewfinderanywhere.control
 
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.SurfaceTexture
 import android.net.Uri
 import android.os.Build
@@ -577,11 +578,10 @@ class OverlayViewFinderController(private val context: Context) {
                             camera.getSensorOrientation())
 
                     cameraSurfaceTexture?.let {
-                        val texView = TextureView(context)
-                        texView.setSurfaceTexture(it)
-
-                        camera.bindPreviewSurfaceAsync(
-                                texView,
+                        camera.bindPreviewSurfaceTextureAsync(
+                                it,
+                                cameraView.getViewFinderSurface().width,
+                                cameraView.getViewFinderSurface().height,
                                 BindSurfaceCallbackImpl())
                     } ?: run {
                         logE(TAG, "cameraSurfaceTexture is null")
@@ -1142,19 +1142,37 @@ class OverlayViewFinderController(private val context: Context) {
         }
     }
 
+    // previewSize is based on landscape/portrait, requestAspectWH is always landscape.
     private fun calcVideoSize(previewSize: Size, requestAspectWH: Float): Size {
         val previewAspectWH = previewSize.width.toFloat() / previewSize.height.toFloat()
 
-        return if (previewAspectWH < requestAspectWH) {
-            // Cut off top/bottom.
-            val w = previewSize.width
-            val h = (w.toFloat() / requestAspectWH).toInt()
-            Size(w, h)
+        if (1.0 < previewAspectWH) {
+            // Landscape.
+            if (previewAspectWH < requestAspectWH) {
+                // Crop top/bottom.
+                val w = previewSize.width
+                val h = (w.toFloat() / requestAspectWH).toInt()
+                return Size(w, h)
+            } else {
+                // Crop left/right.
+                val h = previewSize.height
+                val w = (h.toFloat() * requestAspectWH).toInt()
+                return Size(w, h)
+            }
         } else {
-            // Cut off left/right.
-            val h = previewSize.height
-            val w = (h.toFloat() * requestAspectWH).toInt()
-            Size(w, h)
+            // Portrait.
+            val revisedRequestAspectWH = 1.0f / requestAspectWH
+            if (previewAspectWH < revisedRequestAspectWH) {
+                // Crop top/bottom.
+                val w = previewSize.width
+                val h = (w.toFloat() / revisedRequestAspectWH).toInt()
+                return Size(w, h)
+            } else {
+                // Crop left/right.
+                val h = previewSize.height
+                val w = (h.toFloat() * revisedRequestAspectWH).toInt()
+                return Size(w, h)
+            }
         }
     }
 
