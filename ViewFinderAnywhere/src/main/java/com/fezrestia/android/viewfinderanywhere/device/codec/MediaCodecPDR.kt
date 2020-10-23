@@ -1,4 +1,4 @@
-@file:Suppress("LocalVariableName")
+@file:Suppress("LocalVariableName", "unused")
 
 package com.fezrestia.android.viewfinderanywhere.device.codec
 
@@ -97,6 +97,7 @@ internal object MediaCodecPDR {
 
     private const val SAMPLING_RATE = 44100
     private const val CHANNEL_COUNT = 1
+    private const val AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT
 
     fun getAudioRecordAudioFormat(): AudioFormat {
         return AudioFormat.Builder()
@@ -110,7 +111,7 @@ internal object MediaCodecPDR {
         val minBufSize = AudioRecord.getMinBufferSize(
                 SAMPLING_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT)
+                AUDIO_FORMAT)
 
         if (IS_DEBUG) logD(TAG, "Audio Min Buf Size = $minBufSize")
         return minBufSize
@@ -178,4 +179,19 @@ internal object MediaCodecPDR {
         return encoderName
     }
 
+    fun calcBufferLengthNanoSec(byteSize: Int): Long {
+        val sampleSize = when (AUDIO_FORMAT) {
+            AudioFormat.ENCODING_PCM_8BIT -> 1
+            AudioFormat.ENCODING_PCM_16BIT -> 2
+            else -> throw RuntimeException("Unsupported AudioFormat = $AUDIO_FORMAT")
+        }
+
+        val sampleCount = byteSize / sampleSize
+
+        val lengthInSec = sampleCount.toFloat() / SAMPLING_RATE.toFloat()
+
+        val lengthInNanoSec = lengthInSec * 1000 * 1000 * 1000
+
+        return lengthInNanoSec.toLong()
+    }
 }

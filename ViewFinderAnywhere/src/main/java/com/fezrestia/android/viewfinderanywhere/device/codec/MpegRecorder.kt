@@ -15,6 +15,7 @@ import android.os.HandlerThread
 import android.util.Size
 import android.view.OrientationEventListener
 import android.view.Surface
+import com.fezrestia.android.lib.util.ensure
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.lib.util.log.logE
@@ -47,6 +48,7 @@ class MpegRecorder(
     private var audioFormat: AudioFormat
     private var audioRecord: AudioRecord? = null
     private val audioFrameSize: Int
+    private val audioBufferSizeInBytes: Int
 
     // Mux.
     private var mpegMuxer: MediaMuxer? = null
@@ -67,8 +69,6 @@ class MpegRecorder(
             rotDeg = orientation
         }
     }
-
-    fun <T : Any> ensure(nullable: T?): T = nullable ?: throw Exception("Ensure FAIL")
 
     interface Callback {
         fun onRecStarted()
@@ -100,6 +100,8 @@ class MpegRecorder(
         } else {
             32 // 16 bits stereo
         }
+
+        audioBufferSizeInBytes = MediaCodecPDR.getAudioRecordMinBufferSize() * 2
 
         rotDegCallback.enable()
     }
@@ -149,17 +151,11 @@ class MpegRecorder(
             videoInputSurface = createInputSurface()
         }
 
-        val audioBufSize = MediaCodecPDR.getAudioRecordMinBufferSize() * 2
         audioRecord = AudioRecord.Builder()
                 .setAudioSource(MediaRecorder.AudioSource.CAMCORDER)
                 .setAudioFormat(audioFormat)
-                .setBufferSizeInBytes(audioBufSize)
+                .setBufferSizeInBytes(audioBufferSizeInBytes)
                 .build()
-        audioRecord?.let { it ->
-            val bufFullFrameCount = audioBufSize / audioFrameSize
-            it.positionNotificationPeriod = bufFullFrameCount
-            it.setRecordPositionUpdateListener(AudioRecordCallback())
-        }
 
         audioMediaCodec = MediaCodec.createByCodecName(audioEncoderName).apply {
             setCallback(AudioMediaCodecCallbackImpl(), audioHandler)
@@ -191,6 +187,16 @@ class MpegRecorder(
 
         val audioRec = ensure(audioRecord)
         audioRec.startRecording()
+
+        // Flush audio record buffer.
+        // If invalid audio buffer is available, it will be available as noise in contents.
+        if (IS_DEBUG) logD(TAG, "## AudioRecord buffer flushing ...")
+        val buf = ByteArray(audioBufferSizeInBytes)
+        audioRec.read(buf, 0, buf.size, AudioRecord.READ_BLOCKING)
+        if (IS_DEBUG) logD(TAG, "## AudioRecord buffer flushing ... DONE")
+
+        val audioEnc = ensure(audioMediaCodec)
+        audioEnc.start()
 
         val muxer = ensure(mpegMuxer)
         val videoRotHint = ((rotDeg + 45) / 90 * 90) % 360 // Round to 0, 90, 180, 270
@@ -270,35 +276,49 @@ class MpegRecorder(
                 logD(TAG, "  info.flags = ${info.flags}")
             }
 
-            if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                if (IS_DEBUG) logD(TAG, "FLAG = BUFFER_FLAG_END_OF_STREAM")
+            val outBuf: ByteBuffer = ensure(codec.getOutputBuffer(index))
+            if (IS_DEBUG) logD(TAG, "  outBuf.remaining = ${outBuf.remaining()}")
 
+            if (info.presentationTimeUs == 0L) {
+                // NOP, this frame is not video frame.
+            } else {
+                if (startOutBufPresentationTimeUs == 0L) {
+                    // This is first frame.
+                    startOutBufPresentationTimeUs = info.presentationTimeUs
+                    info.presentationTimeUs = 0L
+                } else {
+                    info.presentationTimeUs = info.presentationTimeUs - startOutBufPresentationTimeUs
+                }
+            }
+            if (IS_DEBUG) logD(TAG, "Video Out Buf Revised PresentationTimeUs = ${info.presentationTimeUs}")
+
+            // Buffer flags.
+            val isNoFlag = info.flags == 0
+            val isKeyFrame = info.flags and MediaCodec.BUFFER_FLAG_KEY_FRAME != 0
+            val isPartialFrame = info.flags and MediaCodec.BUFFER_FLAG_PARTIAL_FRAME != 0
+            val isCodecConfig = info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0
+            val isEndOfStream = info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0
+            if (IS_DEBUG) {
+                if (isNoFlag) logD(TAG, "## BUFFER_FLAG_NO_FLAG")
+                if (isKeyFrame) logD(TAG, "## BUFFER_FLAG_KEY_FRAME")
+                if (isPartialFrame) logD(TAG, "## BUFFER_FLAG_PARTIAL_FRAME")
+                if (isCodecConfig) logD(TAG, "## BUFFER_FLAG_CODEC_CONFIG")
+                if (isEndOfStream) logD(TAG, "## BUFFER_FLAG_END_OF_STREAM")
+            }
+
+            if (!isCodecConfig) {
+                val muxer: MediaMuxer = ensure(mpegMuxer)
+                muxer.writeSampleData(videoTrackIndex, outBuf, info)
+            }
+
+            codec.releaseOutputBuffer(index, false)
+
+            if (isEndOfStream) {
                 codec.stop()
                 codec.release()
                 videoMediaCodec = null
 
                 tryToStopMpegMuxer()
-            } else {
-                val outBuf: ByteBuffer = ensure(codec.getOutputBuffer(index))
-                if (IS_DEBUG) logD(TAG, "  outBuf.remaining = ${outBuf.remaining()}")
-
-                if (info.presentationTimeUs == 0L) {
-                    // NOP, this frame is not video frame.
-                } else {
-                    if (startOutBufPresentationTimeUs == 0L) {
-                        // This is first frame.
-                        startOutBufPresentationTimeUs = info.presentationTimeUs
-                        info.presentationTimeUs = 0L
-                    } else {
-                        info.presentationTimeUs = info.presentationTimeUs - startOutBufPresentationTimeUs
-                    }
-                }
-                if (IS_DEBUG) logD(TAG, "Video Out Buf Revised PresentationTimeUs = ${info.presentationTimeUs}")
-
-                val muxer: MediaMuxer = ensure(mpegMuxer)
-                muxer.writeSampleData(videoTrackIndex, outBuf, info)
-
-                codec.releaseOutputBuffer(index, false)
             }
 
             if (IS_DEBUG) logD(TAG, "onOutputBufferAvailable() : X")
@@ -332,34 +352,12 @@ class MpegRecorder(
         }
     }
 
-    private inner class AudioRecordCallback : AudioRecord.OnRecordPositionUpdateListener {
-        private val TAG = "AudioRecordCallback"
-
-        override fun onMarkerReached(recorder: AudioRecord) {
-            if (IS_DEBUG) logD(TAG, "onMarkerReached() : E")
-            // NOP.
-            if (IS_DEBUG) logD(TAG, "onMarkerReached() : X")
-        }
-
-        override fun onPeriodicNotification(recorder: AudioRecord) {
-            if (IS_DEBUG) logD(TAG, "onPeriodicNotification() : E")
-
-            val audioEnc = ensure(audioMediaCodec)
-            audioEnc.start()
-
-            recorder.setRecordPositionUpdateListener(null)
-
-            if (IS_DEBUG) logD(TAG, "onPeriodicNotification() : X")
-        }
-    }
-
     private inner class AudioMediaCodecCallbackImpl : MediaCodec.Callback() {
         private val TAG = "AudioMediaCodecCallbackImpl"
 
         private var isInputFinished = false
         private var startOutBufPresentationTimeUs = 0L
         private var previousOutBufPresentationTimeUs = 0L
-        private var outputStartDelayUs = 0L
 
         private fun getValidNextPresentationTimeUs(outBufPresentationTimeUs: Long): Long {
             if (outBufPresentationTimeUs < previousOutBufPresentationTimeUs) {
@@ -390,13 +388,14 @@ class MpegRecorder(
 
             val audioRec = ensure(audioRecord)
 
-            var presentationTimeUs: Long
             var readSize: Int
+            var presentationTimeUs: Long
             do {
+                readSize = audioRec.read(inBuf, maxReadSize)
+
                 presentationTimeUs = System.nanoTime() / 1000
                 if (IS_DEBUG) logD(TAG, "## presentationTimeUs = $presentationTimeUs")
 
-                readSize = audioRec.read(inBuf, maxReadSize)
                 when (readSize) {
                     AudioRecord.ERROR_INVALID_OPERATION -> {
                         logE(TAG, "AudioRecord.read() : ERROR_INVALID_OPERATION")
@@ -430,14 +429,6 @@ class MpegRecorder(
                     }
                 }
             } while (readSize <= 0)
-
-            if (outputStartDelayUs == 0L) {
-                // First frame.
-                val frameCount: Long = readSize.toLong() / audioFrameSize
-                outputStartDelayUs = frameCount * 1000 * 1000 / audioFormat.sampleRate
-
-                if (IS_DEBUG) logD(TAG, "## outputStartDelayUs = $outputStartDelayUs")
-            }
 
             if (audioRec.recordingState == AudioRecord.RECORDSTATE_STOPPED) {
                 if (IS_DEBUG) logD(TAG, "## RECORDSTATE_STOPPED")
@@ -484,7 +475,7 @@ class MpegRecorder(
                 if (startOutBufPresentationTimeUs == 0L) {
                     // This is first frame.
                     startOutBufPresentationTimeUs = info.presentationTimeUs
-                    info.presentationTimeUs = outputStartDelayUs
+                    info.presentationTimeUs = 0
                 } else {
                     info.presentationTimeUs = info.presentationTimeUs - startOutBufPresentationTimeUs
                 }
@@ -492,14 +483,28 @@ class MpegRecorder(
             info.presentationTimeUs = getValidNextPresentationTimeUs(info.presentationTimeUs)
             if (IS_DEBUG) logD(TAG, "Audio Out Buf Revised PresentationTimeUs = ${info.presentationTimeUs}")
 
-            val muxer: MediaMuxer = ensure(mpegMuxer)
-            muxer.writeSampleData(audioTrackIndex, outBuf, info)
+            // Buffer flags.
+            val isNoFlag = info.flags == 0
+            val isKeyFrame = info.flags and MediaCodec.BUFFER_FLAG_KEY_FRAME != 0
+            val isPartialFrame = info.flags and MediaCodec.BUFFER_FLAG_PARTIAL_FRAME != 0
+            val isCodecConfig = info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0
+            val isEndOfStream = info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0
+            if (IS_DEBUG) {
+                if (isNoFlag) logD(TAG, "## BUFFER_FLAG_NO_FLAG")
+                if (isKeyFrame) logD(TAG, "## BUFFER_FLAG_KEY_FRAME")
+                if (isPartialFrame) logD(TAG, "## BUFFER_FLAG_PARTIAL_FRAME")
+                if (isCodecConfig) logD(TAG, "## BUFFER_FLAG_CODEC_CONFIG")
+                if (isEndOfStream) logD(TAG, "## BUFFER_FLAG_END_OF_STREAM")
+            }
+
+            if (!isCodecConfig) {
+                val muxer: MediaMuxer = ensure(mpegMuxer)
+                muxer.writeSampleData(audioTrackIndex, outBuf, info)
+            }
 
             codec.releaseOutputBuffer(index, false)
 
-            if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                if (IS_DEBUG) logD(TAG, "## FLAG = BUFFER_FLAG_END_OF_STREAM")
-
+            if (isEndOfStream) {
                 codec.stop()
                 codec.release()
                 audioMediaCodec = null
