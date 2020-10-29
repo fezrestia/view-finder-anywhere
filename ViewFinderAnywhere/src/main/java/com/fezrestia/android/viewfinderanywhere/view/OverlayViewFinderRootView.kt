@@ -135,6 +135,12 @@ class OverlayViewFinderRootView : RelativeLayout {
                         this@OverlayViewFinderRootView,
                         windowLayoutParams)
 
+                when (targetWindowXY) {
+                    windowEnabledXY -> enableInteraction()
+                    windowDisabledXY -> disableInteraction()
+                    else -> throw RuntimeException("Invalid targetWindowXY = $targetWindowXY")
+                }
+
                 return
             }
             lastDelta.set(dXY)
@@ -748,16 +754,12 @@ class OverlayViewFinderRootView : RelativeLayout {
                 if (SHOWN_ALPHA < actualAlpha) {
                     actualAlpha = SHOWN_ALPHA
                     isNextTaskRequired = false
-
-                    enableInteraction()
                 }
             } else {
                 actualAlpha -= ALPHA_DELTA
                 if (actualAlpha < HIDDEN_ALPHA) {
                     actualAlpha = HIDDEN_ALPHA
                     isNextTaskRequired = false
-
-                    disableInteraction()
                 }
             }
 
@@ -1017,6 +1019,8 @@ class OverlayViewFinderRootView : RelativeLayout {
         windowManager.updateViewLayout(this, windowLayoutParams)
 
         pauseController()
+
+        disableInteraction()
     }
 
     /**
@@ -1028,6 +1032,8 @@ class OverlayViewFinderRootView : RelativeLayout {
         windowManager.updateViewLayout(this, windowLayoutParams)
 
         pauseController()
+
+        disableInteraction()
     }
 
     private fun pauseController() {
@@ -1123,6 +1129,8 @@ class OverlayViewFinderRootView : RelativeLayout {
         }
 
         pauseController()
+
+        disableInteraction()
     }
 
     /**
