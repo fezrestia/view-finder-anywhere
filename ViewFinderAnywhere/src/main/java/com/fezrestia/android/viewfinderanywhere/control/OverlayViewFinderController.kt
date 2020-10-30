@@ -46,8 +46,7 @@ class OverlayViewFinderController(private val context: Context) {
 
     private val NO_STATE = StateNone()
 
-    var currentState: State = NO_STATE
-            private set
+    private var currentState: State = NO_STATE
 
     private lateinit var storageController: StorageController
 
@@ -202,13 +201,24 @@ class OverlayViewFinderController(private val context: Context) {
         }
     }
 
+    fun lifeCycle(): LifeCycleInterface {
+        return currentState
+    }
+
+    fun fromView(): FromViewInterface {
+        return currentState
+    }
+
     private interface StateInternalInterface {
-        val isActive: Boolean
         fun entry()
         fun exit()
     }
 
-    private interface LifeCycleInterface {
+    /**
+     * Check or send life-cycle related event.
+     */
+    interface LifeCycleInterface {
+        val isActive: Boolean
         fun onConstructed()
         fun onResume()
         fun onPause()
@@ -216,7 +226,10 @@ class OverlayViewFinderController(private val context: Context) {
         fun onToggleShowHideRequired()
     }
 
-    private interface FromViewInterface {
+    /**
+     * Called from view interface.
+     */
+    interface FromViewInterface {
         fun onPreOpenRequested()
         fun onPreOpenCanceled()
         fun onSurfaceCreated()
@@ -629,6 +642,8 @@ class OverlayViewFinderController(private val context: Context) {
             if (IS_DEBUG) logD(TAG, "entry()")
 
             cameraSurfaceTexture?.setOnFrameAvailableListener(null)
+
+            notifyCameraStreamFinished()
 
             camera.closeAsync(CloseCallbackImpl())
 
@@ -1199,6 +1214,18 @@ class OverlayViewFinderController(private val context: Context) {
         }
     }
 
+    private fun notifyCameraStreamFinished() {
+        if (IS_DEBUG) logD(TAG, "notifyCameraStreamFinished() : E")
+
+        nativeBindAppEglContext()
+
+        nativeOnCameraStreamFinished()
+
+        nativeUnbindAppEglContext()
+
+        if (IS_DEBUG) logD(TAG, "notifyCameraStreamFinished() : X")
+    }
+
     private external fun nativeOnCreated(): Int
     private external fun nativeOnDestroyed(): Int
 
@@ -1216,6 +1243,7 @@ class OverlayViewFinderController(private val context: Context) {
     private external fun nativeSetCameraStreamTransformMatrix(matrix: FloatArray): Int
     private external fun nativeSetCameraStreamRotDeg(frameOrientation: Int): Int
     private external fun nativeOnCameraStreamUpdated(): Int
+    private external fun nativeOnCameraStreamFinished(): Int
 
     private external fun nativeSetEncoderSurface(surface: Surface): Int
     private external fun nativeReleaseEncoderSurface(): Int

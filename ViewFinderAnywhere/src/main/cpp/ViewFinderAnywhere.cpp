@@ -40,8 +40,7 @@ namespace fezrestia {
                 EGL_RED_SIZE,           8,
                 EGL_GREEN_SIZE,         8,
                 EGL_BLUE_SIZE,          8,
-                EGL_DEPTH_SIZE,         16,
-                EGL_STENCIL_SIZE,       8,
+                EGL_ALPHA_SIZE,         8,
                 EGL_NONE
         };
         const EGLint eglContextAttrs[] = {
@@ -423,7 +422,7 @@ namespace fezrestia {
         // Clear color, (red, green, blue, alpha).
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         // Clear buffer bit.
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // NOLINT(hicpp-signed-bitwise)
+        glClear(GL_COLOR_BUFFER_BIT); // NOLINT(hicpp-signed-bitwise)
 
         float globalMatrix[16];
         Matrix4x4_SetIdentity(globalMatrix);
@@ -516,7 +515,7 @@ namespace fezrestia {
             changeCurrentEglTo(gEncoderEglDisplay, gEglSurfaceEncoder, gEglSurfaceEncoder, gEncoderEglContext);
 
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // NOLINT(hicpp-signed-bitwise)
+            glClear(GL_COLOR_BUFFER_BIT); // NOLINT(hicpp-signed-bitwise)
 
             gSurfaceTextureFrame->render();
 
@@ -536,6 +535,26 @@ namespace fezrestia {
         }
 
         TraceLog(TAG, "nativeOnCameraStreamUpdated() : X");
+        return 0;
+    }
+
+    extern "C" JNIEXPORT jint JNICALL Java_com_fezrestia_android_viewfinderanywhere_control_OverlayViewFinderController_nativeOnCameraStreamFinished(
+            JNIEnv* __unused jenv,
+            jobject __unused instance) {
+        TraceLog(TAG, "nativeOnCameraStreamFinished() : E");
+
+        // Clear color, (red, green, blue, alpha).
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        // Clear buffer bit.
+        glClear(GL_COLOR_BUFFER_BIT); // NOLINT(hicpp-signed-bitwise)
+
+        glFlush();
+        glFinish();
+
+        // Swap buffer.
+        eglSwapBuffers(gAppEglDisplay, gEglSurfaceUi);
+
+        TraceLog(TAG, "nativeOnCameraStreamFinished() : X");
         return 0;
     }
 

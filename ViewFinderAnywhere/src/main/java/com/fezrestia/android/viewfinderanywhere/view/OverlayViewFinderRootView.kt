@@ -83,9 +83,6 @@ class OverlayViewFinderRootView : RelativeLayout {
     private val windowEnabledXY = IntXY(0, 0)
     private var windowDisabledXY = IntXY(0, 0)
 
-    // Already resumed or not.
-    private var isResumed = true
-
     // Resources.
     private lateinit var customResContainer: CustomizableResourceContainer
 
@@ -191,7 +188,6 @@ class OverlayViewFinderRootView : RelativeLayout {
 
         // Viewfinder related.
         viewfinder.surfaceTextureListener = surfaceTextureListenerImpl
-        viewfinder.alpha = HIDDEN_ALPHA
         viewfinder_background.setBackgroundColor(customResContainer.colorVfBackground)
 
         // Scan indicator.
@@ -366,7 +362,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         }
 
         // Check active.
-        if (!isInitialSetup && !controller.currentState.isActive) {
+        if (!isInitialSetup && !controller.lifeCycle().isActive) {
             windowLayoutParams.x = windowDisabledXY.x
             windowLayoutParams.y = windowDisabledXY.y
         }
@@ -662,7 +658,7 @@ class OverlayViewFinderRootView : RelativeLayout {
             if (IS_DEBUG) logD(TAG,
                     "onSurfaceTextureAvailable() : [W=$width] [H=$height]")
 
-            controller.currentState.onSurfaceCreated()
+            controller.fromView().onSurfaceCreated()
 
             checkViewFinderAspect(width, height)
         }
@@ -691,7 +687,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                 setOnTouchListener(OnTouchListenerImpl())
 
                 // Notify to device.
-                controller.currentState.onSurfaceReady()
+                controller.fromView().onSurfaceReady()
             } else {
                 if (IS_DEBUG) logD(TAG, "checkViewFinderAspect() : Now on resizing...")
                 // NOP. Now on resizing.
@@ -700,90 +696,14 @@ class OverlayViewFinderRootView : RelativeLayout {
 
         override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
             if (IS_DEBUG) logD(TAG, "onSurfaceTextureDestroyed()")
-            controller.currentState.onSurfaceReleased()
+            controller.fromView().onSurfaceReleased()
             return true
         }
 
         override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
 //            if (IS_DEBUG) logD(TAG, "onSurfaceTextureUpdated()")
-
-            if (isResumed && viewfinder.alpha == HIDDEN_ALPHA) {
-                showSurfaceTask.reset()
-                App.ui.post(showSurfaceTask)
-            }
+            // NOP.
         }
-    }
-
-    private fun clearSurface() {
-        App.ui.removeCallbacks(showSurfaceTask)
-        hideSurfaceTask.reset()
-        App.ui.post(hideSurfaceTask)
-    }
-
-    private abstract inner class SurfaceVisibilityControlTask : Runnable {
-        // Log tag.
-        private val TAG = "SurfaceVisibilityControlTask"
-
-        // Actual view finder alpha.
-        private var actualAlpha = SHOWN_ALPHA
-
-        // Alpha stride.
-        private val ALPHA_DELTA = 0.2f
-
-        /**
-         * Reset state.
-         */
-        fun reset() {
-            actualAlpha = viewfinder.alpha
-        }
-
-        protected abstract fun isFadeIn(): Boolean
-
-        override fun run() {
-            if (IS_DEBUG) logD(TAG, "run()")
-
-            if (!isAttachedToWindow) {
-                // Already released.
-                return
-            }
-
-            var isNextTaskRequired = true
-
-            if (isFadeIn()) {
-                actualAlpha += ALPHA_DELTA
-                if (SHOWN_ALPHA < actualAlpha) {
-                    actualAlpha = SHOWN_ALPHA
-                    isNextTaskRequired = false
-                }
-            } else {
-                actualAlpha -= ALPHA_DELTA
-                if (actualAlpha < HIDDEN_ALPHA) {
-                    actualAlpha = HIDDEN_ALPHA
-                    isNextTaskRequired = false
-                }
-            }
-
-            viewfinder.alpha = actualAlpha
-
-            if (isNextTaskRequired) {
-                // NOTICE:
-                //   On Android N, invalidate() is called in setAlpha().
-                //   So, this task takes 1 frame V-Sync millis (about 16[ms])
-                //   Not to delay fade in/out, post next control task immediately.
-                App.ui.post(this)
-            }
-        }
-    }
-
-    private val showSurfaceTask = ShowSurfaceTask()
-    private inner class ShowSurfaceTask : SurfaceVisibilityControlTask() {
-        override fun isFadeIn(): Boolean = true
-    }
-
-
-    private val hideSurfaceTask = HideSurfaceTask()
-    private inner class HideSurfaceTask : SurfaceVisibilityControlTask() {
-        override fun isFadeIn() : Boolean = false
     }
 
     /**
@@ -810,12 +730,12 @@ class OverlayViewFinderRootView : RelativeLayout {
                     "onSingleTouched() : [X=${point.x}] [Y=${point.y}]")
 
             // Pre-open.
-            if (!isResumed) {
-                controller.currentState.onPreOpenRequested()
+            if (!controller.lifeCycle().isActive) {
+                controller.fromView().onPreOpenRequested()
             }
 
             // Request scan.
-            controller.currentState.requestScan()
+            controller.fromView().requestScan()
 
             // Stop animation.
             windowPositionCorrectionTask?.let { task ->
@@ -838,7 +758,7 @@ class OverlayViewFinderRootView : RelativeLayout {
             // Check moving.
             val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
             if (touchSlop < abs(diffX) || touchSlop < abs(diffY)) {
-                controller.currentState.requestCancelScan()
+                controller.fromView().requestCancelScan()
             }
 
             var newX = windowLayoutParams.x
@@ -890,7 +810,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                     "onSingleReleased() : [X=${point.x}] [Y=${point.y}]")
 
             // Request still capture.
-            controller.currentState.requestStillCapture()
+            controller.fromView().requestStillCapture()
 
             // Decide correction target position.
             val diffToEnable: Int
@@ -916,21 +836,21 @@ class OverlayViewFinderRootView : RelativeLayout {
                 target = windowEnabledXY
 
                 // Resume controller.
-                if (!isResumed) {
-                    isResumed = true
+                if (!controller.lifeCycle().isActive) {
                     controller.resume()
                     if (viewfinder.isAvailable) {
-                        controller.currentState.onSurfaceReady()
+                        controller.fromView().onSurfaceReady()
                     }
                 }
             } else {
                 target = windowDisabledXY
 
-                pauseController()
-            }
-
-            if (!isResumed) {
-                controller.currentState.onPreOpenCanceled()
+                if (controller.lifeCycle().isActive) {
+                    controller.pause()
+                } else {
+                    // Not resumed, cancel pre-open.
+                    controller.fromView().onPreOpenCanceled()
+                }
             }
 
             // Correct position start.
@@ -1018,7 +938,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         windowLayoutParams.y = windowDisabledXY.y
         windowManager.updateViewLayout(this, windowLayoutParams)
 
-        pauseController()
+        controller.pause()
 
         disableInteraction()
     }
@@ -1031,20 +951,9 @@ class OverlayViewFinderRootView : RelativeLayout {
         windowLayoutParams.y = windowDisabledXY.y
         windowManager.updateViewLayout(this, windowLayoutParams)
 
-        pauseController()
+        controller.pause()
 
         disableInteraction()
-    }
-
-    private fun pauseController() {
-        if (isResumed) {
-            isResumed = false
-
-            // Hide surface.
-            clearSurface()
-
-            controller.pause()
-        }
     }
 
     override fun dispatchKeyEvent(keyEvent: KeyEvent): Boolean {
@@ -1081,13 +990,13 @@ class OverlayViewFinderRootView : RelativeLayout {
                     KeyEvent.ACTION_DOWN -> {
                         if (IS_DEBUG) logD(TAG, "dispatchKeyEvent() : [VOLUME- DOWN]")
 
-                        controller.currentState.requestStartRec()
+                        controller.fromView().requestStartRec()
                     }
 
                     KeyEvent.ACTION_UP -> {
                         if (IS_DEBUG) logD(TAG, "dispatchKeyEvent() : [VOLUME- UP]")
 
-                        controller.currentState.requestStopRec()
+                        controller.fromView().requestStopRec()
                     }
 
                     else -> {
@@ -1128,7 +1037,7 @@ class OverlayViewFinderRootView : RelativeLayout {
             }
         }
 
-        pauseController()
+        controller.pause()
 
         disableInteraction()
     }
@@ -1230,8 +1139,5 @@ class OverlayViewFinderRootView : RelativeLayout {
         // Hidden window position.
         private const val WINDOW_INVISIBLE_POS_X = -5000
 
-        // Alpha definitions.
-        private const val SHOWN_ALPHA = 1.0f
-        private const val HIDDEN_ALPHA = 0.0f
     }
 }

@@ -106,7 +106,7 @@ class OverlayViewFinderService : Service() {
             }
 
             Constants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY -> {
-                controller?.currentState?.onToggleShowHideRequired()
+                controller?.lifeCycle()?.onToggleShowHideRequired()
             }
 
             Intent.ACTION_SCREEN_ON -> {
@@ -115,7 +115,7 @@ class OverlayViewFinderService : Service() {
 
             Intent.ACTION_SCREEN_OFF -> {
                 // Close overlay window if active.
-                if (controller?.currentState?.isActive == true) {
+                if (controller?.lifeCycle()?.isActive == true) {
                     controller?.forceClose()
                 }
             }
