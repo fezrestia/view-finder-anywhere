@@ -730,9 +730,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                     "onSingleTouched() : [X=${point.x}] [Y=${point.y}]")
 
             // Pre-open.
-            if (!controller.lifeCycle().isActive) {
-                controller.fromView().onPreOpenRequested()
-            }
+            controller.fromView().onPreOpenRequested()
 
             // Request scan.
             controller.fromView().requestScan()
@@ -833,24 +831,20 @@ class OverlayViewFinderRootView : RelativeLayout {
                 }
             }
             if (diffToEnable < diffToDisable) {
+                // To be resumed.
+
                 target = windowEnabledXY
 
-                // Resume controller.
-                if (!controller.lifeCycle().isActive) {
-                    controller.resume()
-                    if (viewfinder.isAvailable) {
-                        controller.fromView().onSurfaceReady()
-                    }
-                }
+                controller.resume()
             } else {
+                // To be paused.
+
                 target = windowDisabledXY
 
-                if (controller.lifeCycle().isActive) {
-                    controller.pause()
-                } else {
-                    // Not resumed, cancel pre-open.
-                    controller.fromView().onPreOpenCanceled()
-                }
+                // Not resumed, cancel pre-open.
+                controller.fromView().onPreOpenCanceled()
+
+                controller.pause()
             }
 
             // Correct position start.
