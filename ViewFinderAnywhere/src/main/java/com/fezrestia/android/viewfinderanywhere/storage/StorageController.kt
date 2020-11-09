@@ -3,9 +3,11 @@
 package com.fezrestia.android.viewfinderanywhere.storage
 
 import android.content.Context
+import android.location.Location
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Handler
+import androidx.exifinterface.media.ExifInterface
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.lib.util.log.logE
@@ -71,27 +73,28 @@ class StorageController constructor (
         override fun toString(): String = "${buffer.hashCode()}"
     }
 
-    data class PhotoData(val fileFullPath: String, val jpeg: ByteBuffer) {
+    data class PhotoData(val fileFullPath: String, val jpeg: ByteBuffer, val location: Location?) {
         override fun equals(other: Any?): Boolean {
-            if (other is PhotoData && this.fileFullPath == other.fileFullPath) {
+            if (other is PhotoData
+                    && this.fileFullPath == other.fileFullPath
+                    && this.jpeg == other.jpeg
+                    && this.location == other.location) {
                 return true
             }
             return false
         }
 
-        override fun hashCode(): Int {
-            var result = fileFullPath.hashCode()
-            result = 31 * result + jpeg.hashCode()
-            return result
-        }
+        override fun hashCode(): Int =
+                fileFullPath.hashCode() + 31 * jpeg.hashCode() + 31 * location.hashCode()
     }
 
     /**
      * Store JPEG picture data.
      *
      * @param jpegBuffer JPEG picture data.
+     * @param location GPS/GNSS location information if available.
      */
-    fun storePicture(jpegBuffer: ByteArray) {
+    fun storePicture(jpegBuffer: ByteArray, location: Location?) {
         if (IS_DEBUG) logD(TAG, "storePicture() : E")
 
         // Get target directory/file.
@@ -120,7 +123,7 @@ class StorageController constructor (
         if (IS_DEBUG) logD(TAG, "Task Size = ${fullPathSet.size}")
         fullPathSet.forEach { eachFullPath ->
             // Photo data.
-            val photoData = PhotoData(eachFullPath, ByteBuffer(jpegBuffer))
+            val photoData = PhotoData(eachFullPath, ByteBuffer(jpegBuffer), location)
             if (IS_DEBUG) logD(TAG, "PhotoData = $photoData")
 
             // Task.
@@ -171,6 +174,19 @@ class StorageController constructor (
                 val task = NotifyPhotoStoreDoneTask(false, null)
                 callbackHandler.post(task)
                 return
+            }
+
+            // Update EXIF.
+            photoData.location?.let {
+                if (IS_DEBUG) logD(TAG, "Start EXIF edit ...")
+
+                val exif = ExifInterface(photoData.fileFullPath)
+                exif.setGpsInfo(it)
+                exif.saveAttributes()
+
+                if (IS_DEBUG) logD(TAG, "Start EXIF edit ... DONE")
+            } ?: run {
+                logE(TAG, "location is null for path=${photoData.fileFullPath}")
             }
 
             val latch = CountDownLatch(1)

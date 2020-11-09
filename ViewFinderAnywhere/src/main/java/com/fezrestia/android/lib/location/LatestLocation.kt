@@ -25,7 +25,8 @@ class LatestLocation(val context: Context) {
 
     private val locationCallback: LocationCallback = LocationCallbackImpl()
 
-    private var latestLocation: Location? = null
+    var latestLocation: Location? = null
+            private set
 
     private val UPDATE_INTERVAL_MILLIS = 5000L
     private val FASTEST_UPDATE_INTERVAL_MILLIS = 1000L

@@ -871,7 +871,7 @@ class OverlayViewFinderController(private val context: Context) {
             if (IS_DEBUG) logD(TAG, "onPhotoStoreReady()")
 
             // Request store.
-            storageController.storePicture(data)
+            storageController.storePicture(data, latestLocation.latestLocation)
 
             if (isPauseRequested) {
                 changeStateTo(StateStopping())
