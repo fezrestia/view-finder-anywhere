@@ -11,6 +11,7 @@ import android.os.SystemClock
 import android.util.Size
 import android.view.Surface
 import android.view.View
+import com.fezrestia.android.lib.location.LatestLocation
 
 import com.fezrestia.android.lib.util.currentDisplayRot
 import com.fezrestia.android.lib.util.log.IS_DEBUG
@@ -43,6 +44,8 @@ class OverlayViewFinderController(private val context: Context) {
 
     private lateinit var camera: CameraPlatformInterface
     private var cameraSurfaceTexture: SurfaceTexture? = null
+
+    private lateinit var latestLocation: LatestLocation
 
     private val NO_STATE = StateNone()
 
@@ -88,6 +91,9 @@ class OverlayViewFinderController(private val context: Context) {
                 CameraApiLevel.API_2 -> Camera2Device(context, App.ui)
             }
             camera.prepare()
+
+            // Location.
+            latestLocation = LatestLocation(context)
 
             // Storage.
             storageController = StorageController(
@@ -183,6 +189,9 @@ class OverlayViewFinderController(private val context: Context) {
             // All state return to static zero.
 
             nativeOnDestroyed()
+
+            // Location.
+            latestLocation.release()
 
             // Storage.
             storageController.release()
@@ -520,6 +529,8 @@ class OverlayViewFinderController(private val context: Context) {
                 App.ui.post { cameraView.addToOverlayWindow() }
             }
 
+            latestLocation.start()
+
             checkCameraAndSurfaceAndStartViewFinder()
         }
 
@@ -650,6 +661,8 @@ class OverlayViewFinderController(private val context: Context) {
             App.ui.post {
                 storageView.removeFromOverlayWindow()
             }
+
+            latestLocation.stop()
         }
 
         override fun onResume() {

@@ -432,25 +432,18 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
         @TargetApi(Build.VERSION_CODES.M)
         get() = Settings.canDrawOverlays(this)
 
-    private val isCameraPermissionGranted: Boolean
-        @TargetApi(Build.VERSION_CODES.M)
-        get() = (checkSelfPermission(Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED)
+    private val REQUIRED_PERMISSIONS = arrayOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+    )
 
-    private val isMicPermissionGranted: Boolean
-        @TargetApi(Build.VERSION_CODES.M)
-        get() = (checkSelfPermission(Manifest.permission.RECORD_AUDIO)
-                == PackageManager.PERMISSION_GRANTED)
-
-    private val isWriteStoragePermissionGranted: Boolean
-        @TargetApi(Build.VERSION_CODES.M)
-        get() = (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED)
-
-    private val isReadStoragePermissionGranted: Boolean
-        @TargetApi(Build.VERSION_CODES.M)
-        get() = (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED)
+    @TargetApi(Build.VERSION_CODES.M)
+    private fun isPermissionGranted(permission: String): Boolean =
+            checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
 
     /**
      * Check permission.
@@ -474,17 +467,10 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
             val permissions = mutableListOf<String>()
 
-            if (!isCameraPermissionGranted) {
-                permissions.add(Manifest.permission.CAMERA)
-            }
-            if (!isMicPermissionGranted) {
-                permissions.add(Manifest.permission.RECORD_AUDIO)
-            }
-            if (!isWriteStoragePermissionGranted) {
-                permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            }
-            if (!isReadStoragePermissionGranted) {
-                permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            REQUIRED_PERMISSIONS.forEach { permission ->
+                if(!isPermissionGranted(permission)) {
+                    permissions.add(permission)
+                }
             }
 
             return if (permissions.isNotEmpty()) {
@@ -519,17 +505,11 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
         if (IS_DEBUG) logD(TAG, "onRequestPermissionsResult()")
 
         if (requestCode == REQUEST_CODE_MANAGE_PERMISSIONS) {
-            if (!isCameraPermissionGranted) {
-                logE(TAG, "Camera permission is not granted yet.")
-                finish()
-            }
-            if (!isWriteStoragePermissionGranted) {
-                logE(TAG,"Write storage permission is not granted yet.")
-                finish()
-            }
-            if (!isReadStoragePermissionGranted) {
-                logE(TAG,"  Read storage permission is not granted yet.")
-                finish()
+            REQUIRED_PERMISSIONS.forEach { permission ->
+                if (!isPermissionGranted(permission)) {
+                    logE(TAG, "Permission: $permission is NOT granted yet.")
+                    finish()
+                }
             }
 
             // After WRITE_EXTERNAL_STORAGE permission is granted,
