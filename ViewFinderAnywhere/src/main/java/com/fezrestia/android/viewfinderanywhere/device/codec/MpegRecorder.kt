@@ -4,6 +4,7 @@ package com.fezrestia.android.viewfinderanywhere.device.codec
 
 import android.content.Context
 import android.hardware.SensorManager
+import android.location.Location
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaCodec
@@ -178,8 +179,10 @@ class MpegRecorder(
     /**
      * Start recording.
      * setup() -> start() -> stop() -> reset()
+     *
+     * @location Current GPS/GNSS location information if available.
      */
-    fun start() {
+    fun start(location: Location?) {
         if (IS_DEBUG) logD(TAG, "start()")
 
         val videoEnc = ensure(videoMediaCodec)
@@ -202,6 +205,11 @@ class MpegRecorder(
         val videoRotHint = ((rotDeg + 45) / 90 * 90) % 360 // Round to 0, 90, 180, 270
         if (IS_DEBUG) logD(TAG, "## rotDeg=$rotDeg, videoRotHint=$videoRotHint")
         muxer.setOrientationHint(videoRotHint)
+        location?.let {
+            muxer.setLocation(location.latitude.toFloat(), location.longitude.toFloat())
+        } ?: run {
+            logE(TAG, "location is null for path=$mpegFileFullPath")
+        }
     }
 
     /**

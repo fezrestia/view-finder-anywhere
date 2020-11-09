@@ -933,7 +933,7 @@ class OverlayViewFinderController(private val context: Context) {
 
             nativeStartVideoEncode()
 
-            mpegRecorder?.start()
+            mpegRecorder?.start(latestLocation.latestLocation)
         }
 
         override fun onVideoStreamStopped() {
