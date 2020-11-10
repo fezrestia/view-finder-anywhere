@@ -1,6 +1,6 @@
 #pragma ide diagnostic ignored "UnusedGlobalDeclarationInspection"
 
-#include "opengl/util/opengl_matrix.hpp"
+#include <opengl/util/opengl_matrix.hpp>
 
 #define PI 3.14159f
 

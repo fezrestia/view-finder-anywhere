@@ -1,4 +1,4 @@
-#include "ElementBase.hpp"
+#include <opengl/ElementBase.hpp>
 
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 

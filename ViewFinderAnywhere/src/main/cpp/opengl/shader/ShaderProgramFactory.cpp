@@ -1,4 +1,4 @@
-#include "ShaderProgramFactory.hpp"
+#include <opengl/shader/ShaderProgramFactory.hpp>
 
 namespace fezrestia {
 
