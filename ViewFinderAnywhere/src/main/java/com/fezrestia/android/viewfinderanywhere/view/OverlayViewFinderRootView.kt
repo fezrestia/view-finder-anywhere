@@ -294,11 +294,17 @@ class OverlayViewFinderRootView : RelativeLayout {
 
     @SuppressLint("RtlHardcoded")
     private fun updateWindowParams(isInitialSetup: Boolean) {
+        if (IS_DEBUG) logD(TAG, "updateWindowParams() : E")
+
         releaseWindowPositionCorrector()
         val edgeClearance = context.resources.getDimensionPixelSize(
                 R.dimen.viewfinder_edge_clearance)
         val gripSize = context.resources.getDimensionPixelSize(
                 R.dimen.viewfinder_grip_size)
+        if (IS_DEBUG) {
+            logD(TAG, "edgeClearance = $edgeClearance")
+            logD(TAG, "gripSize = $gripSize")
+        }
 
         val winX: Int
         val winY: Int
@@ -321,11 +327,15 @@ class OverlayViewFinderRootView : RelativeLayout {
                         windowLayoutParams.x,
                         windowLayoutParams.y)
 
+                // Size.
+                windowLayoutParams.width = viewfinderWH.w
+                windowLayoutParams.height = viewfinderWH.h + gripSize
+
                 // Cache.
                 winX = displayWH.longLen() - viewfinderWH.w - windowLayoutParams.x
                 winY = displayWH.shortLen() - viewfinderWH.h - gripSize - windowLayoutParams.y
-                winW = viewfinderWH.w
-                winH = viewfinderWH.h + gripSize
+                winW = windowLayoutParams.width
+                winH = windowLayoutParams.height
                 OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
             }
 
@@ -344,11 +354,15 @@ class OverlayViewFinderRootView : RelativeLayout {
                         windowLayoutParams.x,
                         windowLayoutParams.y)
 
+                // Size.
+                windowLayoutParams.width = viewfinderWH.w + gripSize
+                windowLayoutParams.height = viewfinderWH.h
+
                 // Cache.
                 winX = displayWH.shortLen() - viewfinderWH.w - gripSize - windowLayoutParams.x
                 winY = displayWH.longLen() - viewfinderWH.h - windowLayoutParams.y
-                winW = viewfinderWH.w + gripSize
-                winH = viewfinderWH.h
+                winW = windowLayoutParams.width
+                winH = windowLayoutParams.height
                 OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
             }
 
@@ -370,6 +384,8 @@ class OverlayViewFinderRootView : RelativeLayout {
         if (isAttachedToWindow) {
             windowManager.updateViewLayout(this, windowLayoutParams)
         }
+
+        if (IS_DEBUG) logD(TAG, "updateWindowParams() : X")
     }
 
     /**
@@ -410,30 +426,49 @@ class OverlayViewFinderRootView : RelativeLayout {
         // Get display size.
         val rect = currentDisplayRect(windowManager)
         displayWH.set(rect.width(), rect.height())
+        if (IS_DEBUG) logD(TAG, "displayWH = ${displayWH.w} x ${displayWH.h}")
 
         // Get display orientation.
         orientation = if (height < width) {
+            if (IS_DEBUG) logD(TAG, "orientation = LANDSCAPE")
             Configuration.ORIENTATION_LANDSCAPE
         } else {
+            if (IS_DEBUG) logD(TAG, "orientation = PORTRAIT")
             Configuration.ORIENTATION_PORTRAIT
         }
     }
 
     private fun calculateViewFinderSize() {
+        val gripSize = context.resources.getDimensionPixelSize(R.dimen.viewfinder_grip_size)
+
         // Define view finder size.
         when (orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
-                viewfinderWH.w =
-                        (displayWH.longLen() * configManager.evfSize.scaleRate).toInt()
-                viewfinderWH.h =
-                        (viewfinderWH.w / configManager.evfAspect.ratioWH).toInt()
+                var checkW = (displayWH.w * configManager.evfSize.scaleRate).toInt()
+                var checkH = (checkW / configManager.evfAspect.ratioWH).toInt()
+
+                if (checkH > (displayWH.h - gripSize)) {
+                    // Fit overlay window height to display height.
+                    checkH = displayWH.h - gripSize
+                    checkW = (checkH * configManager.evfAspect.ratioWH).toInt()
+                }
+
+                viewfinderWH.w = checkW
+                viewfinderWH.h = checkH
             }
 
             Configuration.ORIENTATION_PORTRAIT -> {
-                viewfinderWH.h =
-                        (displayWH.longLen() * configManager.evfSize.scaleRate).toInt()
-                viewfinderWH.w =
-                        (viewfinderWH.h / configManager.evfAspect.ratioWH).toInt()
+                var checkH = (displayWH.h * configManager.evfSize.scaleRate).toInt()
+                var checkW = (checkH / configManager.evfAspect.ratioWH).toInt()
+
+                if (checkW > (displayWH.w - gripSize)) {
+                    // Fit overlay window width to display width.
+                    checkW = displayWH.w - gripSize
+                    checkH = (checkW * configManager.evfAspect.ratioWH).toInt()
+                }
+
+                viewfinderWH.w = checkW
+                viewfinderWH.h = checkH
             }
 
             else -> {
@@ -441,12 +476,13 @@ class OverlayViewFinderRootView : RelativeLayout {
                 throw IllegalStateException("Unexpected orientation.")
             }
         }
+
+        if (IS_DEBUG) logD(TAG, "viewfinderWH = ${viewfinderWH.w} x ${viewfinderWH.h}")
     }
 
     @SuppressLint("RtlHardcoded")
     private fun updateLayoutParams() {
-        val gripSize = context.resources.getDimensionPixelSize(
-                R.dimen.viewfinder_grip_size)
+        val gripSize = context.resources.getDimensionPixelSize(R.dimen.viewfinder_grip_size)
 
         // Viewfinder size.
         run {
