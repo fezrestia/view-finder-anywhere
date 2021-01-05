@@ -5,14 +5,7 @@ package com.fezrestia.android.viewfinderanywhere.view
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Matrix
-import android.graphics.Paint
-import android.graphics.PixelFormat
-import android.graphics.Point
-import android.graphics.SurfaceTexture
-import android.graphics.Typeface
+import android.graphics.*
 import android.util.AttributeSet
 import android.view.Gravity
 import android.view.KeyEvent
@@ -1079,6 +1072,26 @@ class OverlayViewFinderRootView : RelativeLayout {
                     .map { index -> scan_indicator_container.getChildAt(index) }
                     .forEach { view -> view.setBackgroundColor(color) }
             scan_indicator_container.invalidate()
+        }
+    }
+
+    // To ignore global navigation gesture on side edge.
+    private val navExclusionRect = Rect()
+    private val NAV_EXCLUSION_MAX_DP = 200.0f
+    private val NAV_EXCLUSION_MAX_PX = (NAV_EXCLUSION_MAX_DP * resources.displayMetrics.density).toInt()
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            if (bottom - top > NAV_EXCLUSION_MAX_PX) {
+                // Exclude top area. (near grip area)
+                navExclusionRect.set(left, top, right, top + NAV_EXCLUSION_MAX_PX)
+            } else {
+                // Exclude whole area.
+                navExclusionRect.set(left, top, right, bottom)
+            }
+            val list = listOf(navExclusionRect)
+            this.systemGestureExclusionRects = list
         }
     }
 
