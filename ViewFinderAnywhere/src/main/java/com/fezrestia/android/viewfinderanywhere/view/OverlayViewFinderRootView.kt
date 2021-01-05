@@ -176,9 +176,6 @@ class OverlayViewFinderRootView : RelativeLayout {
         // Window related.
         createWindowParameters()
 
-        // Update UI.
-        updateTotalUserInterface()
-
         if (IS_DEBUG) logD(TAG, "initialize() : X")
     }
 
@@ -284,108 +281,12 @@ class OverlayViewFinderRootView : RelativeLayout {
      * Add this view to WindowManager layer.
      */
     fun addToOverlayWindow() {
-        // Window parameters.
-        updateWindowParams(true)
+        // Update UI.
+        updateTotalUserInterface()
 
         // Add to WindowManager.
         val winMng = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         winMng.addView(this, windowLayoutParams)
-    }
-
-    @SuppressLint("RtlHardcoded")
-    private fun updateWindowParams(isInitialSetup: Boolean) {
-        if (IS_DEBUG) logD(TAG, "updateWindowParams() : E")
-
-        releaseWindowPositionCorrector()
-        val edgeClearance = context.resources.getDimensionPixelSize(
-                R.dimen.viewfinder_edge_clearance)
-        val gripSize = context.resources.getDimensionPixelSize(
-                R.dimen.viewfinder_grip_size)
-        if (IS_DEBUG) {
-            logD(TAG, "edgeClearance = $edgeClearance")
-            logD(TAG, "gripSize = $gripSize")
-        }
-
-        val winX: Int
-        val winY: Int
-        val winW: Int
-        val winH: Int
-
-        when (orientation) {
-            Configuration.ORIENTATION_LANDSCAPE -> {
-                windowLayoutParams.gravity = Gravity.BOTTOM or Gravity.RIGHT
-
-                // Window offset on enabled.
-                windowLayoutParams.x = edgeClearance
-                windowLayoutParams.y = 0
-
-                // Position limit.
-                windowDisabledXY.set(
-                        windowLayoutParams.x,
-                        windowLayoutParams.y - viewfinderWH.h)
-                windowEnabledXY.set(
-                        windowLayoutParams.x,
-                        windowLayoutParams.y)
-
-                // Size.
-                windowLayoutParams.width = viewfinderWH.w
-                windowLayoutParams.height = viewfinderWH.h + gripSize
-
-                // Cache.
-                winX = displayWH.longLen() - viewfinderWH.w - windowLayoutParams.x
-                winY = displayWH.shortLen() - viewfinderWH.h - gripSize - windowLayoutParams.y
-                winW = windowLayoutParams.width
-                winH = windowLayoutParams.height
-                OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
-            }
-
-            Configuration.ORIENTATION_PORTRAIT -> {
-                windowLayoutParams.gravity = Gravity.BOTTOM or Gravity.RIGHT
-
-                // Window offset on enabled.
-                windowLayoutParams.x = 0
-                windowLayoutParams.y = edgeClearance
-
-                // Position limit.
-                windowDisabledXY.set(
-                        windowLayoutParams.x - viewfinderWH.w,
-                        windowLayoutParams.y)
-                windowEnabledXY.set(
-                        windowLayoutParams.x,
-                        windowLayoutParams.y)
-
-                // Size.
-                windowLayoutParams.width = viewfinderWH.w + gripSize
-                windowLayoutParams.height = viewfinderWH.h
-
-                // Cache.
-                winX = displayWH.shortLen() - viewfinderWH.w - gripSize - windowLayoutParams.x
-                winY = displayWH.longLen() - viewfinderWH.h - windowLayoutParams.y
-                winW = windowLayoutParams.width
-                winH = windowLayoutParams.height
-                OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
-            }
-
-            else -> {
-                throw IllegalStateException("Unexpected orientation.")
-            }
-        }
-
-        if (IS_DEBUG) {
-            logD(TAG, "updateWindowParams() : X=$winX, Y=$winY, W=$winW, H=$winH")
-        }
-
-        // Check active.
-        if (!isInitialSetup && !controller.lifeCycle().isActive) {
-            windowLayoutParams.x = windowDisabledXY.x
-            windowLayoutParams.y = windowDisabledXY.y
-        }
-
-        if (isAttachedToWindow) {
-            windowManager.updateViewLayout(this, windowLayoutParams)
-        }
-
-        if (IS_DEBUG) logD(TAG, "updateWindowParams() : X")
     }
 
     /**
@@ -417,7 +318,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         // View finder size.
         calculateViewFinderSize()
         // Window layout.
-        updateWindowParams(false)
+        updateWindowParams()
         // Update layout.
         updateLayoutParams()
     }
@@ -429,7 +330,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         if (IS_DEBUG) logD(TAG, "displayWH = ${displayWH.w} x ${displayWH.h}")
 
         // Get display orientation.
-        orientation = if (height < width) {
+        orientation = if (displayWH.w > displayWH.h) {
             if (IS_DEBUG) logD(TAG, "orientation = LANDSCAPE")
             Configuration.ORIENTATION_LANDSCAPE
         } else {
@@ -471,13 +372,106 @@ class OverlayViewFinderRootView : RelativeLayout {
                 viewfinderWH.h = checkH
             }
 
+            else -> throw IllegalStateException("Unexpected orientation.")
+        }
+
+        if (IS_DEBUG) logD(TAG, "viewfinderWH = ${viewfinderWH.w} x ${viewfinderWH.h}")
+    }
+
+    @SuppressLint("RtlHardcoded")
+    private fun updateWindowParams() {
+        if (IS_DEBUG) logD(TAG, "updateWindowParams() : E")
+
+        releaseWindowPositionCorrector()
+        val edgeClearance = context.resources.getDimensionPixelSize(
+                R.dimen.viewfinder_edge_clearance)
+        val gripSize = context.resources.getDimensionPixelSize(
+                R.dimen.viewfinder_grip_size)
+        if (IS_DEBUG) {
+            logD(TAG, "edgeClearance = $edgeClearance")
+            logD(TAG, "gripSize = $gripSize")
+        }
+
+        val winX: Int
+        val winY: Int
+        val winW: Int
+        val winH: Int
+
+        when (orientation) {
+            Configuration.ORIENTATION_LANDSCAPE -> {
+                windowLayoutParams.gravity = Gravity.BOTTOM or Gravity.RIGHT
+
+                // Window offset on enabled.
+                windowLayoutParams.x = edgeClearance
+                windowLayoutParams.y = 0
+
+                // Position limit.
+                windowDisabledXY.set(
+                        windowLayoutParams.x,
+                        windowLayoutParams.y - viewfinderWH.h)
+                windowEnabledXY.set(
+                        windowLayoutParams.x,
+                        windowLayoutParams.y)
+
+                // Size.
+                windowLayoutParams.width = viewfinderWH.w
+                windowLayoutParams.height = viewfinderWH.h + gripSize
+
+                // Cache.
+                winX = displayWH.w - viewfinderWH.w - windowLayoutParams.x
+                winY = displayWH.h - viewfinderWH.h - gripSize - windowLayoutParams.y
+                winW = windowLayoutParams.width
+                winH = windowLayoutParams.height
+                OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
+            }
+
+            Configuration.ORIENTATION_PORTRAIT -> {
+                windowLayoutParams.gravity = Gravity.BOTTOM or Gravity.RIGHT
+
+                // Window offset on enabled.
+                windowLayoutParams.x = 0
+                windowLayoutParams.y = edgeClearance
+
+                // Position limit.
+                windowDisabledXY.set(
+                        windowLayoutParams.x - viewfinderWH.w,
+                        windowLayoutParams.y)
+                windowEnabledXY.set(
+                        windowLayoutParams.x,
+                        windowLayoutParams.y)
+
+                // Size.
+                windowLayoutParams.width = viewfinderWH.w + gripSize
+                windowLayoutParams.height = viewfinderWH.h
+
+                // Cache.
+                winX = displayWH.w - viewfinderWH.w - gripSize - windowLayoutParams.x
+                winY = displayWH.h - viewfinderWH.h - windowLayoutParams.y
+                winW = windowLayoutParams.width
+                winH = windowLayoutParams.height
+                OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
+            }
+
             else -> {
-                // Unexpected orientation.
                 throw IllegalStateException("Unexpected orientation.")
             }
         }
 
-        if (IS_DEBUG) logD(TAG, "viewfinderWH = ${viewfinderWH.w} x ${viewfinderWH.h}")
+        if (IS_DEBUG) {
+            logD(TAG, "updateWindowParams() : X=$winX, Y=$winY, W=$winW, H=$winH")
+        }
+
+        // Check active.
+        if (!controller.lifeCycle().isActive) {
+            windowLayoutParams.x = windowDisabledXY.x
+            windowLayoutParams.y = windowDisabledXY.y
+        }
+
+        if (isAttachedToWindow) {
+            windowManager.updateViewLayout(this, windowLayoutParams)
+        }
+
+        if (IS_DEBUG) logD(TAG, "updateWindowParams() : X")
     }
 
     @SuppressLint("RtlHardcoded")
@@ -492,29 +486,10 @@ class OverlayViewFinderRootView : RelativeLayout {
             viewfinder_container.layoutParams = params
         }
 
-        val totalWidth: Int
-        val totalHeight: Int
-        when (orientation) {
-            Configuration.ORIENTATION_LANDSCAPE -> {
-                totalWidth = viewfinderWH.w
-                totalHeight = viewfinderWH.h + gripSize
-            }
-
-            Configuration.ORIENTATION_PORTRAIT -> {
-                totalWidth = viewfinderWH.w + gripSize
-                totalHeight = viewfinderWH.h
-            }
-
-            else -> {
-                // Unexpected orientation.
-                throw IllegalStateException("Unexpected orientation.")
-            }
-        }
-
         run {
             val params = total_background.layoutParams
-            params.width = totalWidth
-            params.height = totalHeight
+            params.width = windowLayoutParams.width
+            params.height = windowLayoutParams.height
             total_background.layoutParams = params
 
             when (orientation) {
@@ -526,17 +501,14 @@ class OverlayViewFinderRootView : RelativeLayout {
                     total_background.setImageDrawable(customResContainer.drawableTotalBackPort)
                 }
 
-                else -> {
-                    // Unexpected orientation.
-                    throw IllegalStateException("Unexpected orientation.")
-                }
+                else -> throw IllegalStateException("Unexpected orientation.")
             }
         }
 
         run {
             val params = total_foreground.layoutParams
-            params.width = totalWidth
-            params.height = totalHeight
+            params.width = windowLayoutParams.width
+            params.height = windowLayoutParams.height
             total_foreground.layoutParams = params
 
             when (orientation) {
@@ -548,10 +520,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                     total_foreground.setImageDrawable(customResContainer.drawableTotalForePort)
                 }
 
-                else -> {
-                    // Unexpected orientation.
-                    throw IllegalStateException("Unexpected orientation.")
-                }
+                else -> throw IllegalStateException("Unexpected orientation.")
             }
         }
 
@@ -566,10 +535,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                     overlay_slider.orientation = LinearLayout.HORIZONTAL
                 }
 
-                else -> {
-                    // Unexpected orientation.
-                    throw IllegalStateException("Unexpected orientation.")
-                }
+                else -> throw IllegalStateException("Unexpected orientation.")
             }
         }
 
@@ -587,10 +553,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                     params.height = viewfinderWH.h
                 }
 
-                else -> {
-                    // Unexpected orientation.
-                    throw IllegalStateException("Unexpected orientation.")
-                }
+                else -> throw IllegalStateException("Unexpected orientation.")
             }
             viewfinder_grip_container.layoutParams = params
         }
@@ -611,10 +574,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                     viewfinder_grip.setImageDrawable(customResContainer.drawableVfGripPort)
                 }
 
-                else -> {
-                    // Unexpected orientation.
-                    throw IllegalStateException("Unexpected orientation.")
-                }
+                else -> throw IllegalStateException("Unexpected orientation.")
             }
             params.gravity = Gravity.TOP or Gravity.LEFT
             viewfinder_grip.layoutParams = params
@@ -660,10 +620,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                     }
                 }
 
-                else -> {
-                    // Unexpected orientation.
-                    throw IllegalStateException("Unexpected orientation.")
-                }
+                else -> throw IllegalStateException("Unexpected orientation.")
             }
             viewfinder_grip_label.visibility = visibility
             viewfinder_grip_label.layoutParams = params
@@ -680,10 +637,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                     viewfinder_frame.setImageDrawable(customResContainer.drawableVfFramePort)
                 }
 
-                else -> {
-                    // Unexpected orientation.
-                    throw IllegalStateException("Unexpected orientation.")
-                }
+                else -> throw IllegalStateException("Unexpected orientation.")
             }
         }
     }
@@ -820,10 +774,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                     }
                 }
 
-                else -> {
-                    // Unexpected orientation.
-                    throw IllegalStateException("Unexpected orientation.")
-                }
+                else -> throw IllegalStateException("Unexpected orientation.")
             }
 
             if (windowLayoutParams.x != newX || windowLayoutParams.y != newY) {
@@ -861,10 +812,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                     diffToDisable = abs(windowDisabledXY.x - windowLayoutParams.x)
                 }
 
-                else -> {
-                    // Unexpected orientation.
-                    throw IllegalStateException("Unexpected orientation.")
-                }
+                else -> throw IllegalStateException("Unexpected orientation.")
             }
             if (diffToEnable < diffToDisable) {
                 // To be resumed.
@@ -1050,26 +998,14 @@ class OverlayViewFinderRootView : RelativeLayout {
                 "onConfigurationChanged() : [Config=$newConfig]")
         super.onConfigurationChanged(newConfig)
 
-        // Cache.
-        val lastOrientation = orientation
-
-        // Update UI.
-        updateTotalUserInterface()
-
-        // Hide grip when configuration is landscape.
-        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            // Landscape always.
-            invisible()
-        } else {
-            // Changed from landscape to portrait.
-            if (lastOrientation == Configuration.ORIENTATION_LANDSCAPE) {
-                close()
-            }
-        }
-
         controller.pause()
+        controller.release()
 
-        disableInteraction()
+        controller.ready()
+        controller.resume()
+
+        // TODO: Consider to open/close overlay window align to previous state.
+
     }
 
     /**

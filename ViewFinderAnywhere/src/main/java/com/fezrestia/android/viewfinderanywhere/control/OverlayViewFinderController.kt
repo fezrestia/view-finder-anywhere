@@ -1203,27 +1203,30 @@ class OverlayViewFinderController(private val context: Context) {
     private inner class CameraSurfaceTextureCallback : SurfaceTexture.OnFrameAvailableListener {
         val TAG = "CameraSurfaceTextureCallback"
         override fun onFrameAvailable(surfaceTexture: SurfaceTexture) {
-            if (IS_DEBUG) logD(TAG, "onFrameAvailable() : E")
+            handler.post {
+                if (IS_DEBUG) logD(TAG, "onFrameAvailable() : E")
 
-            if (surfaceTexture.isReleased) {
-                logE(TAG, "SurfaceTexture is already released.")
-                return
+                if (surfaceTexture.isReleased) {
+                    logE(TAG, "SurfaceTexture is already released.")
+                    return@post
+                }
+
+
+                nativeBindAppEglContext()
+
+                surfaceTexture.updateTexImage()
+
+                val matrix = FloatArray(16)
+                surfaceTexture.getTransformMatrix(matrix)
+
+                nativeSetCameraStreamTransformMatrix(matrix)
+
+                nativeOnCameraStreamUpdated()
+
+                nativeUnbindAppEglContext()
+
+                if (IS_DEBUG) logD(TAG, "onFrameAvailable() : X")
             }
-
-            nativeBindAppEglContext()
-
-            surfaceTexture.updateTexImage()
-
-            val matrix = FloatArray(16)
-            surfaceTexture.getTransformMatrix(matrix)
-
-            nativeSetCameraStreamTransformMatrix(matrix)
-
-            nativeOnCameraStreamUpdated()
-
-            nativeUnbindAppEglContext()
-
-            if (IS_DEBUG) logD(TAG, "onFrameAvailable() : X")
         }
     }
 
