@@ -31,10 +31,8 @@ import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAspect
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderSize
 import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger
 import com.fezrestia.android.viewfinderanywhere.plugin.ui.loadCustomizedUiResources
-import com.fezrestia.android.viewfinderanywhere.storage.DirFileUtil
+import com.fezrestia.android.viewfinderanywhere.storage.MediaStoreUtil
 import com.google.firebase.analytics.FirebaseAnalytics
-
-import java.io.File
 
 class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
     companion object {
@@ -200,6 +198,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                             setEnabledStorageSelectorRelatedPreferences(false)
                         } else {
                             setEnabledStorageSelectorRelatedPreferences(true)
+                            updateStorageSelectorSelectableDirectoryList()
                         }
                     }
 
@@ -210,16 +209,16 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
                         // Validation.
                         if (newDir.isNotEmpty()) {
-                            // Create new directory.
-                            val isSuccess = DirFileUtil.createNewContentsDirectory(
-                                    requireContext(),
-                                    newDir)
+                            val selectableSet = App.sp.getStringSet(
+                                    Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
+                                    mutableSetOf<String>()) as MutableSet<String>
 
-                            if (isSuccess) {
-                                // Update available list.
-                                updateStorageSelectorSelectableDirectoryList()
-                            } else {
-                                if (IS_DEBUG) logD(TAG, "New dir creation FAILED")
+                            if (!selectableSet.contains(newDir)) {
+                                selectableSet.add(newDir)
+                                App.sp.edit().putStringSet(
+                                        Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
+                                        selectableSet)
+                                        .apply()
                             }
                         }
                     }
@@ -228,10 +227,11 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                         @Suppress("UNCHECKED_CAST")
                         val validDirSet: MutableSet<String> = newValue as MutableSet<String>
 
-                        // Add default storage.
-                        validDirSet.add(DirFileUtil.DEFAULT_STORAGE_DIR_NAME)
-
-                        if (IS_DEBUG) validDirSet.forEach { dir -> logD(TAG, "ValidDir = $dir") }
+                        if (IS_DEBUG) {
+                            validDirSet.forEach { dir ->
+                                logD(TAG, "ValidDir = $dir")
+                            }
+                        }
 
                         // Store.
                         App.sp.edit().putStringSet(
@@ -315,61 +315,37 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
         fun updateStorageSelectorSelectableDirectoryList() {
             if (IS_DEBUG) logD(TAG, "updateStorageSelectorSelectableDirectoryList() : E")
 
-            // Create root dir.
-            DirFileUtil.createContentsRootDirectory(requireContext())
+            val pref: MultiSelectListPreference = findPreference(
+                    Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY)!!
 
-            // Scan directory list.
-            val contentsRoot = File(DirFileUtil.getApplicationStorageRootPath(requireContext()))
-            val fileList: Array<out File>? = contentsRoot.listFiles()
-
-            if (fileList == null) {
-                // If before runtime permission process done, fileList is null.
-                // In that case, return here and retry after onActivityResults.
-                if (IS_DEBUG) logD(TAG, "contentsRoot.listFiles() == null")
+            // Total.
+            val totalDirs = MediaStoreUtil.getTagDirList(requireContext())
+            if (totalDirs.isEmpty()) {
+                pref.isEnabled = false
+                logE(TAG, "No tag dirs.")
                 return
             }
 
-            if (IS_DEBUG) {
-                logD(TAG, "contentsRoot = ${contentsRoot.path}")
-                logD(TAG, "listFiles() DONE")
-//                fileList.forEach { file -> logD(TAG, "path = ${file.path}") }
-            }
-
-            // Scan directories.
-            val dirPathList = mutableListOf<String>()
-            fileList.forEach { file ->
-                if (file.isDirectory) {
-                    dirPathList.add(file.name)
-                }
-            }
-            if (IS_DEBUG) {
-                logD(TAG, "dirList  DONE")
-                dirPathList.forEach { dirPath -> logD(TAG, "dir = $dirPath") }
-            }
-
-            // Existing path is valid for selected values.
+            // Current selectable.
             val selectableSet = App.sp.getStringSet(
                     Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
                     setOf<String>()) as Set<String>
-            val validValues = mutableSetOf<String>()
+            val validSelectables = mutableSetOf<String>()
             selectableSet.forEach { selectable ->
-                if (dirPathList.contains(selectable)) {
-                    validValues.add(selectable)
+                if (totalDirs.contains(selectable)) {
+                    validSelectables.add(selectable)
                 }
             }
 
             // Apply to preferences.
-            val pref: MultiSelectListPreference = findPreference(
-                    Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY)!!
-            val entries = dirPathList.toTypedArray()
+            val entries = totalDirs.toTypedArray()
             pref.entries = entries
             pref.entryValues = entries
-            pref.values = validValues
+            pref.values = validSelectables
             pref.onPreferenceChangeListener = onChangeListenerImpl
 
             if (IS_DEBUG) logD(TAG, "updateStorageSelectorSelectableDirectoryList() : X")
         }
-
     }
 
     //// MAIN ACTIVITY
@@ -435,8 +411,6 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
     private val REQUIRED_PERMISSIONS = arrayOf(
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION,
     )

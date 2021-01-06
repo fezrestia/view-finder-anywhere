@@ -4,7 +4,6 @@ package com.fezrestia.android.viewfinderanywhere.storage
 
 import android.content.Context
 import android.location.Location
-import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Handler
 import androidx.exifinterface.media.ExifInterface
@@ -14,7 +13,6 @@ import com.fezrestia.android.lib.util.log.logE
 import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.Constants
 import java.util.Calendar
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
@@ -58,7 +56,6 @@ class StorageController constructor (
     init {
         if (IS_DEBUG) logD(TAG, "CONSTRUCTOR : E")
 
-        DirFileUtil.createContentsRootDirectory(context)
         backWorker = Executors.newSingleThreadExecutor(BackWorkerThreadFactoryImpl())
 
         if (IS_DEBUG) logD(TAG, "CONSTRUCTOR : X")
@@ -69,15 +66,16 @@ class StorageController constructor (
         backWorker.awaitTermination(5000, TimeUnit.MILLISECONDS)
     }
 
-    class ByteBuffer(val buffer: ByteArray) {
-        override fun toString(): String = "${buffer.hashCode()}"
-    }
-
-    data class PhotoData(val fileFullPath: String, val jpeg: ByteBuffer, val location: Location?) {
+    data class PhotoData(
+            val tagDir: String,
+            val fileName: String,
+            val jpeg: ByteArray,
+            val location: Location?) {
         override fun equals(other: Any?): Boolean {
             if (other is PhotoData
-                    && this.fileFullPath == other.fileFullPath
-                    && this.jpeg == other.jpeg
+                    && this.tagDir == other.tagDir
+                    && this.fileName == other.fileName
+                    && this.jpeg.contentEquals(other.jpeg)
                     && this.location == other.location) {
                 return true
             }
@@ -85,7 +83,7 @@ class StorageController constructor (
         }
 
         override fun hashCode(): Int =
-                fileFullPath.hashCode() + 31 * jpeg.hashCode() + 31 * location.hashCode()
+                "$tagDir/$fileName".hashCode() + 31 * jpeg.hashCode() + 31 * location.hashCode()
     }
 
     /**
@@ -101,29 +99,15 @@ class StorageController constructor (
         val targetDirSet: Set<String> = getTargetDirSet()
         val targetFileName: String = getTargetFileName()
 
-        // File full path.
-        val fullPathSet = mutableSetOf<String>()
-
         targetDirSet.forEach { eachDir ->
             if (IS_DEBUG) logD(TAG, "eachDir = $eachDir")
 
-            // Storage root.
-            val rootPath = DirFileUtil.getApplicationStorageRootPath(context)
-
-            if (eachDir == DirFileUtil.DEFAULT_STORAGE_DIR_NAME) {
-                // Default path.
-                fullPathSet.add("$rootPath/$targetFileName${DirFileUtil.JPEG_FILE_EXT}")
-            } else {
-                // Specific tag dir.
-                fullPathSet.add("$rootPath/$eachDir/$targetFileName${DirFileUtil.JPEG_FILE_EXT}")
-            }
-        }
-
-        // Task.
-        if (IS_DEBUG) logD(TAG, "Task Size = ${fullPathSet.size}")
-        fullPathSet.forEach { eachFullPath ->
             // Photo data.
-            val photoData = PhotoData(eachFullPath, ByteBuffer(jpegBuffer), location)
+            val photoData = PhotoData(
+                    eachDir,
+                    targetFileName,
+                    jpegBuffer,
+                    location)
             if (IS_DEBUG) logD(TAG, "PhotoData = $photoData")
 
             // Task.
@@ -146,14 +130,14 @@ class StorageController constructor (
 
         // Default dir.
         if (targetDirSet.isEmpty()) {
-            targetDirSet.add(DirFileUtil.DEFAULT_STORAGE_DIR_NAME)
+            targetDirSet.add(MediaStoreUtil.DEFAULT_STORAGE_DIR_NAME)
         }
 
         return targetDirSet
     }
 
     private fun getTargetFileName(): String =
-            DirFileUtil.FILE_NAME_SDF.format(Calendar.getInstance().time)
+            MediaStoreUtil.FILE_NAME_SDF.format(Calendar.getInstance().time)
 
     private inner class SavePictureTask constructor(
             val context: Context,
@@ -166,10 +150,13 @@ class StorageController constructor (
         override fun run() {
             if (IS_DEBUG) logD(TAG, "run() : E")
 
-            // Store.
-            val isSuccess = DirFileUtil.byte2file(photoData.jpeg.buffer, photoData.fileFullPath)
+            val uri: Uri? = MediaStoreUtil.storeImage(
+                    context,
+                    photoData.tagDir,
+                    photoData.fileName,
+                    photoData.jpeg)
 
-            if (!isSuccess) {
+            if (uri == null) {
                 if (IS_DEBUG) logE(TAG, "File can not be stored.")
                 val task = NotifyPhotoStoreDoneTask(false, null)
                 callbackHandler.post(task)
@@ -180,29 +167,21 @@ class StorageController constructor (
             photoData.location?.let {
                 if (IS_DEBUG) logD(TAG, "Start EXIF edit ...")
 
-                val exif = ExifInterface(photoData.fileFullPath)
-                exif.setGpsInfo(it)
-                exif.saveAttributes()
+                val fd = context.contentResolver.openFileDescriptor(uri, "rw")?.fileDescriptor
+                if (fd != null) {
+                    val exif = ExifInterface(fd)
+                    exif.setGpsInfo(it)
+                    exif.saveAttributes()
+                } else {
+                    logE(TAG, "InputStream of $uri is null")
+                }
 
                 if (IS_DEBUG) logD(TAG, "Start EXIF edit ... DONE")
             } ?: run {
-                logE(TAG, "location is null for path=${photoData.fileFullPath}")
+                logE(TAG, "location is null for uri=$uri")
             }
 
-            val latch = CountDownLatch(1)
-
-            // Request update Media DB.
-            val notifier = MediaScannerNotifier(context, photoData.fileFullPath, latch)
-            notifier.start()
-
-            try {
-                latch.await()
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-                throw RuntimeException("Why thread is interrupted ?")
-            }
-
-            val task = NotifyPhotoStoreDoneTask(true, notifier.uri)
+            val task = NotifyPhotoStoreDoneTask(true, uri)
             callbackHandler.post(task)
 
             if (IS_DEBUG) logD(TAG, "run() : X")
@@ -218,95 +197,24 @@ class StorageController constructor (
         }
     }
 
-    private class MediaScannerNotifier constructor(
-            context: Context,
-            val path: String,
-            val latch: CountDownLatch)
-            : MediaScannerConnection.MediaScannerConnectionClient {
-        // Log tag.
-        private val TAG = "MediaScannerNotifier"
-
-        private val connection = MediaScannerConnection(context, this)
-
-        var uri: Uri? = null
-
-        fun start() {
-            connection.connect()
-        }
-
-        override fun onMediaScannerConnected() {
-            if (IS_DEBUG) logD(TAG, "onMediaScannerConnected()")
-            connection.scanFile(path, null)
-        }
-
-        override fun onScanCompleted(path: String, uri: Uri) {
-            if (IS_DEBUG) logD(TAG, "onScanCompleted()")
-            if (IS_DEBUG) logD(TAG, "URI = ${uri.path}")
-
-            this.uri = uri
-
-            // Notify.
-            latch.countDown()
-
-            // Disconnect.
-            connection.disconnect()
-        }
-    }
-
     /**
-     * Get target video path to be stored.
+     * Open MPEG URI.
      *
-     * @return Store target video full path.
+     * @return
      */
-    fun getVideoFileFullPath(): String {
-        if (IS_DEBUG) logD(TAG, "getVideoFileFullPath()")
+    fun openMpegUri(): Uri? {
+        if (IS_DEBUG) logD(TAG, "openMpegUri()")
 
         val targetDir: String = getTargetDirSet().first()
         val targetFileName: String = getTargetFileName()
 
-        val rootPath = DirFileUtil.getApplicationStorageRootPath(context)
-
-        val targetFullPath = if (targetDir == DirFileUtil.DEFAULT_STORAGE_DIR_NAME) {
-            "$rootPath/$targetFileName${DirFileUtil.MP4_FILE_EXT}"
-        } else {
-            "$rootPath/$targetDir/$targetFileName${DirFileUtil.MP4_FILE_EXT}"
-        }
-
-        if (IS_DEBUG) logD(TAG, "Target Video Full Path = $targetFullPath")
-
-        return targetFullPath
-    }
-
-    private class NotifyToMediaScannerTask(context: Context, val path: String)
-            : MediaScannerConnection.MediaScannerConnectionClient, Runnable {
-        private val TAG = "NotifyToMediaScannerTask"
-
-        private val connection = MediaScannerConnection(context, this)
-
-        override fun run() {
-            connection.connect()
-
-        }
-
-        override fun onMediaScannerConnected() {
-            if (IS_DEBUG) logD(TAG, "onMediaScannerConnected()")
-            connection.scanFile(path, null)
-        }
-
-        override fun onScanCompleted(path: String, uri: Uri) {
-            if (IS_DEBUG) logD(TAG, "onScanCompleted()")
-            if (IS_DEBUG) logD(TAG, "URI = ${uri.path}")
-
-            connection.disconnect()
-        }
+        return MediaStoreUtil.openMpegUri(context, targetDir, targetFileName)
     }
 
     /**
-     * Notify path to MediaScanner and to be scanned.
-     *
-     * @path
+     * Close MPEG URI.
      */
-    fun notifyToMediaScanner(path: String) {
-        backWorker.execute(NotifyToMediaScannerTask(context, path))
+    fun closeMpegUri(uri: Uri) {
+        MediaStoreUtil.closeMpegUri(context, uri)
     }
 }

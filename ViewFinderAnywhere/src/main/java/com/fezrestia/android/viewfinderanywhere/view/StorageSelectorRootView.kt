@@ -23,14 +23,12 @@ import com.fezrestia.android.lib.util.currentDisplayRect
 
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
-import com.fezrestia.android.lib.util.log.logE
 import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.R
 import com.fezrestia.android.viewfinderanywhere.Constants
-import com.fezrestia.android.viewfinderanywhere.storage.DirFileUtil
+import com.fezrestia.android.viewfinderanywhere.storage.MediaStoreUtil
 import kotlinx.android.synthetic.main.storage_selector_root.view.*
 
-import java.io.File
 import kotlin.math.min
 
 class StorageSelectorRootView : RelativeLayout {
@@ -90,25 +88,21 @@ class StorageSelectorRootView : RelativeLayout {
     }
 
     private fun loadPreferences() {
+        // Selectables.
         availableStorageList.clear()
-        targetStorageSet.clear()
-
-        //TODO:Directory existence check.
-
         val totalSet = App.sp.getStringSet(
                 Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
                 emptySet()) as Set<String>
-        for (eachDirName in totalSet) {
-            val dirPath = DirFileUtil.getApplicationStorageRootPath(context) + "/" + eachDirName
-            val dir = File(dirPath)
-            if (dir.isDirectory && dir.exists()) {
-                availableStorageList.add(eachDirName)
-            } else {
-                logE(TAG, "loadPreferences() : Directory is not existing.")
-            }
+        totalSet.forEach {
+            availableStorageList.add(it)
         }
         availableStorageList.sort()
 
+        // Set default.
+        availableStorageList.add(0, MediaStoreUtil.DEFAULT_STORAGE_DIR_NAME)
+
+        // Selected.
+        targetStorageSet.clear()
         val targetSet = App.sp.getStringSet(
                 Constants.SP_KEY_STORAGE_SELECTOR_TARGET_DIRECTORY,
                 emptySet()) as Set<String>
@@ -134,7 +128,7 @@ class StorageSelectorRootView : RelativeLayout {
                 PixelFormat.TRANSLUCENT)
     }
 
-    @SuppressLint("InflateParams")
+    @SuppressLint("InflateParams", "SetTextI18n")
     private fun createUiLayout() {
         item_list.removeAllViews()
 
@@ -144,35 +138,21 @@ class StorageSelectorRootView : RelativeLayout {
         val itemHeight = resources.getDimensionPixelSize(R.dimen.storage_selector_item_height)
         val params = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, itemHeight)
 
-        // Set default storage.
-        defaultItem = inflater.inflate(R.layout.storage_selector_list_item, null)
-        defaultItem.setOnTouchListener(onStorageItemTouchListenerImpl)
-        defaultItem.tag = DirFileUtil.DEFAULT_STORAGE_DIR_NAME
-        defaultItem.isSelected = targetStorageSet.contains(DirFileUtil.DEFAULT_STORAGE_DIR_NAME)
-        val defaultLabel: TextView = defaultItem.findViewById(R.id.storage_selector_list_item_label)
-        defaultLabel.setText(R.string.storage_selector_default_storage_label)
-        onStorageItemTouchListenerImpl.updateStaticDrawable(defaultItem)
-        item_list.addView(defaultItem, params)
-
-        // Set selected storage.
-        for (eachStorage in availableStorageList) {
-            if (DirFileUtil.DEFAULT_STORAGE_DIR_NAME == eachStorage) {
-                // This is default storage. Already handled.
-                continue
-            }
-
+        for (eachDir in availableStorageList) {
             val item = inflater.inflate(R.layout.storage_selector_list_item, null)
-            val label: TextView = item.findViewById(R.id.storage_selector_list_item_label)
-            label.text = eachStorage
-            label.setShadowLayer(10.0f, 0.0f, 0.0f, Color.BLACK)
-            item.tag = eachStorage
             item.setOnTouchListener(onStorageItemTouchListenerImpl)
-            item.isSelected = targetStorageSet.contains(eachStorage)
-
-            // Update UI.
+            item.tag = eachDir
+            item.isSelected = targetStorageSet.contains(eachDir)
+            val label: TextView = item.findViewById(R.id.storage_selector_list_item_label)
+            label.text = "/$eachDir"
+            label.setShadowLayer(10.0f, 0.0f, 0.0f, Color.BLACK)
             onStorageItemTouchListenerImpl.updateStaticDrawable(item)
-
             item_list.addView(item, params)
+
+            // Cache default.
+            if (eachDir == MediaStoreUtil.DEFAULT_STORAGE_DIR_NAME) {
+                defaultItem = item
+            }
         }
 
         // Check selected state.

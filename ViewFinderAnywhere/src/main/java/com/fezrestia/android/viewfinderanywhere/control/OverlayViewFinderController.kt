@@ -884,7 +884,7 @@ class OverlayViewFinderController(private val context: Context) {
     private inner class StateRec : State() {
         private val TAG = "StateRec"
 
-        val mpegFileFullPath = storageController.getVideoFileFullPath()
+        val mpegUri = storageController.openMpegUri()
         var isPauseRequested = false
 
         val MIN_REC_DURATION_MILLIS = 1000L
@@ -895,10 +895,18 @@ class OverlayViewFinderController(private val context: Context) {
         override fun entry() {
             if (IS_DEBUG) logD(TAG, "entry()")
 
-            mpegRecorder?.let {
-                it.setup(mpegFileFullPath)
-                nativeSetEncoderSurface(it.getVideoInputSurface())
+            if (mpegUri != null) {
+                mpegRecorder?.let {
+                    it.setup(mpegUri)
+                    nativeSetEncoderSurface(it.getVideoInputSurface())
+                }
+            } else {
+                logE(TAG, "mpegUri == null")
+
+                // TODO: Handle error.
+
             }
+
             camera.requestStartVideoStreamAsync(VideoCallbackImpl())
         }
 
@@ -961,7 +969,9 @@ class OverlayViewFinderController(private val context: Context) {
         override fun onRecStopped() {
             if (IS_DEBUG) logD(TAG, "onRecStopped()")
 
-            storageController.notifyToMediaScanner(mpegFileFullPath)
+            if (mpegUri != null) {
+                storageController.closeMpegUri(mpegUri)
+            }
 
             nativeReleaseEncoderSurface()
 
@@ -1120,7 +1130,7 @@ class OverlayViewFinderController(private val context: Context) {
             currentState.onRecStarted()
         }
 
-        override fun onRecStopped(recFileFullPath: String) {
+        override fun onRecStopped(recUri: Uri) {
             currentState.onRecStopped()
         }
     }

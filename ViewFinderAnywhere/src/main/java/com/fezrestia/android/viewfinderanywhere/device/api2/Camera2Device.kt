@@ -583,25 +583,15 @@ class Camera2DeviceDelegated(
             cam: CameraDevice,
             evf: Surface,
             sessionCallback: CaptureSessionStateCallback) {
-
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
             val evfOutputConfig = OutputConfiguration(evf)
-            val stillOutputConfig = OutputConfiguration(stillImgReader.surface)
+        val stillOutputConfig = OutputConfiguration(stillImgReader.surface)
 
-            val sessionConfig = SessionConfiguration(
-                    SessionConfiguration.SESSION_REGULAR,
-                    listOf(evfOutputConfig, stillOutputConfig),
-                    { task -> callbackHandler.post(task) }, // Executor.
-                    sessionCallback)
-            cam.createCaptureSession(sessionConfig)
-        } else {
-            val outputs = listOf(evf, stillImgReader.surface)
-            @Suppress("DEPRECATION")
-            cam.createCaptureSession(
-                    outputs,
-                    sessionCallback,
-                    callbackHandler)
-        }
+        val sessionConfig = SessionConfiguration(
+                SessionConfiguration.SESSION_REGULAR,
+                listOf(evfOutputConfig, stillOutputConfig),
+                { task -> callbackHandler.post(task) }, // Executor.
+                sessionCallback)
+        cam.createCaptureSession(sessionConfig)
     }
 
     private inner class UnbindSurfaceTask : Runnable {

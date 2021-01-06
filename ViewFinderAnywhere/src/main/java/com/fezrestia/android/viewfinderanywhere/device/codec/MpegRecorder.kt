@@ -11,6 +11,7 @@ import android.media.MediaCodec
 import android.media.MediaFormat
 import android.media.MediaMuxer
 import android.media.MediaRecorder
+import android.net.Uri
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Size
@@ -59,7 +60,7 @@ class MpegRecorder(
     private var audioTrackIndex = INVALID_TRACK_INDEX
 
     // File.
-    private var mpegFileFullPath: String = ""
+    private lateinit var mpegUri: Uri
 
     // Orientation.
     private var rotDeg = OrientationEventListener.ORIENTATION_UNKNOWN
@@ -73,7 +74,7 @@ class MpegRecorder(
 
     interface Callback {
         fun onRecStarted()
-        fun onRecStopped(recFileFullPath: String)
+        fun onRecStopped(recUri: Uri)
     }
 
     /**
@@ -136,9 +137,9 @@ class MpegRecorder(
      * Setup MPEG recorder for single recording.
      * setup() -> start() -> stop() -> reset()
      *
-     * @param mpegFileFullPath
+     * @param mpegUri
      */
-    fun setup(mpegFileFullPath: String) {
+    fun setup(mpegUri: Uri) {
         if (IS_DEBUG) logD(TAG, "setup()")
 
         videoMediaCodec = MediaCodec.createByCodecName(videoEncoderName).apply {
@@ -167,13 +168,18 @@ class MpegRecorder(
                     MediaCodec.CONFIGURE_FLAG_ENCODE)
         }
 
-        mpegMuxer = MediaMuxer(
-                mpegFileFullPath,
-                MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+        val fd = context.contentResolver.openFileDescriptor(mpegUri, "rw")?.fileDescriptor
+        if (fd != null) {
+            mpegMuxer = MediaMuxer(
+                    fd,
+                    MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+        } else {
+            logE(TAG, "FileDescriptor is null. URI=$mpegUri")
+        }
 
         mpegMuxerStartLatch = CountDownLatch(2) // video and audio
 
-        this.mpegFileFullPath = mpegFileFullPath
+        this.mpegUri = mpegUri
     }
 
     /**
@@ -208,7 +214,7 @@ class MpegRecorder(
         location?.let {
             muxer.setLocation(location.latitude.toFloat(), location.longitude.toFloat())
         } ?: run {
-            logE(TAG, "location is null for path=$mpegFileFullPath")
+            logE(TAG, "location is null for mpegUri=$mpegUri")
         }
     }
 
@@ -578,7 +584,7 @@ class MpegRecorder(
             muxer.release()
             mpegMuxer = null
 
-            callbackHandler.post { callback.onRecStopped(mpegFileFullPath) }
+            callbackHandler.post { callback.onRecStopped(mpegUri) }
         }
     }
 }
