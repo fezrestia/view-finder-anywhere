@@ -26,6 +26,7 @@ import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.R
 import com.fezrestia.android.viewfinderanywhere.Constants
+import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController
 import com.fezrestia.android.viewfinderanywhere.storage.MediaStoreUtil
 import kotlinx.android.synthetic.main.storage_selector_root.view.*
 
@@ -36,6 +37,9 @@ class StorageSelectorRootView : RelativeLayout {
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle)
+
+    // Core instance.
+    private lateinit var controller: OverlayViewFinderController
 
     // UI.
     private lateinit var defaultItem: View
@@ -64,6 +68,15 @@ class StorageSelectorRootView : RelativeLayout {
     init {
         if (IS_DEBUG) logD(TAG, "CONSTRUCTOR")
         // NOP.
+    }
+
+    /**
+     * Set core instance dependency.
+     *
+     * @param controller Master controller
+     */
+    fun setCoreInstances(controller: OverlayViewFinderController) {
+        this.controller = controller
     }
 
     /**
@@ -255,15 +268,48 @@ class StorageSelectorRootView : RelativeLayout {
             return
         }
 
-        // Window parameters.
-        updateWindowParams(true)
+        updateTotalUserInterface()
 
         // Add to WindowManager.
         windowManager.addView(this, windowLayoutParams)
     }
 
+    /**
+     * Remove this view from WindowManager layer.
+     */
+    fun removeFromOverlayWindow() {
+        if (!isAttachedToWindow) {
+            // Already detached.
+            return
+        }
+
+        // Remove from to WindowManager.
+        windowManager.removeView(this)
+    }
+
+    private fun updateTotalUserInterface() {
+        // Screen configuration.
+        calculateScreenConfiguration()
+        // Window layout.
+        updateWindowParams()
+        // Update layout.
+        updateLayoutParams()
+    }
+
+    private fun calculateScreenConfiguration() {
+        val rect = currentDisplayRect(windowManager)
+        displayShortLineLength = min(rect.width(), rect.height())
+
+        // Get display orientation.
+        orientation = if (rect.height() < rect.width()) {
+            Configuration.ORIENTATION_LANDSCAPE
+        } else {
+            Configuration.ORIENTATION_PORTRAIT
+        }
+    }
+
     @SuppressLint("RtlHardcoded")
-    private fun updateWindowParams(isInitialSetup: Boolean) {
+    private fun updateWindowParams() {
         when (orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
                 windowLayoutParams.gravity = Gravity.CENTER_VERTICAL or Gravity.LEFT
@@ -303,47 +349,13 @@ class StorageSelectorRootView : RelativeLayout {
         }
 
         // Check active.
-        if (!isInitialSetup && !isAttachedToWindow) {
+        if (!controller.lifeCycle().isActive) {
             windowLayoutParams.x = windowDisabledPosit.x
             windowLayoutParams.y = windowDisabledPosit.y
         }
 
         if (isAttachedToWindow) {
             windowManager.updateViewLayout(this, windowLayoutParams)
-        }
-    }
-
-    /**
-     * Remove this view from WindowManager layer.
-     */
-    fun removeFromOverlayWindow() {
-        if (!isAttachedToWindow) {
-            // Already detached.
-            return
-        }
-
-        // Remove from to WindowManager.
-        windowManager.removeView(this)
-    }
-
-    private fun updateTotalUserInterface() {
-        // Screen configuration.
-        calculateScreenConfiguration()
-        // Window layout.
-        updateWindowParams(false)
-        // Update layout.
-        updateLayoutParams()
-    }
-
-    private fun calculateScreenConfiguration() {
-        val rect = currentDisplayRect(windowManager)
-        displayShortLineLength = min(rect.width(), rect.height())
-
-        // Get display orientation.
-        orientation = if (height < width) {
-            Configuration.ORIENTATION_LANDSCAPE
-        } else {
-            Configuration.ORIENTATION_PORTRAIT
         }
     }
 
