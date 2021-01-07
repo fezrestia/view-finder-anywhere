@@ -132,16 +132,14 @@ object MediaStoreUtil {
     }
 
     /**
-     * Store image file to external storage under DCIM.
+     * Open JPEG URI.
      *
      * @param context
-     * @param tagDir Tagged directory name. null means top dir.
-     * @param fileName File name without extension.
-     * @param data
-     * @return URI when succeeded, or null.
+     * @param tagDir
+     * @param fileName
      */
-    fun storeImage(context: Context, tagDir: String?, fileName: String, data: ByteArray): Uri? {
-        if (IS_DEBUG) logD(TAG, "storeImage() : E")
+    fun openJpegUri(context: Context, tagDir: String?, fileName: String): Uri? {
+        if (IS_DEBUG) logD(TAG, "openJpegUri() : E")
 
         var relPath = ROOT_DIR_PATH
         if (tagDir != null && tagDir != "") {
@@ -154,7 +152,7 @@ object MediaStoreUtil {
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
             put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
             put(MediaStore.Images.Media.RELATIVE_PATH, relPath)
-            put(MediaStore.Images.Media.IS_PENDING, true)
+            put(MediaStore.Images.Media.IS_PENDING, 1)
         }
 
         val storageUri = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
@@ -163,27 +161,51 @@ object MediaStoreUtil {
         val contentUri: Uri? = context.contentResolver.insert(storageUri, values)
         if (IS_DEBUG) logD(TAG, "contentUri == $contentUri")
 
-        if (contentUri != null) {
-            val os = context.contentResolver.openOutputStream(contentUri)
+        if (IS_DEBUG) logD(TAG, "openJpegUri() : X")
+        return contentUri
+    }
 
-            if (os != null) {
-                os.write(data)
-                os.close()
-            } else {
-                logE(TAG, "openOutputStream == null")
-                return null
-            }
+    /**
+     * Store JPEG file to URI.
+     *
+     * @param context
+     * @param uri
+     * @param jpeg
+     * @return Success or not.
+     */
+    fun storeJpeg(context: Context, uri: Uri, jpeg: ByteArray): Boolean {
+        if (IS_DEBUG) logD(TAG, "storeJpeg() : E")
+
+        val os = context.contentResolver.openOutputStream(uri)
+
+        if (os != null) {
+            os.write(jpeg)
+            os.flush()
+            os.close()
         } else {
-            logE(TAG, "contentUri == null")
-            return null
+            logE(TAG, "openOutputStream == null")
+            return false
         }
 
-        values.clear()
-        values.put(MediaStore.Images.Media.IS_PENDING, false)
-        context.contentResolver.update(contentUri, values, null, null)
+        if (IS_DEBUG) logD(TAG, "storeJpeg() : X")
+        return true
+    }
 
-        if (IS_DEBUG) logD(TAG, "storeImage() : X")
-        return contentUri
+    /**
+     * Close JPEG URI.
+     *
+     * @param context
+     * @param uri
+     */
+    fun closeJpegUri(context: Context, uri: Uri) {
+        if (IS_DEBUG) logD(TAG, "closeJpegUri() : E")
+
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.IS_PENDING, 0)
+        }
+        context.contentResolver.update(uri, values, null, null)
+
+        if (IS_DEBUG) logD(TAG, "closeJpegUri() : X")
     }
 
     /**
@@ -209,7 +231,7 @@ object MediaStoreUtil {
             put(MediaStore.Video.Media.MIME_TYPE, "video/avc")
             put(MediaStore.Video.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
             put(MediaStore.Video.Media.RELATIVE_PATH, relPath)
-            put(MediaStore.Video.Media.IS_PENDING, true)
+            put(MediaStore.Video.Media.IS_PENDING, 1)
         }
 
         val storageUri = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
@@ -232,7 +254,7 @@ object MediaStoreUtil {
         if (IS_DEBUG) logD(TAG, "closeMpegUri()")
 
         val values = ContentValues().apply {
-            put(MediaStore.Video.Media.IS_PENDING, false)
+            put(MediaStore.Video.Media.IS_PENDING, 0)
         }
 
         context.contentResolver.update(uri, values, null, null)

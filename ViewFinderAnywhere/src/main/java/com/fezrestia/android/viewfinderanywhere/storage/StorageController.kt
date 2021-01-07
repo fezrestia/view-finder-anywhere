@@ -29,6 +29,10 @@ class StorageController constructor (
     // Log tag.
     private val TAG = "StorageController"
 
+    // Try to save max count.
+    private val MAX_RETRY_COUNT = 10
+    private val RETRY_INTERVAL_MILLIS = 100L
+
     // Worker thread.
     private val backWorker : ExecutorService
     private inner class BackWorkerThreadFactoryImpl : ThreadFactory {
@@ -150,36 +154,64 @@ class StorageController constructor (
         override fun run() {
             if (IS_DEBUG) logD(TAG, "run() : E")
 
-            val uri: Uri? = MediaStoreUtil.storeImage(
+            val uri: Uri? = MediaStoreUtil.openJpegUri(
                     context,
                     photoData.tagDir,
-                    photoData.fileName,
-                    photoData.jpeg)
-
+                    photoData.fileName)
             if (uri == null) {
-                if (IS_DEBUG) logE(TAG, "File can not be stored.")
+                if (IS_DEBUG) logE(TAG, "Failed to open URI=$uri")
                 val task = NotifyPhotoStoreDoneTask(false, null)
                 callbackHandler.post(task)
                 return
             }
 
-            // Update EXIF.
+            val isSuccess = MediaStoreUtil.storeJpeg(context, uri, photoData.jpeg)
+            if (!isSuccess) {
+                if (IS_DEBUG) logE(TAG, "Failed to store JPEG")
+                val task = NotifyPhotoStoreDoneTask(false, null)
+                callbackHandler.post(task)
+                return
+            }
+
             photoData.location?.let {
                 if (IS_DEBUG) logD(TAG, "Start EXIF edit ...")
 
-                val fd = context.contentResolver.openFileDescriptor(uri, "rw")?.fileDescriptor
-                if (fd != null) {
-                    val exif = ExifInterface(fd)
-                    exif.setGpsInfo(it)
-                    exif.saveAttributes()
-                } else {
-                    logE(TAG, "InputStream of $uri is null")
-                }
+                // WORKAROUND:
+                //   When multiple JPEG are captured, after 2nd or 3rd SavePictureTask,
+                //   IOException (Bad FileDescriptor) is occurred on
+                //   ExifInterface.saveAttributes().
+                //   Currently reason is unknown, but success on re-opened FD, so retry.
+                var count = 0
+                do {
+                    count++
+                    var isFailed = false
+                    try {
+                        val fd = context.contentResolver.openFileDescriptor(uri, "rw")?.fileDescriptor
+                        if (fd != null) {
+                            val exif = ExifInterface(fd)
+                            exif.setGpsInfo(it)
+                            exif.saveAttributes()
+                        } else {
+                            logE(TAG, "FD of $uri is null")
+                        }
+                    } catch(e: Exception) {
+                        logE(TAG, "ExifInterface.saveAttributes() : Failed, retry...")
+
+                        if (MAX_RETRY_COUNT <= count) {
+                            throw e
+                        }
+                        isFailed = true
+
+                        Thread.sleep(RETRY_INTERVAL_MILLIS)
+                    }
+                } while (isFailed)
 
                 if (IS_DEBUG) logD(TAG, "Start EXIF edit ... DONE")
             } ?: run {
                 logE(TAG, "location is null for uri=$uri")
             }
+
+            MediaStoreUtil.closeJpegUri(context, uri)
 
             val task = NotifyPhotoStoreDoneTask(true, uri)
             callbackHandler.post(task)
