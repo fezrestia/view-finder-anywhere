@@ -66,9 +66,7 @@ internal object MediaCodecPDR {
                     val encoderCaps = capabilities.encoderCapabilities
                     logD(TAG, "  Encoder Capabilities :")
                     logD(TAG, "    complexityRange = ${encoderCaps.complexityRange}")
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                        logD(TAG, "    qualityRange = ${encoderCaps.qualityRange}")
-                    }
+                    logD(TAG, "    qualityRange = ${encoderCaps.qualityRange}")
                     logD(TAG, "    CBR = ${encoderCaps.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)}")
                     logD(TAG, "    CQ  = ${encoderCaps.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ)}")
                     logD(TAG, "    VBR = ${encoderCaps.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR)}")
@@ -159,9 +157,7 @@ internal object MediaCodecPDR {
                     val encoderCaps = capabilities.encoderCapabilities
                     logD(TAG, "  Encoder Capabilities :")
                     logD(TAG, "    complexityRange = ${encoderCaps.complexityRange}")
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                        logD(TAG, "    qualityRange = ${encoderCaps.qualityRange}")
-                    }
+                    logD(TAG, "    qualityRange = ${encoderCaps.qualityRange}")
                     logD(TAG, "    CBR = ${encoderCaps.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)}")
                     logD(TAG, "    CQ  = ${encoderCaps.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ)}")
                     logD(TAG, "    VBR = ${encoderCaps.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR)}")

@@ -1,8 +1,8 @@
 #include <opengl/shader/ShaderProgramFactory.hpp>
 
-namespace fezrestia {
+#define TAG "ShaderProgramFactory"
 
-    const std::string TAG = "ShaderProgramFactory";
+namespace fezrestia {
 
     /**
      * Initialize.

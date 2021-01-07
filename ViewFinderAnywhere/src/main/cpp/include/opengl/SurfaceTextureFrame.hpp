@@ -88,9 +88,9 @@ namespace fezrestia {
 
         GLuint enableLocalFunctions();
 
-        GLuint enableShaderProgram();
+        GLuint enableShaderProgram() const;
 
-        GLuint disableLocalFunctions();
+        GLuint disableLocalFunctions() const;
 
         void doRender();
 

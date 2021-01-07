@@ -1,8 +1,8 @@
 #include <opengl/SurfaceTextureFrame.hpp>
 
-namespace fezrestia {
+#define TAG "SurfaceTextureFrame"
 
-    const std::string TAG = "SurfaceTextureFrame";
+namespace fezrestia {
 
     void SurfaceTextureFrame::initialize(float screenNormWidth, float screenNormHeight) {
         // Super.
@@ -72,7 +72,7 @@ namespace fezrestia {
         return GL_TRUE;
     }
 
-    GLuint SurfaceTextureFrame::enableShaderProgram() {
+    GLuint SurfaceTextureFrame::enableShaderProgram() const {
         // Install program object to GL renderer and validate.
         if (mShaderProgram == 0) {
             LogE(TAG, "enableShaderProgram() : Program is Invalid");
@@ -89,7 +89,7 @@ namespace fezrestia {
         return GL_TRUE;
     }
 
-    GLuint SurfaceTextureFrame::disableLocalFunctions() {
+    GLuint SurfaceTextureFrame::disableLocalFunctions() const {
         // Vertex / Texture for background.
         glDisableVertexAttribArray(mGLSL_aVertex);
         glDisableVertexAttribArray(mGLSL_aTexCoord);
@@ -170,15 +170,15 @@ namespace fezrestia {
         TraceLog(TAG, "initializeShaderProgram() : E");
 
         // Link vertex information with field of shader source codes.
-        mGLSL_aVertex = glGetAttribLocation(mShaderProgram, "aVertex");
+        mGLSL_aVertex = (GLuint) glGetAttribLocation(mShaderProgram, "aVertex");
         // Link texture information with field of shader source codes.
-        mGLSL_aTexCoord = glGetAttribLocation(mShaderProgram, "aTexCoord");
+        mGLSL_aTexCoord = (GLuint) glGetAttribLocation(mShaderProgram, "aTexCoord");
         // Link MVP matrix.
-        mGLSL_uMvpMatrix = glGetUniformLocation(mShaderProgram, "uMvpMatrix");
+        mGLSL_uMvpMatrix = (GLuint) glGetUniformLocation(mShaderProgram, "uMvpMatrix");
         // Link OES texture matrix.
-        mGLSL_uOesTexMatrix = glGetUniformLocation(mShaderProgram, "uOesTexMatrix");
+        mGLSL_uOesTexMatrix = (GLuint) glGetUniformLocation(mShaderProgram, "uOesTexMatrix");
         // Link alpha.
-        mGLSL_uAlpha = glGetUniformLocation(mShaderProgram, "uAlpha");
+        mGLSL_uAlpha = (GLuint) glGetUniformLocation(mShaderProgram, "uAlpha");
 
         checkGlError(TAG);
 

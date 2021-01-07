@@ -1,8 +1,8 @@
 #include <ViewFinderAnywhere.hpp>
 
-namespace fezrestia {
+#define TAG "VFA_Native"
 
-    const std::string TAG = "VFA_Native";
+namespace fezrestia {
 
     extern "C" jint JNI_OnLoad(JavaVM* vm, void* __unused reserved) {
         TraceLog(TAG, "JNI_OnLoad() : E");
@@ -64,6 +64,9 @@ namespace fezrestia {
             case EGL_NOT_INITIALIZED:
                 LogE(TAG, "eglInitialize() == EGL_NOT_INITIALIZED");
                 break;
+            default:
+                TraceLog(TAG, "eglInitialize() : OK");
+                break;
         }
 
         // Set config.
@@ -71,19 +74,22 @@ namespace fezrestia {
         EGLint numConfigs;
         switch (eglChooseConfig(display, eglConfigAttrs, &config, 1, &numConfigs)) {
             case EGL_FALSE:
-                LogE(TAG, "eglInitialize() == EGL_FALSE");
+                LogE(TAG, "eglChooseConfig() == EGL_FALSE");
                 break;
             case EGL_BAD_DISPLAY:
-                LogE(TAG, "eglInitialize() == EGL_BAD_DISPLAY");
+                LogE(TAG, "eglChooseConfig() == EGL_BAD_DISPLAY");
                 break;
             case EGL_BAD_ATTRIBUTE:
-                LogE(TAG, "eglInitialize() == EGL_BAD_ATTRIBUTE");
+                LogE(TAG, "eglChooseConfig() == EGL_BAD_ATTRIBUTE");
                 break;
             case EGL_NOT_INITIALIZED:
-                LogE(TAG, "eglInitialize() == EGL_NOT_INITIALIZED");
+                LogE(TAG, "eglChooseConfig() == EGL_NOT_INITIALIZED");
                 break;
             case EGL_BAD_PARAMETER:
-                LogE(TAG, "eglInitialize() == EGL_BAD_PARAMETER");
+                LogE(TAG, "eglChooseConfig() == EGL_BAD_PARAMETER");
+                break;
+            default:
+                TraceLog(TAG, "eglChooseConfig(): OK");
                 break;
         }
 
@@ -91,19 +97,22 @@ namespace fezrestia {
         EGLint format;
         switch (eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &format)) {
             case EGL_FALSE:
-                LogE(TAG, "eglInitialize() == EGL_FALSE");
+                LogE(TAG, "eglGetConfigAttrib() == EGL_FALSE");
                 break;
             case EGL_BAD_DISPLAY:
-                LogE(TAG, "eglInitialize() == EGL_BAD_DISPLAY");
+                LogE(TAG, "eglGetConfigAttrib() == EGL_BAD_DISPLAY");
                 break;
             case EGL_NOT_INITIALIZED:
-                LogE(TAG, "eglInitialize() == EGL_NOT_INITIALIZED");
+                LogE(TAG, "eglGetConfigAttrib() == EGL_NOT_INITIALIZED");
                 break;
             case EGL_BAD_CONFIG:
-                LogE(TAG, "eglInitialize() == EGL_BAD_CONFIG");
+                LogE(TAG, "eglGetConfigAttrib() == EGL_BAD_CONFIG");
                 break;
             case EGL_BAD_ATTRIBUTE:
-                LogE(TAG, "eglInitialize() == EGL_BAD_ATTRIBUTE");
+                LogE(TAG, "eglGetConfigAttrib() == EGL_BAD_ATTRIBUTE");
+                break;
+            default:
+                TraceLog(TAG, "eglGetConfigAttrib() : OK");
                 break;
         }
 
@@ -594,6 +603,9 @@ namespace fezrestia {
             case EGL_NOT_INITIALIZED:
                 LogE(TAG, "eglInitialize() == EGL_NOT_INITIALIZED");
                 break;
+            default:
+                TraceLog(TAG, "eglInitialize() : OK");
+                break;
         }
 
         // Set config.
@@ -601,19 +613,22 @@ namespace fezrestia {
         EGLint numConfigs;
         switch (eglChooseConfig(display, eglConfigAttrs, &config, 1, &numConfigs)) {
             case EGL_FALSE:
-                LogE(TAG, "eglInitialize() == EGL_FALSE");
+                LogE(TAG, "eglChooseConfig() == EGL_FALSE");
                 break;
             case EGL_BAD_DISPLAY:
-                LogE(TAG, "eglInitialize() == EGL_BAD_DISPLAY");
+                LogE(TAG, "eglChooseConfig() == EGL_BAD_DISPLAY");
                 break;
             case EGL_BAD_ATTRIBUTE:
-                LogE(TAG, "eglInitialize() == EGL_BAD_ATTRIBUTE");
+                LogE(TAG, "eglChooseConfig() == EGL_BAD_ATTRIBUTE");
                 break;
             case EGL_NOT_INITIALIZED:
-                LogE(TAG, "eglInitialize() == EGL_NOT_INITIALIZED");
+                LogE(TAG, "eglChooseConfig() == EGL_NOT_INITIALIZED");
                 break;
             case EGL_BAD_PARAMETER:
-                LogE(TAG, "eglInitialize() == EGL_BAD_PARAMETER");
+                LogE(TAG, "eglChooseConfig() == EGL_BAD_PARAMETER");
+                break;
+            default:
+                TraceLog(TAG, "eglChooseConfig() : OK");
                 break;
         }
 
@@ -621,19 +636,22 @@ namespace fezrestia {
         EGLint format;
         switch (eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &format)) {
             case EGL_FALSE:
-                LogE(TAG, "eglInitialize() == EGL_FALSE");
+                LogE(TAG, "eglGetConfigAttrib() == EGL_FALSE");
                 break;
             case EGL_BAD_DISPLAY:
-                LogE(TAG, "eglInitialize() == EGL_BAD_DISPLAY");
+                LogE(TAG, "eglGetConfigAttrib() == EGL_BAD_DISPLAY");
                 break;
             case EGL_NOT_INITIALIZED:
-                LogE(TAG, "eglInitialize() == EGL_NOT_INITIALIZED");
+                LogE(TAG, "eglGetConfigAttrib() == EGL_NOT_INITIALIZED");
                 break;
             case EGL_BAD_CONFIG:
-                LogE(TAG, "eglInitialize() == EGL_BAD_CONFIG");
+                LogE(TAG, "eglGetConfigAttrib() == EGL_BAD_CONFIG");
                 break;
             case EGL_BAD_ATTRIBUTE:
-                LogE(TAG, "eglInitialize() == EGL_BAD_ATTRIBUTE");
+                LogE(TAG, "eglGetConfigAttrib() == EGL_BAD_ATTRIBUTE");
+                break;
+            default:
+                TraceLog(TAG, "eglGetConfigAttrib() : OK");
                 break;
         }
 

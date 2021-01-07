@@ -1,10 +1,11 @@
 #include <opengl/ElementBase.hpp>
 
+#pragma ide diagnostic ignored "UnusedGlobalDeclarationInspection"
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 
-namespace fezrestia {
+#define TAG "ElementBase"
 
-    const std::string TAG = "ElementBase";
+namespace fezrestia {
 
     /**
      * Initialize.
@@ -50,21 +51,21 @@ namespace fezrestia {
     /**
      * This element is visible or not.
      */
-    GLboolean ElementBase::isVisible() {
+    GLboolean ElementBase::isVisible() const {
         return mIsVisible;
     }
 
     /**
      * Normalized screen width.
      */
-    float ElementBase::getScreenNormWidth() {
+    float ElementBase::getScreenNormWidth() const {
         return mScreenNormWidth;
     }
 
     /**
      * Normalized screen height.
      */
-    float ElementBase::getScreenNormHeight() {
+    float ElementBase::getScreenNormHeight() const {
         return mScreenNormHeight;
     }
 

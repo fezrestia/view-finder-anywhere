@@ -64,7 +64,7 @@ namespace fezrestia {
         /**
          * This element is visible or not.
          */
-        GLboolean isVisible();
+        GLboolean isVisible() const;
 
         /**
          * Request rendering.
@@ -93,12 +93,12 @@ namespace fezrestia {
         /**
          * Normalized screen width.
          */
-        float getScreenNormWidth();
+        float getScreenNormWidth() const;
 
         /**
          * Normalized screen height.
          */
-        float getScreenNormHeight();
+        float getScreenNormHeight() const;
 
         /**
          * Global matrix.
