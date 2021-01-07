@@ -23,10 +23,9 @@ import android.view.WindowManager
 import com.fezrestia.android.lib.util.currentDisplayRot
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
-import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAspect
+import com.fezrestia.android.lib.util.log.logE
 
 import java.util.ArrayList
-import kotlin.math.abs
 
 /**
  * Platform Dependency Resolver based on Camera API 2.0.
@@ -333,29 +332,20 @@ internal object PDR2 {
      * @param charas Camera characteristics.
      * @return Preview stream frame buffer size.
      */
-    // TODO: Consider display size ?
     fun getPreviewStreamFrameSize(charas: CameraCharacteristics): Size {
         if (IS_DEBUG) logD(TAG, "getPreviewStreamFrameSize()")
 
         // Sensor aspect.
         val fullSize = charas.get(CameraCharacteristics.SENSOR_INFO_PIXEL_ARRAY_SIZE)!!
-        var fullAspectWH = fullSize.width.toFloat() / fullSize.height.toFloat()
+        val fullAspectWH = fullSize.width.toFloat() / fullSize.height.toFloat()
+        val activeSize = charas.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)!!
+        val activeAspectWH = activeSize.width().toFloat() / activeSize.height().toFloat()
         if (IS_DEBUG) {
             logD(TAG, "## PixelArraySize = $fullSize")
             logD(TAG, "## Full Size Aspect = $fullAspectWH")
+            logD(TAG, "## ActiveArraySize = $activeSize")
+            logD(TAG, "## Active Size Aspect = $activeAspectWH")
         }
-
-        // Estimate full aspect.
-        val diffTo43 = abs(ViewFinderAspect.WH_4_3.ratioWH - fullAspectWH)
-        val diffTo169 = abs(ViewFinderAspect.WH_16_9.ratioWH - fullAspectWH)
-        fullAspectWH = if (diffTo43 < diffTo169) {
-            // Near to 4:3.
-            ViewFinderAspect.WH_4_3.ratioWH
-        } else {
-            // Near to 16:9.
-            ViewFinderAspect.WH_16_9.ratioWH
-        }
-        if (IS_DEBUG) logD(TAG, "## Estimated full Size Aspect = $fullAspectWH")
 
         // Supported size.
         val configMap = charas.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!
@@ -366,20 +356,30 @@ internal object PDR2 {
         sizes.forEach { size ->
             if (IS_DEBUG) logD(TAG, "#### EachSize = $size")
 
-            //TODO: Consider display size ?
-            if (1920 < size.width) {
-                if (IS_DEBUG) logD(TAG, "## Ignore. Over than 1920")
-                // NOP.
-            } else {
-                // Target aspect.
-                val eachAspectWH = size.width.toFloat() / size.height.toFloat()
-                if (IS_DEBUG) logD(TAG, "## Each Aspect = $eachAspectWH")
+            if (size.height < 720) {
+                logD(TAG, "## Skip this size, too small.")
+                return@forEach
+            }
 
-                if ((fullAspectWH * 100).toInt() == (eachAspectWH * 100).toInt()) {
-                    if (optimalSize.width < size.width) {
-                        if (IS_DEBUG) logD(TAG, "## Update optimal size")
-                        optimalSize = size
-                    }
+            val eachAspectWH = size.width.toFloat() / size.height.toFloat()
+            if (IS_DEBUG) logD(TAG, "## Each Aspect = $eachAspectWH")
+
+            if ((activeAspectWH * 100).toInt() == (eachAspectWH * 100).toInt()) {
+                if (optimalSize.width < size.width) {
+                    if (IS_DEBUG) logD(TAG, "## Update optimal size")
+                    optimalSize = size
+                }
+            }
+        }
+
+        // Fail-safe.
+        if (optimalSize == Size(0, 0)) {
+            logE(TAG, "ERROR: Aspect based optimal size detection is FAILED")
+
+            sizes.forEach { size ->
+                if (optimalSize.height < size.height) {
+                    // More square shape is better.
+                    optimalSize = size
                 }
             }
         }

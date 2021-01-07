@@ -100,13 +100,11 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
     }
 
     override fun openAsync(evfAspectWH: Float, openCallback: CameraPlatformInterface.OpenCallback) {
-        val task = OpenTask(evfAspectWH, openCallback)
+        val task = OpenTask(openCallback)
         backWorker?.execute(task)
     }
 
-    private inner class OpenTask(
-            private val aspectWH: Float,
-            private val openCallback: CameraPlatformInterface.OpenCallback) : Runnable {
+    private inner class OpenTask(private val openCallback: CameraPlatformInterface.OpenCallback) : Runnable {
         override fun run() {
             if (IS_DEBUG) logD(TAG, "OpenTask.run() : E")
 
@@ -146,9 +144,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
                             supportedSizes.add(supported)
                         }
                     }
-                    previewSize = PlatformDependencyResolver.getOptimalPreviewSizeForStill(
-                            aspectWH,
-                            supportedSizes)
+                    previewSize = PlatformDependencyResolver.getOptimalPreviewSizeForStill(supportedSizes)
 
                     // Picture size.
                     supportedSizes.clear()
@@ -161,7 +157,7 @@ class Camera1Device(private val context: Context) : CameraPlatformInterface {
                         }
                     }
                     val pictureSize = PlatformDependencyResolver.getOptimalPictureSize(
-                            aspectWH,
+                            previewSize.width.toFloat() / previewSize.height.toFloat(),
                             supportedSizes)
 
                     // Parameters.

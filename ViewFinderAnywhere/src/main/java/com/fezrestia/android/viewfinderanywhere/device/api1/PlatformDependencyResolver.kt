@@ -20,9 +20,6 @@ internal object PlatformDependencyResolver {
     // Log tag.
     private const val TAG = "PlatformDependencyResolver"
 
-    // Platform specifications.
-    private val PREFERRED_PREVIEW_SIZE_FOR_STILL = Size(1280, 720)
-
     // Aspect ratio clearance.
     private const val ASPECT_RATIO_CLEARANCE = 0.01f
 
@@ -46,71 +43,30 @@ internal object PlatformDependencyResolver {
     /**
      * Get optimal preview size for still picture.
      *
-     * @param requiredAspectRatioWH Required aspect ratio.
      * @param supportedPreviewSizeSet Supported preview sizes.
      * @return Optimal preview size for picture.
      */
-    fun getOptimalPreviewSizeForStill(
-            requiredAspectRatioWH: Float,
-            supportedPreviewSizeSet: Set<Size>): Size {
+    fun getOptimalPreviewSizeForStill(supportedPreviewSizeSet: Set<Size>): Size {
         if (IS_DEBUG) logD(TAG, "getOptimalPreviewSize() : E")
 
         // Check supported.
         require(supportedPreviewSizeSet.isNotEmpty()) { "Supported size set is empty." }
 
-        // Estimate aspect.
-        val estimatedAspectWH: Float
-        val diffTo43 = abs(ViewFinderAspect.WH_4_3.ratioWH - requiredAspectRatioWH)
-        val diffTo169 = abs(ViewFinderAspect.WH_16_9.ratioWH - requiredAspectRatioWH)
-        estimatedAspectWH = if (diffTo43 < diffTo169) {
-            // Near to 4:3.
-            ViewFinderAspect.WH_4_3.ratioWH
-        } else {
-            // Near to 16:9.
-            ViewFinderAspect.WH_16_9.ratioWH
-        }
-        if (IS_DEBUG) logD(TAG, "###### Estimated aspect = $estimatedAspectWH")
-
-        // Check aspect ratio.
-        val aspectAcceptable = HashSet<Size>()
+        var optimalSize = Size(0, 0)
         for (eachSize in supportedPreviewSizeSet) {
-            val aspect = eachSize.width.toFloat() / eachSize.height.toFloat()
-            if (abs(estimatedAspectWH - aspect) < ASPECT_RATIO_CLEARANCE) {
-                // Valid.
-                aspectAcceptable.add(eachSize)
+            if (IS_DEBUG) logD(TAG, "## eachSize = $optimalSize")
 
-                if (IS_DEBUG) logD(TAG, "Aspect acceptable : $eachSize")
+            if (optimalSize.width <= eachSize.width && optimalSize.height <= eachSize.height) {
+                if (IS_DEBUG) logD(TAG, "## update optimal")
+                optimalSize = eachSize
             }
         }
-
-        // Check MAX size.
-        var acceptableMaxSize: Size? = null
-        for (eachSize in aspectAcceptable) {
-            if (PREFERRED_PREVIEW_SIZE_FOR_STILL.width < eachSize.width
-                    || PREFERRED_PREVIEW_SIZE_FOR_STILL.height < eachSize.height) {
-                // Too large.
-                continue
-            }
-
-            if (acceptableMaxSize == null) {
-                acceptableMaxSize = eachSize
-            } else {
-                if (acceptableMaxSize.width < eachSize.width) {
-                    acceptableMaxSize = eachSize
-                }
-            }
-
-            if (IS_DEBUG) logD(TAG, "Size acceptable : $eachSize")
-        }
-
-        // Check result.
-        val ret = acceptableMaxSize ?: supportedPreviewSizeSet.single()
 
         if (IS_DEBUG) {
-            logD(TAG, "Result : $ret")
+            logD(TAG, "Result : $optimalSize")
             logD(TAG, "getOptimalPreviewSize() : X")
         }
-        return ret
+        return optimalSize
     }
 
     /**
