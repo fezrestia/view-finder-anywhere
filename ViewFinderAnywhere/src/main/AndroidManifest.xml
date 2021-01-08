@@ -6,8 +6,8 @@
 
     package="com.fezrestia.android.viewfinderanywhere"
 
-    android:versionCode="1089"
-    android:versionName="5.9.5-1089"
+    android:versionCode="1108"
+    android:versionName="5.10.0-1108"
 >
 <!--                     | | | |-> incremental build count
                          | | |-> patch

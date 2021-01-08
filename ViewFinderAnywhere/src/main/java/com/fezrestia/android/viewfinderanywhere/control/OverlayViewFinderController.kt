@@ -83,7 +83,7 @@ class OverlayViewFinderController(private val context: Context) {
             cameraView.setCoreInstances(this@OverlayViewFinderController, configManager)
             cameraView.initialize()
             storageView = View.inflate(context, R.layout.storage_selector_root, null) as StorageSelectorRootView
-            storageView.setCoreInstances(this@OverlayViewFinderController)
+            storageView.setCoreInstances(this@OverlayViewFinderController, configManager)
             storageView.initialize()
 
             // Camera.

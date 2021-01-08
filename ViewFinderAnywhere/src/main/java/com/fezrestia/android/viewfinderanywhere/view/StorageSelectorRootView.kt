@@ -23,14 +23,15 @@ import com.fezrestia.android.lib.util.currentDisplayRect
 
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
+import com.fezrestia.android.lib.util.math.IntWH
 import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.R
 import com.fezrestia.android.viewfinderanywhere.Constants
+import com.fezrestia.android.viewfinderanywhere.config.ConfigManager
+import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAlign
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController
 import com.fezrestia.android.viewfinderanywhere.storage.MediaStoreUtil
 import kotlinx.android.synthetic.main.storage_selector_root.view.*
-
-import kotlin.math.min
 
 class StorageSelectorRootView : RelativeLayout {
 
@@ -40,12 +41,15 @@ class StorageSelectorRootView : RelativeLayout {
 
     // Core instance.
     private lateinit var controller: OverlayViewFinderController
+    private lateinit var configManager: ConfigManager
+
+    // Display coordinates.
+    private val displayWH = IntWH(0, 0)
 
     // UI.
     private lateinit var defaultItem: View
 
     // UI coordinates.
-    private var displayShortLineLength = 0
     private var windowEdgePadding = 0
 
     // Overlay window orientation.
@@ -74,9 +78,13 @@ class StorageSelectorRootView : RelativeLayout {
      * Set core instance dependency.
      *
      * @param controller Master controller
+     * @param configManager
      */
-    fun setCoreInstances(controller: OverlayViewFinderController) {
+    fun setCoreInstances(
+            controller: OverlayViewFinderController,
+            configManager: ConfigManager) {
         this.controller = controller
+        this.configManager = configManager
     }
 
     /**
@@ -298,7 +306,7 @@ class StorageSelectorRootView : RelativeLayout {
 
     private fun calculateScreenConfiguration() {
         val rect = currentDisplayRect(windowManager)
-        displayShortLineLength = min(rect.width(), rect.height())
+        displayWH.set(rect.width(), rect.height())
 
         // Get display orientation.
         orientation = if (rect.height() < rect.width()) {
@@ -312,7 +320,14 @@ class StorageSelectorRootView : RelativeLayout {
     private fun updateWindowParams() {
         when (orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
-                windowLayoutParams.gravity = Gravity.CENTER_VERTICAL or Gravity.LEFT
+                when (configManager.evfAlign) {
+                    ViewFinderAlign.TOP_OR_LEFT -> {
+                        windowLayoutParams.gravity = Gravity.CENTER_VERTICAL or Gravity.RIGHT
+                    }
+                    ViewFinderAlign.BOTTOM_OR_RIGHT -> {
+                        windowLayoutParams.gravity = Gravity.CENTER_VERTICAL or Gravity.LEFT
+                    }
+                }
 
                 // Window offset on enabled.
                 windowLayoutParams.x = windowEdgePadding
@@ -320,7 +335,7 @@ class StorageSelectorRootView : RelativeLayout {
 
                 // Position limit.
                 windowDisabledPosit.set(
-                        windowLayoutParams.x - displayShortLineLength,
+                        windowLayoutParams.x - displayWH.h,
                         windowLayoutParams.y)
                 windowEnabledPosit.set(
                         windowLayoutParams.x,
@@ -328,7 +343,14 @@ class StorageSelectorRootView : RelativeLayout {
             }
 
             Configuration.ORIENTATION_PORTRAIT -> {
-                windowLayoutParams.gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
+                when (configManager.evfAlign) {
+                    ViewFinderAlign.TOP_OR_LEFT -> {
+                        windowLayoutParams.gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
+                    }
+                    ViewFinderAlign.BOTTOM_OR_RIGHT -> {
+                        windowLayoutParams.gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
+                    }
+                }
 
                 // Window offset on enabled.
                 windowLayoutParams.x = 0
@@ -337,7 +359,7 @@ class StorageSelectorRootView : RelativeLayout {
                 // Position limit.
                 windowDisabledPosit.set(
                         windowLayoutParams.x,
-                        windowLayoutParams.y - displayShortLineLength)
+                        windowLayoutParams.y - displayWH.h)
                 windowEnabledPosit.set(
                         windowLayoutParams.x,
                         windowLayoutParams.y)
@@ -370,8 +392,19 @@ class StorageSelectorRootView : RelativeLayout {
         when (orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
                 val overlayVfLeft = OverlayViewFinderWindowConfig.enabledWindowX
-                totalWidth = ((overlayVfLeft - windowEdgePadding) * 0.8f).toInt()
-                maxItemCount = (displayShortLineLength * 0.8f / itemHeight).toInt()
+                val overlayVfW = OverlayViewFinderWindowConfig.enabledWindowW
+                val overlayVfRight = overlayVfLeft + overlayVfW
+
+                totalWidth = when (configManager.evfAlign) {
+                    ViewFinderAlign.TOP_OR_LEFT -> {
+                        ((displayWH.w - overlayVfRight) * 0.8f).toInt()
+                    }
+                    ViewFinderAlign.BOTTOM_OR_RIGHT -> {
+                        ((overlayVfLeft - windowEdgePadding) * 0.8f).toInt()
+                    }
+                }
+
+                maxItemCount = (displayWH.h * 0.8f / itemHeight).toInt()
                 totalHeight = if (item_list.childCount < maxItemCount) {
                     itemHeight * item_list.childCount
                 } else {
@@ -382,24 +415,33 @@ class StorageSelectorRootView : RelativeLayout {
 
                 // Cache.
                 winX = windowEdgePadding
-                winY = (displayShortLineLength - totalHeight) / 2
+                winY = (displayWH.h - totalHeight) / 2
                 StorageSelectorWindowConfig.update(winX, winY, totalWidth, totalHeight)
             }
 
             Configuration.ORIENTATION_PORTRAIT -> {
-                totalWidth = (displayShortLineLength * 0.8f).toInt()
+                totalWidth = (displayWH.w * 0.8f).toInt()
+
                 val overlayVfTop = OverlayViewFinderWindowConfig.enabledWindowY
-                maxItemCount = ((overlayVfTop - windowEdgePadding) * 0.8f / itemHeight).toInt()
-                totalHeight = if (item_list.childCount < maxItemCount) {
-                    itemHeight * item_list.childCount
-                } else {
-                    itemHeight * maxItemCount
+                val overlayVfH = OverlayViewFinderWindowConfig.enabledWindowH
+                val overlayVfBottom = overlayVfTop + overlayVfH
+                val maxHeight = when (configManager.evfAlign) {
+                    ViewFinderAlign.TOP_OR_LEFT -> {
+                        ((displayWH.h - windowEdgePadding - overlayVfBottom) * 0.8f).toInt()
+                    }
+                    ViewFinderAlign.BOTTOM_OR_RIGHT -> {
+                        ((overlayVfTop - windowEdgePadding) * 0.8f).toInt()
+                    }
                 }
+
+                maxItemCount = maxHeight / itemHeight
+                totalHeight = itemHeight * maxItemCount
+
                 params.width = totalWidth
                 params.height = totalHeight
 
                 // Cache.
-                winX = (displayShortLineLength - totalWidth) / 2
+                winX = (displayWH.w - totalWidth) / 2
                 winY = windowEdgePadding
                 StorageSelectorWindowConfig.update(winX, winY, totalWidth, totalHeight)
             }

@@ -29,6 +29,7 @@ import com.fezrestia.android.viewfinderanywhere.R
 import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.Constants
 import com.fezrestia.android.viewfinderanywhere.config.ConfigManager
+import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAlign
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController
 import com.fezrestia.android.viewfinderanywhere.plugin.ui.CustomizableResourceContainer
 import kotlinx.android.synthetic.main.overlay_view_finder_root.view.*
@@ -392,7 +393,14 @@ class OverlayViewFinderRootView : RelativeLayout {
 
         when (orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
-                windowLayoutParams.gravity = Gravity.BOTTOM or Gravity.RIGHT
+                when (configManager.evfAlign) {
+                    ViewFinderAlign.TOP_OR_LEFT -> {
+                        windowLayoutParams.gravity = Gravity.BOTTOM or Gravity.LEFT
+                    }
+                    ViewFinderAlign.BOTTOM_OR_RIGHT -> {
+                        windowLayoutParams.gravity = Gravity.BOTTOM or Gravity.RIGHT
+                    }
+                }
 
                 // Window offset on enabled.
                 windowLayoutParams.x = edgeClearance
@@ -411,15 +419,32 @@ class OverlayViewFinderRootView : RelativeLayout {
                 windowLayoutParams.height = viewfinderWH.h + gripSize
 
                 // Cache.
-                winX = displayWH.w - viewfinderWH.w - windowLayoutParams.x
-                winY = displayWH.h - viewfinderWH.h - gripSize - windowLayoutParams.y
-                winW = windowLayoutParams.width
-                winH = windowLayoutParams.height
+                when (configManager.evfAlign) {
+                    ViewFinderAlign.TOP_OR_LEFT -> {
+                        winX = windowLayoutParams.x
+                        winY = displayWH.h - viewfinderWH.h - gripSize - windowLayoutParams.y
+                        winW = windowLayoutParams.width
+                        winH = windowLayoutParams.height
+                    }
+                    ViewFinderAlign.BOTTOM_OR_RIGHT -> {
+                        winX = displayWH.w - viewfinderWH.w - windowLayoutParams.x
+                        winY = displayWH.h - viewfinderWH.h - gripSize - windowLayoutParams.y
+                        winW = windowLayoutParams.width
+                        winH = windowLayoutParams.height
+                    }
+                }
                 OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
             }
 
             Configuration.ORIENTATION_PORTRAIT -> {
-                windowLayoutParams.gravity = Gravity.BOTTOM or Gravity.RIGHT
+                when (configManager.evfAlign) {
+                    ViewFinderAlign.TOP_OR_LEFT -> {
+                        windowLayoutParams.gravity = Gravity.TOP or Gravity.RIGHT
+                    }
+                    ViewFinderAlign.BOTTOM_OR_RIGHT -> {
+                        windowLayoutParams.gravity = Gravity.BOTTOM or Gravity.RIGHT
+                    }
+                }
 
                 // Window offset on enabled.
                 windowLayoutParams.x = 0
@@ -438,10 +463,20 @@ class OverlayViewFinderRootView : RelativeLayout {
                 windowLayoutParams.height = viewfinderWH.h
 
                 // Cache.
-                winX = displayWH.w - viewfinderWH.w - gripSize - windowLayoutParams.x
-                winY = displayWH.h - viewfinderWH.h - windowLayoutParams.y
-                winW = windowLayoutParams.width
-                winH = windowLayoutParams.height
+                when (configManager.evfAlign) {
+                    ViewFinderAlign.TOP_OR_LEFT -> {
+                        winX = displayWH.w - viewfinderWH.w - gripSize - windowLayoutParams.x
+                        winY = windowLayoutParams.y
+                        winW = windowLayoutParams.width
+                        winH = windowLayoutParams.height
+                    }
+                    ViewFinderAlign.BOTTOM_OR_RIGHT -> {
+                        winX = displayWH.w - viewfinderWH.w - gripSize - windowLayoutParams.x
+                        winY = displayWH.h - viewfinderWH.h - windowLayoutParams.y
+                        winW = windowLayoutParams.width
+                        winH = windowLayoutParams.height
+                    }
+                }
                 OverlayViewFinderWindowConfig.update(winX, winY, winW, winH)
             }
 
@@ -559,17 +594,35 @@ class OverlayViewFinderRootView : RelativeLayout {
                     params.width = (viewfinderWH.w * GRIP_SIZE_RATIO).toInt()
                     params.height = gripSize
                     viewfinder_grip.setImageDrawable(customResContainer.drawableVfGripLand)
+
+                    when (configManager.evfAlign) {
+                        ViewFinderAlign.TOP_OR_LEFT -> {
+                            params.gravity = Gravity.TOP or Gravity.LEFT
+                        }
+                        ViewFinderAlign.BOTTOM_OR_RIGHT -> {
+                            params.gravity = Gravity.TOP or Gravity.RIGHT
+                        }
+                    }
                 }
 
                 Configuration.ORIENTATION_PORTRAIT -> {
                     params.width = gripSize
                     params.height = (viewfinderWH.h * GRIP_SIZE_RATIO).toInt()
                     viewfinder_grip.setImageDrawable(customResContainer.drawableVfGripPort)
+
+                    when (configManager.evfAlign) {
+                        ViewFinderAlign.TOP_OR_LEFT -> {
+                            params.gravity = Gravity.BOTTOM or Gravity.LEFT
+                        }
+                        ViewFinderAlign.BOTTOM_OR_RIGHT -> {
+                            params.gravity = Gravity.TOP or Gravity.LEFT
+                        }
+                    }
                 }
 
                 else -> throw IllegalStateException("Unexpected orientation.")
             }
-            params.gravity = Gravity.TOP or Gravity.LEFT
+
             viewfinder_grip.layoutParams = params
         }
 
@@ -588,12 +641,19 @@ class OverlayViewFinderRootView : RelativeLayout {
                             verticalPadding,
                             horizontalPadding,
                             0)
-                    params.gravity =
-                            Gravity.TOP or Gravity.LEFT or Gravity.CENTER_VERTICAL
                     params.width = ViewGroup.LayoutParams.WRAP_CONTENT
                     params.height = gripSize
                     if (viewfinderWH.w * GRIP_SIZE_RATIO < viewfinder_grip_labelLandscapeBmp.width) {
                         visibility = View.INVISIBLE
+                    }
+
+                    when (configManager.evfAlign) {
+                        ViewFinderAlign.TOP_OR_LEFT -> {
+                            params.gravity = Gravity.TOP or Gravity.LEFT or Gravity.CENTER_VERTICAL
+                        }
+                        ViewFinderAlign.BOTTOM_OR_RIGHT -> {
+                            params.gravity = Gravity.TOP or Gravity.RIGHT or Gravity.CENTER_VERTICAL
+                        }
                     }
                 }
 
@@ -604,12 +664,19 @@ class OverlayViewFinderRootView : RelativeLayout {
                             horizontalPadding,
                             0,
                             horizontalPadding)
-                    params.gravity =
-                            Gravity.CENTER_HORIZONTAL or Gravity.TOP or Gravity.LEFT
                     params.width = gripSize
                     params.height = ViewGroup.LayoutParams.WRAP_CONTENT
                     if (viewfinderWH.h * GRIP_SIZE_RATIO < viewfinder_grip_labelPortraitBmp.height) {
                         visibility = View.INVISIBLE
+                    }
+
+                    when (configManager.evfAlign) {
+                        ViewFinderAlign.TOP_OR_LEFT -> {
+                            params.gravity = Gravity.BOTTOM or Gravity.LEFT or Gravity.LEFT
+                        }
+                        ViewFinderAlign.BOTTOM_OR_RIGHT -> {
+                            params.gravity = Gravity.TOP or Gravity.LEFT or Gravity.LEFT
+                        }
                     }
                 }
 
@@ -1082,17 +1149,26 @@ class OverlayViewFinderRootView : RelativeLayout {
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            if (bottom - top > NAV_EXCLUSION_MAX_PX) {
-                // Exclude top area. (near grip area)
-                navExclusionRect.set(left, top, right, top + NAV_EXCLUSION_MAX_PX)
-            } else {
-                // Exclude whole area.
-                navExclusionRect.set(left, top, right, bottom)
+        if (bottom - top > NAV_EXCLUSION_MAX_PX) {
+            // Exclude partial area.
+
+            when (configManager.evfAlign) {
+                ViewFinderAlign.TOP_OR_LEFT -> {
+                    // Exclude bottom area. (near grip area)
+                    navExclusionRect.set(left, bottom - NAV_EXCLUSION_MAX_PX, right, bottom)
+                }
+                ViewFinderAlign.BOTTOM_OR_RIGHT -> {
+                    // Exclude top area. (near grip area)
+                    navExclusionRect.set(left, top, right, top + NAV_EXCLUSION_MAX_PX)
+                }
             }
-            val list = listOf(navExclusionRect)
-            this.systemGestureExclusionRects = list
+        } else {
+            // Exclude whole area.
+            navExclusionRect.set(left, top, right, bottom)
         }
+
+        val list = listOf(navExclusionRect)
+        this.systemGestureExclusionRects = list
     }
 
     companion object {

@@ -27,6 +27,7 @@ import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.Constants
 import com.fezrestia.android.viewfinderanywhere.R
 import com.fezrestia.android.viewfinderanywhere.config.options.CameraApiLevel
+import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAlign
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAspect
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderSize
 import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger
@@ -90,6 +91,14 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             vfAspectPref.entries = aspects
             vfAspectPref.entryValues = aspects
             vfAspectPref.onPreferenceChangeListener = onChangeListenerImpl
+
+            // View finder align.
+            val vfAlignPref: ListPreference = findPreference(ViewFinderAlign.key)!!
+            val aligns: Array<String> = ViewFinderAlign.values()
+                    .map { it.toString() }.toTypedArray()
+            vfAlignPref.entries = aligns
+            vfAlignPref.entryValues = aligns
+            vfAlignPref.onPreferenceChangeListener = onChangeListenerImpl
 
             // Storage selector En/Disable.
             val storagePref: SwitchPreference = findPreference(Constants.SP_KEY_IS_STORAGE_SELECTOR_ENABLED)!!
@@ -178,6 +187,10 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                     }
 
                     ViewFinderAspect.key -> {
+                        firebaseValue = newValue as String
+                    }
+
+                    ViewFinderAlign.key -> {
                         firebaseValue = newValue as String
                     }
 

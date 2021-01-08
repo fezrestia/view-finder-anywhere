@@ -47,6 +47,12 @@
             app:title="@string/title_view_finder_aspect"
             app:useSimpleSummaryProvider="true"
         />
+
+        <androidx.preference.ListPreference
+            app:key="sp-key-view-finder-align"
+            app:title="Align To"
+            app:useSimpleSummaryProvider="true"
+        />
     </androidx.preference.PreferenceCategory>
 
     <androidx.preference.PreferenceCategory

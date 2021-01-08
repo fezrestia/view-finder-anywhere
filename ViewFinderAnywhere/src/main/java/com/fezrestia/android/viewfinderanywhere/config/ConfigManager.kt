@@ -2,6 +2,7 @@ package com.fezrestia.android.viewfinderanywhere.config
 
 import com.fezrestia.android.viewfinderanywhere.App
 import com.fezrestia.android.viewfinderanywhere.config.options.CameraApiLevel
+import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAlign
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAspect
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderSize
 
@@ -13,6 +14,7 @@ class ConfigManager {
     var camApiLv = CameraApiLevel.API_1
     var evfSize = ViewFinderSize.L
     var evfAspect = ViewFinderAspect.WH_1_1
+    var evfAlign = ViewFinderAlign.TOP_OR_LEFT
 
     init {
         loadPreferences()
@@ -51,6 +53,15 @@ class ConfigManager {
             ViewFinderAspect.WH_1_1
         } else {
             ViewFinderAspect.valueOf(aspect)
+        }
+
+        // Align.
+        val align = App.sp.getString(ViewFinderAlign.key, null)
+        evfAlign = if (align == null) {
+            // Unexpected or not initialized yet. Use default.
+            ViewFinderAlign.TOP_OR_LEFT
+        } else {
+            ViewFinderAlign.valueOf(align)
         }
     }
 }
