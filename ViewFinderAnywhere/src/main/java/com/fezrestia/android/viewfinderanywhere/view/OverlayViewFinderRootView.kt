@@ -995,20 +995,24 @@ class OverlayViewFinderRootView : RelativeLayout {
     }
 
     override fun dispatchKeyEvent(keyEvent: KeyEvent): Boolean {
+        if (keyEvent.repeatCount != 0) {
+            // Do not handle hold press.
+            return true
+        }
+
         when (keyEvent.keyCode) {
             KeyEvent.KEYCODE_FOCUS -> {
-                if (keyEvent.repeatCount != 0) {
-                    // Do not handle hold press.
-                    return true
-                }
-
                 when (keyEvent.action) {
                     KeyEvent.ACTION_DOWN -> {
                         if (IS_DEBUG) logD(TAG, "dispatchKeyEvent() : [FOCUS DOWN]")
+
+                        controller.fromView().requestScan()
                     }
 
                     KeyEvent.ACTION_UP -> {
                         if (IS_DEBUG) logD(TAG, "dispatchKeyEvent() : [FOCUS UP]")
+
+                        controller.fromView().requestCancelScan()
                     }
 
                     else -> {
@@ -1018,12 +1022,22 @@ class OverlayViewFinderRootView : RelativeLayout {
                 return true
             }
 
-            KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                if (keyEvent.repeatCount != 0) {
-                    // Do not handle hold press.
-                    return true
-                }
+            KeyEvent.KEYCODE_CAMERA -> {
+                when (keyEvent.action) {
+                    KeyEvent.ACTION_DOWN -> {
+                        if (IS_DEBUG) logD(TAG, "dispatchKeyEvent() : [CAMERA DOWN]")
 
+                        controller.fromView().requestStillCapture()
+                    }
+
+                    else -> {
+                        if (IS_DEBUG) logD(TAG, "dispatchKeyEvent() : [CAMERA NO ACT]")
+                    }
+                }
+                return true
+            }
+
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
                 when (keyEvent.action) {
                     KeyEvent.ACTION_DOWN -> {
                         if (IS_DEBUG) logD(TAG, "dispatchKeyEvent() : [VOLUME- DOWN]")
