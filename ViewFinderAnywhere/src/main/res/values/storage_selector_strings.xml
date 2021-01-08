@@ -8,10 +8,10 @@
     <string name="summary_is_storage_selector_enabled">Always you can select target directory to store contents.</string>
 
     <string name="title_storage_selector_create_new_directory">Add New Directory</string>
-    <string name="summary_storage_selector_create_new_directory">Create new directory to store contents.</string>
+    <string name="summary_storage_selector_create_new_directory">Add new directory to selectable directories.</string>
 
-    <string name="title_storage_selector_selectable_directory">Set Selectable Directory</string>
-    <string name="summary_storage_selector_selectable_directory">Select selectable options of target directory.</string>
+    <string name="title_storage_selector_selectable_directory">Set Selectable Directories</string>
+    <string name="summary_storage_selector_selectable_directory">Reset and select selectable directories from existing contents.</string>
 
 
 
