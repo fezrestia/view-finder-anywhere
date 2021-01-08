@@ -107,6 +107,10 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             // Add new directory.
             val addNewDirPref: EditTextPreference = findPreference(SP_KEY_STORAGE_SELECTOR_CREATE_NEW_DIRECTORY)!!
             addNewDirPref.onPreferenceChangeListener = onChangeListenerImpl
+            addNewDirPref.onPreferenceClickListener = Preference.OnPreferenceClickListener { p: Preference ->
+                (p as EditTextPreference).text = ""
+                true
+            }
         }
 
         override fun onStart() {
