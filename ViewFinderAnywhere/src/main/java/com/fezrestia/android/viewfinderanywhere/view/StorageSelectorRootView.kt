@@ -8,6 +8,7 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.Point
+import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
@@ -184,23 +185,32 @@ class StorageSelectorRootView : RelativeLayout {
     }
 
     private inner class OnStorageItemTouchListenerImpl : OnTouchListener {
+        private val hitRect = Rect()
+
         @SuppressLint("ClickableViewAccessibility")
         override fun onTouch(view: View, event: MotionEvent): Boolean {
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    view.background = App.customResContainer.drawableStorageItemBgPressed
+                    updatePressedState(view, event)
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    updatePressedState(view, event)
                 }
 
                 MotionEvent.ACTION_UP -> {
-                    // Update state.
-                    view.isSelected = !view.isSelected
+                    view.getLocalVisibleRect(hitRect)
+                    if (hitRect.contains(event.x.toInt(), event.y.toInt())) {
+                        // Update state.
+                        view.isSelected = !view.isSelected
 
-                    // Click sound.
-                    view.playSoundEffect(SoundEffectConstants.CLICK)
-                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        // Click sound.
+                        view.playSoundEffect(SoundEffectConstants.CLICK)
+                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-                    // Update target storage.
-                    updateTargetStorage(view)
+                        // Update target storage.
+                        updateTargetStorage(view)
+                    }
                     updateStaticDrawable(view)
                 }
 
@@ -215,6 +225,15 @@ class StorageSelectorRootView : RelativeLayout {
             }
 
             return true
+        }
+
+        fun updatePressedState(view: View, event: MotionEvent) {
+            view.getLocalVisibleRect(hitRect)
+            if (hitRect.contains(event.x.toInt(), event.y.toInt())) {
+                view.background = App.customResContainer.drawableStorageItemBgPressed
+            } else {
+                updateStaticDrawable(view)
+            }
         }
 
         fun updateStaticDrawable(view: View) {
