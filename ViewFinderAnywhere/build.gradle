@@ -112,7 +112,7 @@ android {
 
 dependencies {
     // FireBase.
-    implementation 'com.google.firebase:firebase-analytics-ktx:18.0.0'
+    implementation 'com.google.firebase:firebase-analytics-ktx:18.0.1'
     implementation 'com.google.firebase:firebase-crashlytics:17.3.0'
 
     // Kotlin support.
