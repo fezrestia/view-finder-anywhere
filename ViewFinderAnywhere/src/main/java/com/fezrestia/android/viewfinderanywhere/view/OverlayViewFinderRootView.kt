@@ -851,9 +851,16 @@ class OverlayViewFinderRootView : RelativeLayout {
         }
 
         override fun onSingleReleased(point: Point) {
-            if (IS_DEBUG) logD(TAG,
-                    "onSingleReleased() : [X=${point.x}] [Y=${point.y}]")
+            if (IS_DEBUG) logD(TAG, "onSingleReleased() : X=${point.x}, Y=${point.y}")
+            handleTouchUp()
+        }
 
+        override fun onSingleCanceled(point: Point) {
+            if (IS_DEBUG) logD(TAG, "onSingleCanceled() : X=${point.x}, Y=${point.y}")
+            handleTouchUp()
+        }
+
+        private fun handleTouchUp() {
             // Request still capture.
             controller.fromView().requestStillCapture()
 
@@ -896,11 +903,6 @@ class OverlayViewFinderRootView : RelativeLayout {
                 App.ui.postDelayed(task, WINDOW_ANIMATION_INTERVAL)
                 windowPositionCorrectionTask = task
             }
-        }
-
-        override fun onSingleCanceled() {
-            if (IS_DEBUG) logD(TAG, "onSingleCanceled()")
-            // NOP.
         }
 
         override fun onDoubleTouched(point0: Point, point1: Point) {

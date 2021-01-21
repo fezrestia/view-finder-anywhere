@@ -78,7 +78,7 @@ class InteractionEngine(
         fun onSingleMoved(currentPoint: Point, lastPoint: Point, downPoint: Point)
         fun onSingleStopped(currentPoint: Point, lastPoint: Point, downPoint: Point)
         fun onSingleReleased(point: Point)
-        fun onSingleCanceled()
+        fun onSingleCanceled(point: Point)
 
         // Double touch interaction.
         fun onDoubleTouched(point0: Point, point1: Point)
@@ -176,7 +176,7 @@ class InteractionEngine(
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
-                    callback?.onSingleCanceled()
+                    callback?.onSingleCanceled(Point(motion.getX(0).toInt(), motion.getY(0).toInt()))
                     changeTo(Idle())
                 }
 
@@ -232,7 +232,7 @@ class InteractionEngine(
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
-                    callback?.onSingleCanceled()
+                    callback?.onSingleCanceled(Point(motion.getX(0).toInt(), motion.getY(0).toInt()))
                     changeTo(Idle())
                 }
 
@@ -287,7 +287,7 @@ class InteractionEngine(
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
-                    callback?.onSingleCanceled()
+                    callback?.onSingleCanceled(Point(motion.getX(0).toInt(), motion.getY(0).toInt()))
                     changeTo(Idle())
                 }
 
