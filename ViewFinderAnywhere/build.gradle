@@ -10,7 +10,7 @@ import java.util.regex.Pattern
 
 android {
     compileSdkVersion 30
-    buildToolsVersion '30.0.3'
+    buildToolsVersion '31.0.0 rc4'
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere"
@@ -107,23 +107,22 @@ android {
         }
     }
 
-    ndkVersion '22.0.7026061'
+    ndkVersion '22.1.7171670'
 }
 
 dependencies {
     // FireBase.
-    implementation 'com.google.firebase:firebase-analytics-ktx:18.0.1'
-    implementation 'com.google.firebase:firebase-crashlytics:17.3.0'
+    implementation 'com.google.firebase:firebase-analytics-ktx:19.0.0'
+    implementation 'com.google.firebase:firebase-crashlytics:18.0.1'
 
     // Kotlin support.
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.21'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.10'
     implementation 'androidx.preference:preference-ktx:1.1.1'
-    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.4.21'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.5.10'
 
     // Google play services.
-    implementation 'com.google.android.gms:play-services-location:17.1.0'
+    implementation 'com.google.android.gms:play-services-location:18.0.0'
 
     // Android X
     implementation 'androidx.exifinterface:exifinterface:1.3.2'
-
 }

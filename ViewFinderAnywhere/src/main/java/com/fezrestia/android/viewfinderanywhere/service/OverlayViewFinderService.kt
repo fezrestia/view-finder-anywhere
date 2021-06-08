@@ -9,7 +9,11 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.hardware.display.DisplayManager
+import android.os.Build
 import android.os.IBinder
+import android.view.Display
+import android.view.WindowManager
 
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
@@ -39,6 +43,21 @@ class OverlayViewFinderService : Service() {
 
     override fun onBind(intent: Intent): IBinder? = null
 
+    private fun getWindowContext(): Context {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val dm = this.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+            val display: Display = dm.getDisplay(Display.DEFAULT_DISPLAY)
+            val displayCtx: Context = this.createDisplayContext(display)
+            val windowCtx: Context = displayCtx.createWindowContext(
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                null)
+            windowCtx
+        } else {
+            // Use service as context.
+            this
+        }
+    }
+
     override fun onCreate() {
         if (IS_DEBUG) logD(TAG, "onCreate() : E")
         super.onCreate()
@@ -51,7 +70,7 @@ class OverlayViewFinderService : Service() {
         loadCustomizedUiResources(this, customPackage)
 
         // Core instances.
-        controller = OverlayViewFinderController(this)
+        controller = OverlayViewFinderController(getWindowContext())
         triggerReceiver = OverlayViewFinderTriggerReceiver()
 
         // Visibility toggle intent.

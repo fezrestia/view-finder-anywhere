@@ -9,7 +9,15 @@ import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.lib.util.log.logE
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.location.*
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationAvailability
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationSettingsRequest
+import com.google.android.gms.location.LocationSettingsResponse
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.SettingsClient
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.gms.tasks.Task
@@ -37,7 +45,7 @@ class LatestLocation(val context: Context) {
     init {
         if (IS_DEBUG) logD(TAG, "CONSTRUCTOR()")
 
-        locationRequest = LocationRequest().apply {
+        locationRequest = LocationRequest.create().apply {
             interval = UPDATE_INTERVAL_MILLIS
             fastestInterval = FASTEST_UPDATE_INTERVAL_MILLIS
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
@@ -121,7 +129,7 @@ class LatestLocation(val context: Context) {
                 fusedLocationProviderClient.requestLocationUpdates(
                         locationRequest,
                         locationCallback,
-                        null) // Callback thread.
+                        context.mainLooper)
             } catch (e: SecurityException) {
                 val errMsg = "## SecurityException : LOCATION permission is NOT granted ?"
                 logE(TAG, errMsg)
