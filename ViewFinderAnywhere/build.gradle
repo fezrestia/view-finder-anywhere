@@ -10,7 +10,7 @@ import java.util.regex.Pattern
 
 android {
     compileSdkVersion 30
-    buildToolsVersion '31.0.0 rc4'
+    buildToolsVersion '30.0.3'
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere"
@@ -102,7 +102,7 @@ android {
 
     externalNativeBuild {
         cmake {
-            version "3.10.2"
+            version "3.18.1"
             path file("src/main/cpp/CMakeLists.txt")
         }
     }
@@ -113,12 +113,12 @@ android {
 dependencies {
     // FireBase.
     implementation 'com.google.firebase:firebase-analytics-ktx:19.0.0'
-    implementation 'com.google.firebase:firebase-crashlytics:18.0.1'
+    implementation 'com.google.firebase:firebase-crashlytics:18.1.0'
 
     // Kotlin support.
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.10'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.20'
     implementation 'androidx.preference:preference-ktx:1.1.1'
-    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.5.10'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.5.20'
 
     // Google play services.
     implementation 'com.google.android.gms:play-services-location:18.0.0'
