@@ -9,6 +9,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.IBinder
@@ -97,7 +98,10 @@ class OverlayViewFinderService : Service() {
                 .build()
 
         // On foreground.
-        startForeground(ONGOING_NOTIFICATION_ID, notification)
+        startForeground(
+                ONGOING_NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MANIFEST)
 
         if (IS_DEBUG) logD(TAG, "onCreate() : X")
     }
