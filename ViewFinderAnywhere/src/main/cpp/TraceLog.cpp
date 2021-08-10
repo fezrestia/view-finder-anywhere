@@ -1,3 +1,5 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "Simplify"
 #include <TraceLog.hpp>
 
 namespace fezrestia {
@@ -74,3 +76,5 @@ namespace fezrestia {
     }
 
 } // namespace fezrestia
+
+#pragma clang diagnostic pop
