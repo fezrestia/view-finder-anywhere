@@ -152,7 +152,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
         }
 
         private inner class OnChangeListenerImpl : Preference.OnPreferenceChangeListener {
-            override fun onPreferenceChange(preference: Preference?, newValue: Any?): Boolean {
+            override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
                 var firebaseValue: String? = null
 
                 when (preference?.key) {
@@ -273,6 +273,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
                 return true
             }
+
         }
 
         private fun setEnabledStorageSelectorRelatedPreferences(isEnabled: Boolean) {
@@ -494,6 +495,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             permissions: Array<String>,
             grantResults: IntArray) {
         if (IS_DEBUG) logD(TAG, "onRequestPermissionsResult()")
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         if (requestCode == REQUEST_CODE_MANAGE_PERMISSIONS) {
             REQUIRED_PERMISSIONS.forEach { permission ->

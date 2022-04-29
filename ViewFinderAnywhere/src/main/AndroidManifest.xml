@@ -6,8 +6,8 @@
 
     package="com.fezrestia.android.viewfinderanywhere"
 
-    android:versionCode="1218"
-    android:versionName="5.11.9-1218"
+    android:versionCode="1231"
+    android:versionName="5.12.0-1231"
 >
 <!--                     | | | |-> incremental build count
                          | | |-> patch
@@ -42,7 +42,7 @@
             android:label="@string/preference_app_label"
             android:theme="@style/Theme.AppCompat"
             android:launchMode="singleTask"
-            tools:ignore="ExportedPreferenceActivity"
+            android:exported="true"
         >
 
             <intent-filter>
@@ -70,6 +70,7 @@
 
         <receiver
             android:name=".widget.ToggleEnableDisableWidget"
+            android:exported="false"
         >
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
