@@ -12,8 +12,6 @@ android {
     namespace 'com.fezrestia.android.viewfinderanywhere'
     compileSdk 33
 
-    buildToolsVersion '33.0.2'
-
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere"
         minSdkVersion 29
@@ -42,7 +40,7 @@ android {
         }
     }
 
-    task incrementVersionCode {
+    tasks.register('incrementVersionCode') {
         def file = file("src/main/AndroidManifest.xml")
         def text = file.getText()
 
@@ -67,14 +65,14 @@ android {
         file.write(nameUpdatedText)
     }
 
-    tasks.whenTaskAdded { task ->
+    tasks.configureEach { task ->
         if (task.name == "generateReleaseBuildConfig" || task.name == "generateDebugBuildConfig") {
             task.dependsOn("incrementVersionCode")
         }
     }
 
     // Define APK name and replace.
-    applicationVariants.all { variant ->
+    applicationVariants.configureEach { variant ->
         variant.outputs.each { output ->
             if (output.outputFileName.endsWith(".apk")) {
                 def name = getArchivesBaseName()
@@ -115,11 +113,11 @@ android {
 dependencies {
     // FireBase.
     implementation 'com.google.firebase:firebase-analytics-ktx:21.3.0'
-    implementation 'com.google.firebase:firebase-crashlytics:18.3.7'
+    implementation 'com.google.firebase:firebase-crashlytics:18.4.0'
 
     // Kotlin support.
     implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.21'
-    implementation 'androidx.preference:preference-ktx:1.2.0'
+    implementation 'androidx.preference:preference-ktx:1.2.1'
     implementation 'org.jetbrains.kotlin:kotlin-reflect:1.8.21'
 
     // Google play services.
