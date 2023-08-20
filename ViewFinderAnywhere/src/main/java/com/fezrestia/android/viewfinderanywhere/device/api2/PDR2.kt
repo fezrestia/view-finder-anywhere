@@ -172,7 +172,7 @@ internal object PDR2 {
 
         // Check.
         if (orientation == android.view.OrientationEventListener.ORIENTATION_UNKNOWN) {
-            return 0
+            return 90
         }
 
         // Round.
@@ -352,35 +352,22 @@ internal object PDR2 {
         val sizes = configMap.getOutputSizes(SurfaceTexture::class.java)
 
         // Match aspect.
-        var optimalSize = Size(0, 0)
+        var optimalSize = Size(Integer.MAX_VALUE, Integer.MAX_VALUE)
         sizes.forEach { size ->
             if (IS_DEBUG) logD(TAG, "#### EachSize = $size")
 
-            if (size.height < 720) {
+            // Minimum resolution is FHD.
+            if (size.height < 1080) {
                 logD(TAG, "## Skip this size, too small.")
                 return@forEach
             }
 
-            val eachAspectWH = size.width.toFloat() / size.height.toFloat()
-            if (IS_DEBUG) logD(TAG, "## Each Aspect = $eachAspectWH")
-
-            if ((activeAspectWH * 100).toInt() == (eachAspectWH * 100).toInt()) {
-                if (optimalSize.width < size.width) {
-                    if (IS_DEBUG) logD(TAG, "## Update optimal size")
-                    optimalSize = size
-                }
-            }
-        }
-
-        // Fail-safe.
-        if (optimalSize == Size(0, 0)) {
-            logE(TAG, "ERROR: Aspect based optimal size detection is FAILED")
-
-            sizes.forEach { size ->
-                if (optimalSize.height < size.height) {
-                    // More square shape is better.
-                    optimalSize = size
-                }
+            // Smaller size is better for performance.
+            // More square shape is more wide view port.
+            if ( (size.height < optimalSize.height)
+                    || (size.height == optimalSize.height && size.width < optimalSize.width) ){
+                if (IS_DEBUG) logD(TAG, "## Update optimal size")
+                optimalSize = size
             }
         }
 

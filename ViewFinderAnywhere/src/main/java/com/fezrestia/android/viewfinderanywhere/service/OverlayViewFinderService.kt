@@ -81,7 +81,7 @@ class OverlayViewFinderService : Service() {
                 this,
                 0,
                 visibilityToggle,
-                PendingIntent.FLAG_UPDATE_CURRENT)
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
 
         // Foreground notification.
         val channel = NotificationChannel(
