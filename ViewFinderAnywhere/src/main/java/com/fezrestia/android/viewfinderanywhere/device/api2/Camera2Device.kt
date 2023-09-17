@@ -840,6 +840,8 @@ class Camera2DeviceDelegated(
             val cam = ensure(camDevice)
 
             try {
+                stopEvfStream()
+
                 val builder = cam.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
 
                 // AF.
@@ -877,12 +879,10 @@ class Camera2DeviceDelegated(
                 if (IS_DEBUG) logD(TAG, "  JPEG Rot = $jpegRot")
 
                 // Tag.
-                val reqTag = RequestTag(requestId, jpegRot)
+                val reqTag = RequestTag(fixedReqId, jpegRot)
                 builder.setTag(reqTag)
 
                 val jpegReq = builder.build()
-
-                stopEvfStream()
 
                 val session = ensure(camSession)
                 val callback = ensure(captureCallback)
@@ -1083,8 +1083,13 @@ class Camera2DeviceDelegated(
     private inner class CaptureCallback : CameraCaptureSession.CaptureCallback() {
         private val TAG = "CaptureCallback"
 
-        private lateinit var latestRequest: CaptureRequest
-        private lateinit var latestResult: TotalCaptureResult
+        private lateinit var latestPreviewRequest: CaptureRequest
+        private lateinit var latestStillCaptureRequest: CaptureRequest
+        private lateinit var latestVideoCaptureRequest: CaptureRequest
+
+        private lateinit var latestPreviewResult: TotalCaptureResult
+        private lateinit var latestStillCaptureResult: TotalCaptureResult
+        private lateinit var latestVideoCaptureResult: TotalCaptureResult
 
         private var scanDoneLatch: CountDownLatch? = null
         private var cancelScanDoneLatch: CountDownLatch? = null
@@ -1102,8 +1107,6 @@ class Camera2DeviceDelegated(
             super.onCaptureStarted(session, request, timestamp, frameNumber)
             if (IS_DEBUG) logD(TAG, "onCaptureStarted()")
 
-            latestRequest = request
-
             val intent = request.get(CaptureRequest.CONTROL_CAPTURE_INTENT)
 
             if (intent == null) {
@@ -1111,11 +1114,14 @@ class Camera2DeviceDelegated(
             } else when (intent) {
                 CaptureRequest.CONTROL_CAPTURE_INTENT_PREVIEW -> {
                     if (IS_DEBUG) logD(TAG, "  handle INTENT_PREVIEW")
-                    // NOP.
+
+                    latestPreviewRequest = request
                 }
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE -> {
                     if (IS_DEBUG) logD(TAG, "  handle INTENT_STILL_CAPTURE")
+
+                    latestStillCaptureRequest = request
 
                     // Shutter sound.
 //                    shutterSound.play(MediaActionSound.SHUTTER_CLICK);
@@ -1126,6 +1132,8 @@ class Camera2DeviceDelegated(
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_RECORD -> {
                     if (IS_DEBUG) logD(TAG, "  handle INTENT_VIDEO_RECORD")
+
+                    latestVideoCaptureRequest = request
 
                     if (!isVideoStreamStarted) {
                         isVideoStreamStarted = true
@@ -1171,8 +1179,6 @@ class Camera2DeviceDelegated(
             super.onCaptureCompleted(session, request, result)
             if (IS_DEBUG) logD(TAG, "onCaptureCompleted()")
 
-            latestResult = result
-
             val intent = request.get(CaptureRequest.CONTROL_CAPTURE_INTENT)
 
             if (intent == null) {
@@ -1180,16 +1186,22 @@ class Camera2DeviceDelegated(
             } else when (intent) {
                 CaptureRequest.CONTROL_CAPTURE_INTENT_PREVIEW -> {
                     if (IS_DEBUG) logD(TAG, "  handle INTENT_PREVIEW")
+
+                    latestPreviewResult = result
                     handlePreviewIntentCaptureCompleted(result)
                 }
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE -> {
                     if (IS_DEBUG) logD(TAG, "  handle INTENT_STILL_CAPTURE")
+
+                    latestStillCaptureResult = result
                     handleStillIntentCaptureCompleted(request)
                 }
 
                 CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_RECORD -> {
                     if (IS_DEBUG) logD(TAG, "  handle INTENT_VIDEO_RECORD")
+
+                    latestVideoCaptureResult = result
                     handleVideoIntentCaptureCompleted(request)
                 }
 
@@ -1277,7 +1289,7 @@ class Camera2DeviceDelegated(
             val latch = ensure(scanDoneLatch)
             waitForLatch(latch)
             scanDoneLatch = null
-            return PDR2.isAfSucceeded(latestResult)
+            return PDR2.isAfSucceeded(latestPreviewResult)
         }
 
         fun requestDetectCancelScanDone() {
@@ -1322,7 +1334,7 @@ class Camera2DeviceDelegated(
             waitForLatch(latch)
             shutterDoneLatch = null
 
-            val reqTag= latestRequest.tag as RequestTag
+            val reqTag= latestStillCaptureRequest.tag as RequestTag
             return reqTag.requestId
         }
 
@@ -1335,7 +1347,7 @@ class Camera2DeviceDelegated(
             waitForLatch(latch)
             captureDoneLatch = null
 
-            val reqTag= latestRequest.tag as RequestTag
+            val reqTag= latestStillCaptureRequest.tag as RequestTag
             return reqTag.requestId
         }
 

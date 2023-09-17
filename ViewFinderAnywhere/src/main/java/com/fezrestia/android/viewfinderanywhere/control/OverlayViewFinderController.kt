@@ -1225,7 +1225,12 @@ class OverlayViewFinderController(private val context: Context) {
 
                 nativeBindAppEglContext()
 
-                surfaceTexture.updateTexImage()
+                try {
+                    surfaceTexture.updateTexImage()
+                } catch (e: RuntimeException) {
+                    if (IS_DEBUG) logE(TAG, "onFrameAvailable() : Exception on SurfaceTexture.updateTexImage().")
+                    return@post
+                }
 
                 val matrix = FloatArray(16)
                 surfaceTexture.getTransformMatrix(matrix)
