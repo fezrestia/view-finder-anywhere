@@ -96,12 +96,12 @@ android {
 
     externalNativeBuild {
         cmake {
-            version "3.18.1"
+            version "3.22.1"
             path file("src/main/cpp/CMakeLists.txt")
         }
     }
 
-    ndkVersion '25.2.9519653'
+    ndkVersion '26.1.10909125'
 
     lint {
         htmlOutput file("$project.buildDir/reports/test-results-lint.html")
@@ -124,5 +124,5 @@ dependencies {
     implementation 'com.google.android.gms:play-services-location:21.0.1'
 
     // Android X
-    implementation 'androidx.exifinterface:exifinterface:1.3.6'
+    implementation 'androidx.exifinterface:exifinterface:1.3.7'
 }
