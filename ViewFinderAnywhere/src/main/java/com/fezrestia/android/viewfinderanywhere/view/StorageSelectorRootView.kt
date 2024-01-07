@@ -18,6 +18,7 @@ import android.view.SoundEffectConstants
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
 import com.fezrestia.android.lib.util.currentDisplayRect
@@ -32,7 +33,6 @@ import com.fezrestia.android.viewfinderanywhere.config.ConfigManager
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAlign
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController
 import com.fezrestia.android.viewfinderanywhere.storage.MediaStoreUtil
-import kotlinx.android.synthetic.main.storage_selector_root.view.*
 
 class StorageSelectorRootView : RelativeLayout {
 
@@ -69,6 +69,16 @@ class StorageSelectorRootView : RelativeLayout {
     private val targetStorageSet = mutableSetOf<String>()
 
     private val onStorageItemTouchListenerImpl = OnStorageItemTouchListenerImpl()
+
+    // View elements.
+    private val item_list: LinearLayout
+        get() {
+            return this.findViewById(R.id.item_list)
+        }
+    private val total_container: RelativeLayout
+        get() {
+            return this.findViewById(R.id.total_container)
+        }
 
     init {
         if (IS_DEBUG) logD(TAG, "CONSTRUCTOR")

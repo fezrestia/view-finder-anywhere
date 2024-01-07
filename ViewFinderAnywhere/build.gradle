@@ -1,6 +1,5 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
 
 // Add for FireBase.
 apply plugin: 'com.google.gms.google-services'
@@ -10,11 +9,11 @@ import java.util.regex.Pattern
 
 android {
     namespace 'com.fezrestia.android.viewfinderanywhere'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere"
-        minSdkVersion 29
+        minSdk 31
         targetSdk 33
 
         externalNativeBuild {
@@ -25,8 +24,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     buildTypes {
@@ -112,13 +111,13 @@ android {
 
 dependencies {
     // FireBase.
-    implementation 'com.google.firebase:firebase-analytics-ktx:21.3.0'
-    implementation 'com.google.firebase:firebase-crashlytics:18.4.0'
+    implementation 'com.google.firebase:firebase-analytics-ktx:21.5.0'
+    implementation 'com.google.firebase:firebase-crashlytics:18.6.0'
 
     // Kotlin support.
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.21'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22'
     implementation 'androidx.preference:preference-ktx:1.2.1'
-    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.8.21'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.9.22'
 
     // Google play services.
     implementation 'com.google.android.gms:play-services-location:21.0.1'

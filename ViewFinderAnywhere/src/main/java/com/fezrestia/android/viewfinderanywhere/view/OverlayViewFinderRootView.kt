@@ -16,6 +16,7 @@ import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 
@@ -32,7 +33,6 @@ import com.fezrestia.android.viewfinderanywhere.config.ConfigManager
 import com.fezrestia.android.viewfinderanywhere.config.options.ViewFinderAlign
 import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderController
 import com.fezrestia.android.viewfinderanywhere.plugin.ui.CustomizableResourceContainer
-import kotlinx.android.synthetic.main.overlay_view_finder_root.view.*
 import kotlin.math.abs
 import kotlin.math.ceil
 
@@ -61,6 +61,56 @@ class OverlayViewFinderRootView : RelativeLayout {
     // Window.
     lateinit var windowManager: WindowManager
     private lateinit var windowLayoutParams: WindowManager.LayoutParams
+
+    // View instances.
+    private val viewfinder_container: FrameLayout
+        get() {
+            return this.findViewById(R.id.viewfinder_container)
+        }
+    private val viewfinder: TextureView
+        get() {
+            return this.findViewById(R.id.viewfinder)
+        }
+    private val viewfinder_background: ImageView
+        get() {
+            return this.findViewById(R.id.viewfinder_background)
+        }
+    private val scan_indicator_container: FrameLayout
+        get() {
+            return this.findViewById(R.id.scan_indicator_container)
+        }
+    private val shutter_feedback: ImageView
+        get() {
+            return this.findViewById(R.id.shutter_feedback)
+        }
+    private val viewfinder_grip_container: FrameLayout
+        get() {
+            return this.findViewById(R.id.viewfinder_grip_container)
+        }
+    private val viewfinder_grip: ImageView
+        get() {
+            return this.findViewById(R.id.viewfinder_grip)
+        }
+    private val viewfinder_grip_label: ImageView
+        get() {
+            return this.findViewById(R.id.viewfinder_grip_label)
+        }
+    private val viewfinder_frame: ImageView
+        get() {
+            return this.findViewById(R.id.viewfinder_frame)
+        }
+    private val total_background: ImageView
+        get() {
+            return this.findViewById(R.id.total_background)
+        }
+    private val total_foreground: ImageView
+        get() {
+            return this.findViewById(R.id.total_foreground)
+        }
+    private val overlay_slider: LinearLayout
+        get() {
+            return this.findViewById(R.id.overlay_slider)
+        }
 
     // UI Plug-IN.
     // Viewfinder grip.

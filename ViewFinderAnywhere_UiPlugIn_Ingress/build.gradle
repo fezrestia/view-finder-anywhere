@@ -3,13 +3,12 @@ apply plugin: 'com.android.application'
 android {
     namespace 'com.fezrestia.android.viewfinderanywhere.uiplugin.ingress'
 
-    compileSdk 32
-    buildToolsVersion '30.0.3'
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere.uiplugin.ingress"
-        minSdk 29
-        targetSdk 32
+        minSdk 31
+        targetSdk 33
         versionCode 102
         versionName '1.1.0'
     }

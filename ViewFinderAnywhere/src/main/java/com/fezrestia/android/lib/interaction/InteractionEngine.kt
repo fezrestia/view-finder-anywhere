@@ -642,11 +642,12 @@ class InteractionEngine(
 
     @Synchronized
     override fun onFling(
-            event1: MotionEvent,
+            event1: MotionEvent?,
             event2: MotionEvent,
             velocX: Float,
             velocY: Float): Boolean {
-        callback?.onFling(event1, event2, velocX, velocY)
+        // TODO: Handle nullable one.
+        callback?.onFling(event1 as MotionEvent, event2, velocX, velocY)
         return true
     }
 
@@ -657,7 +658,7 @@ class InteractionEngine(
 
     @Synchronized
     override fun onScroll(
-            event1: MotionEvent,
+            event1: MotionEvent?,
             event2: MotionEvent,
             distanceX: Float,
             distanceY: Float): Boolean = true
