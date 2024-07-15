@@ -103,9 +103,9 @@ android {
     ndkVersion '26.1.10909125'
 
     lint {
-        htmlOutput file("$project.buildDir/reports/test-results-lint.html")
+        htmlOutput file("${project.getLayout().getBuildDirectory()}/reports/test-results-lint.html")
         lintConfig file('lint.xml')
-        xmlOutput file("$project.buildDir/reports/test-results-lint.xml")
+        xmlOutput file("${project.getLayout().getBuildDirectory()}/reports/test-results-lint.xml")
     }
 }
 
