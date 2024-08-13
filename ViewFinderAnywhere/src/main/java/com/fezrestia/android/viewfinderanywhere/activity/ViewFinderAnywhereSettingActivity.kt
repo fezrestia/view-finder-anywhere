@@ -3,7 +3,7 @@
 package com.fezrestia.android.viewfinderanywhere.activity
 
 import android.Manifest
-import android.annotation.TargetApi
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -11,6 +11,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
@@ -41,7 +43,6 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
         const val TAG = "VFA:SettingActivity"
 
         // Runtime permission.
-        private const val REQUEST_CODE_MANAGE_OVERLAY_PERMISSION = 100
         private const val REQUEST_CODE_MANAGE_PERMISSIONS = 200
     }
 
@@ -70,7 +71,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
             // API Level.
             val apiLevelPref: ListPreference = findPreference(CameraApiLevel.key)!!
-            val apiLevels: Array<String> = CameraApiLevel.values()
+            val apiLevels: Array<String> = CameraApiLevel.entries
                     .map { it.toString() }.toTypedArray()
             apiLevelPref.entries = apiLevels
             apiLevelPref.entryValues = apiLevels
@@ -78,7 +79,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
             // View finder size.
             val vfSizePref: ListPreference = findPreference(ViewFinderSize.key)!!
-            val sizes: Array<String> = ViewFinderSize.values()
+            val sizes: Array<String> = ViewFinderSize.entries
                     .map { it.toString() }.toTypedArray()
             vfSizePref.entries = sizes
             vfSizePref.entryValues = sizes
@@ -86,7 +87,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
             // View finder aspect.
             val vfAspectPref: ListPreference = findPreference(ViewFinderAspect.key)!!
-            val aspects: Array<String> = ViewFinderAspect.values()
+            val aspects: Array<String> = ViewFinderAspect.entries
                     .map { it.toString() }.toTypedArray()
             vfAspectPref.entries = aspects
             vfAspectPref.entryValues = aspects
@@ -94,7 +95,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
             // View finder align.
             val vfAlignPref: ListPreference = findPreference(ViewFinderAlign.key)!!
-            val aligns: Array<String> = ViewFinderAlign.values()
+            val aligns: Array<String> = ViewFinderAlign.entries
                     .map { it.toString() }.toTypedArray()
             vfAlignPref.entries = aligns
             vfAlignPref.entryValues = aligns
@@ -155,7 +156,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
                 var firebaseValue: String? = null
 
-                when (preference?.key) {
+                when (preference.key) {
                     SP_KEY_OVERLAY_VIEW_FINDER_ENABLE_DISABLE -> {
                         val isChecked: Boolean = newValue as Boolean
 
@@ -231,10 +232,11 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                                     mutableSetOf<String>()) as MutableSet<String>
 
                             if (!selectableSet.contains(newDir)) {
-                                selectableSet.add(newDir)
+                                val newSelectableSet = selectableSet.toMutableSet()
+                                newSelectableSet.add(newDir)
                                 App.sp.edit().putStringSet(
                                         Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
-                                        selectableSet)
+                                        newSelectableSet)
                                         .apply()
                             }
                         }
@@ -258,7 +260,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                     }
 
                     else -> {
-                        throw RuntimeException("UnSupported Preference : key=${preference?.key}")
+                        throw RuntimeException("UnSupported Preference : key=${preference.key}")
                     }
                 }
 
@@ -307,6 +309,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                 }
 
                 // Get plug-in title resource ID.
+                // noinspection DiscouragedApi
                 val titleResId = context.resources.getIdentifier(
                         RES_ID_STRING_PLUG_IN_TITLE,
                         "string",
@@ -370,6 +373,8 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
     private lateinit var settingFragment: SettingFragment
 
+    private lateinit var activityResultLauncher: ActivityResultLauncher<Intent>
+
     override fun onCreate(bundle: Bundle?) {
         if (IS_DEBUG) logD(TAG, "onCreate()")
         super.onCreate(null)
@@ -382,6 +387,18 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                 .beginTransaction()
                 .replace(R.id.preference_fragment_container, settingFragment)
                 .commit()
+
+        // Permission config activity result.
+        activityResultLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result?.resultCode == Activity.RESULT_OK) {
+                if (!isSystemAlertWindowPermissionGranted) {
+                    logE(TAG, "Overlay permission is not granted yet.")
+                    finish()
+                }
+            }
+        }
     }
 
     override fun onResume() {
@@ -419,11 +436,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
     //// RUNTIME PERMISSION RELATED
 
-    private val isRuntimePermissionRequired: Boolean
-        get() = Build.VERSION_CODES.M <= Build.VERSION.SDK_INT
-
     private val isSystemAlertWindowPermissionGranted: Boolean
-        @TargetApi(Build.VERSION_CODES.M)
         get() = Settings.canDrawOverlays(this)
 
     private val REQUIRED_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -444,7 +457,6 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
         )
     }
 
-    @TargetApi(Build.VERSION_CODES.M)
     private fun isPermissionGranted(permission: String): Boolean =
             checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
 
@@ -453,51 +465,34 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
      * @return immediateReturnRequired
      */
-    @TargetApi(Build.VERSION_CODES.M)
     private fun checkMandatoryPermissions(): Boolean {
         if (IS_DEBUG) logD(TAG, "checkMandatoryPermissions()")
 
-        if (isRuntimePermissionRequired) {
-            if (!isSystemAlertWindowPermissionGranted) {
-                // Start permission setting.
-                val intent = Intent(
-                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:$packageName"))
-                startActivityForResult(intent, REQUEST_CODE_MANAGE_OVERLAY_PERMISSION)
+        if (!isSystemAlertWindowPermissionGranted) {
+            // Start permission setting.
+            val intent = Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:$packageName"))
+            activityResultLauncher.launch(intent)
 
-                return true
-            }
-
-            val permissions = mutableListOf<String>()
-
-            REQUIRED_PERMISSIONS.forEach { permission ->
-                if(!isPermissionGranted(permission)) {
-                    permissions.add(permission)
-                }
-            }
-
-            return if (permissions.isNotEmpty()) {
-                requestPermissions(
-                        permissions.toTypedArray(),
-                        REQUEST_CODE_MANAGE_PERMISSIONS)
-                true
-            } else {
-                false
-            }
-        } else {
-            return false
+            return true
         }
-    }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
-        if (IS_DEBUG) logD(TAG, "onActivityResult()")
-        super.onActivityResult(requestCode, resultCode, intent)
+        val permissions = mutableListOf<String>()
 
-        if (requestCode == REQUEST_CODE_MANAGE_OVERLAY_PERMISSION) {
-            if (!isSystemAlertWindowPermissionGranted) {
-                logE(TAG, "Overlay permission is not granted yet.")
-                finish()
+        REQUIRED_PERMISSIONS.forEach { permission ->
+            if(!isPermissionGranted(permission)) {
+                permissions.add(permission)
             }
+        }
+
+        return if (permissions.isNotEmpty()) {
+            requestPermissions(
+                    permissions.toTypedArray(),
+                    REQUEST_CODE_MANAGE_PERMISSIONS)
+            true
+        } else {
+            false
         }
     }
 
