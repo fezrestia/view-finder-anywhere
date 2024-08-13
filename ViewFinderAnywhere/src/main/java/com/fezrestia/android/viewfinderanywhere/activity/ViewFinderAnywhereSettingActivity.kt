@@ -426,14 +426,23 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
         @TargetApi(Build.VERSION_CODES.M)
         get() = Settings.canDrawOverlays(this)
 
-    private val REQUIRED_PERMISSIONS = arrayOf(
+    private val REQUIRED_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        arrayOf(
+                Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO,
+        )
+    } else {
+        arrayOf(
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.READ_MEDIA_IMAGES,
-            Manifest.permission.READ_MEDIA_VIDEO,
-    )
+        )
+    }
 
     @TargetApi(Build.VERSION_CODES.M)
     private fun isPermissionGranted(permission: String): Boolean =

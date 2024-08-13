@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
@@ -22,10 +23,16 @@ class OverlayViewFinderTriggerReceiver : BroadcastReceiver() {
     fun register(context: Context) {
         val filter = IntentFilter()
         filter.addAction(Constants.INTENT_ACTION_TOGGLE_OVERLAY_VISIBILITY)
+        filter.addAction(Constants.INTENT_ACTION_TOGGLE_OVERLAY_ENABLE_DISABLE)
         filter.addAction(Intent.ACTION_SCREEN_ON)
         filter.addAction(Intent.ACTION_SCREEN_OFF)
 
-        context.registerReceiver(this, filter)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(this, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            // noinspection UnspecifiedRegisterReceiverFlag
+            context.registerReceiver(this, filter)
+        }
     }
 
     /**
