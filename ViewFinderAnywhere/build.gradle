@@ -112,7 +112,7 @@ dependencies {
 
     // Kotlin support.
     implementation 'androidx.preference:preference-ktx:1.2.1'
-    implementation 'org.jetbrains.kotlin:kotlin-reflect:2.0.0'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:2.0.10'
 
     // Google play services.
     implementation 'com.google.android.gms:play-services-location:21.3.0'
