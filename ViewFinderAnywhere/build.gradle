@@ -69,7 +69,7 @@ android {
         }
     }
 
-    ndkVersion '26.1.10909125'
+    ndkVersion '27.0.12077973'
 
     lint {
         htmlOutput file("${project.getLayout().getBuildDirectory()}/reports/test-results-lint.html")
@@ -107,12 +107,12 @@ def incrementVersionCode() {
 
 dependencies {
     // FireBase.
-    implementation 'com.google.firebase:firebase-analytics-ktx:22.0.2'
-    implementation 'com.google.firebase:firebase-crashlytics:19.0.3'
+    implementation 'com.google.firebase:firebase-analytics-ktx:22.1.2'
+    implementation 'com.google.firebase:firebase-crashlytics:19.2.1'
 
     // Kotlin support.
     implementation 'androidx.preference:preference-ktx:1.2.1'
-    implementation 'org.jetbrains.kotlin:kotlin-reflect:2.0.10'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:2.0.21'
 
     // Google play services.
     implementation 'com.google.android.gms:play-services-location:21.3.0'
