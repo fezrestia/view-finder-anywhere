@@ -12,7 +12,10 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 android {
     namespace 'com.fezrestia.android.viewfinderanywhere'
+
     compileSdk = 36
+    compileSdkMinor 1
+    buildToolsVersion '36.1.0'
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere"
@@ -72,7 +75,7 @@ android {
         }
     }
 
-    ndkVersion '29.0.13846066 rc3'
+    ndkVersion '29.0.14206865'
 
     lint {
         htmlOutput file("${project.getLayout().getBuildDirectory()}/reports/test-results-lint.html")
@@ -81,8 +84,6 @@ android {
     }
 
     incrementVersionCode()
-
-    buildToolsVersion '36.0.0'
 }
 
 tasks.withType(KotlinJvmCompile).configureEach {
@@ -118,17 +119,17 @@ def incrementVersionCode() {
 
 dependencies {
     // FireBase.
-    implementation platform('com.google.firebase:firebase-bom:34.1.0')
+    implementation platform('com.google.firebase:firebase-bom:34.7.0')
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-crashlytics'
 
     // Kotlin support.
     implementation 'androidx.preference:preference-ktx:1.2.1'
-    implementation 'org.jetbrains.kotlin:kotlin-reflect:2.2.0'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:2.3.0'
 
     // Google play services.
     implementation 'com.google.android.gms:play-services-location:21.3.0'
 
     // Android X
-    implementation 'androidx.exifinterface:exifinterface:1.4.1'
+    implementation 'androidx.exifinterface:exifinterface:1.4.2'
 }

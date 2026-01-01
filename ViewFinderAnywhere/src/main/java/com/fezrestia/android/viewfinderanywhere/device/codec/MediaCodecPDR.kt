@@ -65,27 +65,21 @@ internal object MediaCodecPDR {
 
                     val encoderCaps = capabilities.encoderCapabilities
                     logD(TAG, "  Encoder Capabilities :")
-                    logD(TAG, "    complexityRange = ${encoderCaps.complexityRange}")
-                    logD(TAG, "    qualityRange = ${encoderCaps.qualityRange}")
-                    logD(TAG, "    CBR = ${encoderCaps.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)}")
-                    logD(TAG, "    CQ  = ${encoderCaps.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ)}")
-                    logD(TAG, "    VBR = ${encoderCaps.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR)}")
+                    logD(TAG, "    complexityRange = ${encoderCaps?.complexityRange}")
+                    logD(TAG, "    qualityRange = ${encoderCaps?.qualityRange}")
+                    logD(TAG, "    CBR = ${encoderCaps?.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)}")
+                    logD(TAG, "    CQ  = ${encoderCaps?.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ)}")
+                    logD(TAG, "    VBR = ${encoderCaps?.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR)}")
 
                     val videoCaps = capabilities.videoCapabilities
                     logD(TAG, "  Video Capabilities :")
-                    logD(TAG, "    achievableFpsRange = ${videoCaps.getAchievableFrameRatesFor(videoWidth, videoHeight)}")
-                    logD(TAG, "    supportedFpsRange = ${videoCaps.getSupportedFrameRatesFor(videoWidth, videoHeight)}")
-                    logD(TAG, "    bpsRange = ${videoCaps.bitrateRange}")
-                    logD(TAG, "    widthAlign = ${videoCaps.widthAlignment}")
-                    logD(TAG, "    heightAlign = ${videoCaps.heightAlignment}")
-                    logD(TAG, "    supportedWidth = ${videoCaps.supportedWidths}")
-                    logD(TAG, "    supportedHeight = ${videoCaps.supportedHeights}")
-
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                        videoCaps.supportedPerformancePoints?.forEach { perfPoint ->
-                            logD(TAG, "## performance point = $perfPoint")
-                        }
-                    }
+                    logD(TAG, "    achievableFpsRange = ${videoCaps?.getAchievableFrameRatesFor(videoWidth, videoHeight)}")
+                    logD(TAG, "    supportedFpsRange = ${videoCaps?.getSupportedFrameRatesFor(videoWidth, videoHeight)}")
+                    logD(TAG, "    bpsRange = ${videoCaps?.bitrateRange}")
+                    logD(TAG, "    widthAlign = ${videoCaps?.widthAlignment}")
+                    logD(TAG, "    heightAlign = ${videoCaps?.heightAlignment}")
+                    logD(TAG, "    supportedWidth = ${videoCaps?.supportedWidths}")
+                    logD(TAG, "    supportedHeight = ${videoCaps?.supportedHeights}")
                 }
             }
         }
@@ -156,18 +150,18 @@ internal object MediaCodecPDR {
 
                     val encoderCaps = capabilities.encoderCapabilities
                     logD(TAG, "  Encoder Capabilities :")
-                    logD(TAG, "    complexityRange = ${encoderCaps.complexityRange}")
-                    logD(TAG, "    qualityRange = ${encoderCaps.qualityRange}")
-                    logD(TAG, "    CBR = ${encoderCaps.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)}")
-                    logD(TAG, "    CQ  = ${encoderCaps.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ)}")
-                    logD(TAG, "    VBR = ${encoderCaps.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR)}")
+                    logD(TAG, "    complexityRange = ${encoderCaps?.complexityRange}")
+                    logD(TAG, "    qualityRange = ${encoderCaps?.qualityRange}")
+                    logD(TAG, "    CBR = ${encoderCaps?.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)}")
+                    logD(TAG, "    CQ  = ${encoderCaps?.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ)}")
+                    logD(TAG, "    VBR = ${encoderCaps?.isBitrateModeSupported(MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR)}")
 
                     val audioCaps = capabilities.audioCapabilities
                     logD(TAG, "  Audio Capabilities :")
-                    logD(TAG, "    bitrateRange = ${audioCaps.bitrateRange}")
-                    logD(TAG, "    maxInputChannelCount = ${audioCaps.maxInputChannelCount}")
-                    logD(TAG, "    supportedSampleRateRanges = ${audioCaps.supportedSampleRateRanges}")
-                    logD(TAG, "    supportedSampleRates = ${audioCaps.supportedSampleRates}")
+                    logD(TAG, "    bitrateRange = ${audioCaps?.bitrateRange}")
+                    logD(TAG, "    maxInputChannelCount = ${audioCaps?.maxInputChannelCount}")
+                    logD(TAG, "    supportedSampleRateRanges = ${audioCaps?.supportedSampleRateRanges}")
+                    logD(TAG, "    supportedSampleRates = ${audioCaps?.supportedSampleRates}")
                 }
             }
         }

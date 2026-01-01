@@ -4,8 +4,8 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
 
-    android:versionCode="1425"
-    android:versionName="5.13.15-1425"
+    android:versionCode="1436"
+    android:versionName="5.13.16-1436"
 >
 <!--                     | | | |-> incremental build count
                          | | |-> patch
