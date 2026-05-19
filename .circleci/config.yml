@@ -35,35 +35,35 @@ jobs:
 
       - store_artifacts:
           path: ViewFinderAnywhere/build/reports
-        destination: reports_ViewFinderAnywhere
+          destination: reports_ViewFinderAnywhere
 
       - store_artifacts:
           path: ViewFinderAnywhere_UiPlugIn_Ingress/build/reports
-        destination: reports_UiPlugIn_Ingress
+          destination: reports_UiPlugIn_Ingress
 
       - store_artifacts:
           path: ViewFinderAnywhere_UiPlugIn_RedFrame/build/reports
-        destination: reports_UiPlugIn_RedFrame
+          destination: reports_UiPlugIn_RedFrame
 
       - store_artifacts:
           path: ViewFinderAnywhere_UiPlugIn_TotalClear/build/reports
-        destination: reports_UiPlugIn_TotalClear
+          destination: reports_UiPlugIn_TotalClear
 
       - store_artifacts:
           path: ViewFinderAnywhere/build/outputs/apk/debug
-        destination: apk_ViewFinderAnywhere
+          destination: apk_ViewFinderAnywhere
 
       - store_artifacts:
           path: ViewFinderAnywhere_UiPlugIn_Ingress/build/outputs/apk/debug
-        destination: apk_Ingress
+          destination: apk_Ingress
 
       - store_artifacts:
           path: ViewFinderAnywhere_UiPlugIn_RedFrame/build/outputs/apk/debug
-        destination: apk_RedFrame
+          destination: apk_RedFrame
 
       - store_artifacts:
           path: ViewFinderAnywhere_UiPlugIn_TotalClear/build/outputs/apk/debug
-        destination: apk_TotalClear
+          destination: apk_TotalClear
 
 workflows:
   ci:
