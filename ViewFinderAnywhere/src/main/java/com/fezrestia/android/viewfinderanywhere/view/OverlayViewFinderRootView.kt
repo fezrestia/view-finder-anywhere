@@ -6,6 +6,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.*
+import android.hardware.display.DisplayManager
 import android.util.AttributeSet
 import android.view.Gravity
 import android.view.KeyEvent
@@ -13,7 +14,6 @@ import android.view.MotionEvent
 import android.view.TextureView
 import android.view.View
 import android.view.ViewConfiguration
-import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -21,7 +21,6 @@ import android.widget.LinearLayout
 import android.widget.RelativeLayout
 
 import com.fezrestia.android.lib.interaction.InteractionEngine
-import com.fezrestia.android.lib.util.currentDisplayRect
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
 import com.fezrestia.android.lib.util.math.IntXY
@@ -35,6 +34,7 @@ import com.fezrestia.android.viewfinderanywhere.control.OverlayViewFinderControl
 import com.fezrestia.android.viewfinderanywhere.plugin.ui.CustomizableResourceContainer
 import kotlin.math.abs
 import kotlin.math.ceil
+import androidx.core.graphics.createBitmap
 
 /**
  * Window root view class.
@@ -49,8 +49,38 @@ class OverlayViewFinderRootView : RelativeLayout {
     private lateinit var controller: OverlayViewFinderController
     private lateinit var configManager: ConfigManager
 
-    // Display coordinates.
-    private val displayWH = IntWH(0, 0)
+    // Display related.
+    private val displayManager: DisplayManager
+            = context.getSystemService(DisplayManager::class.java)
+    private var displayRect = Rect()
+    private val displayListener = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(displayId: Int) {
+            // NOP.
+        }
+
+        override fun onDisplayRemoved(displayId: Int) {
+            // NOP.
+        }
+
+        override fun onDisplayChanged(displayId: Int) {
+            if (IS_DEBUG) logD(TAG, "DisplayListener.onDisplayChanged()")
+
+            val nextRect = windowManager.maximumWindowMetrics.bounds
+
+            if (IS_DEBUG) logD(TAG, "DisplayChanged : "
+                    + "prev=${displayRect.width()}x${displayRect.height()}, "
+                    + "next=${nextRect.width()}x${nextRect.height()}")
+
+            if (displayRect.width() != nextRect.width()
+                || displayRect.height() != nextRect.height()) {
+                displayRect = nextRect
+
+                App.ui.post {
+                    controller.forceClose()
+                }
+            }
+        }
+    }
 
     // Overlay window orientation.
     private var orientation = Configuration.ORIENTATION_UNDEFINED
@@ -220,6 +250,10 @@ class OverlayViewFinderRootView : RelativeLayout {
         // Window related.
         createWindowParameters()
 
+        // Display.
+        displayManager.registerDisplayListener(displayListener, handler)
+        displayRect = windowManager.maximumWindowMetrics.bounds  // initial disp size.
+
         if (IS_DEBUG) logD(TAG, "initialize() : X")
     }
 
@@ -235,7 +269,7 @@ class OverlayViewFinderRootView : RelativeLayout {
         scan_indicator_container.visibility = INVISIBLE
 
         // Shutter feedback.
-        shutter_feedback.visibility = View.INVISIBLE
+        shutter_feedback.visibility = INVISIBLE
 
         // UI-Plug-IN.
         // Viewfinder grip.
@@ -253,7 +287,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                 + abs(fontMetrics.leading)).toInt()
         val textLabel = res.getString(R.string.viewfinder_grip_label)
         val textWidth = ceil(paint.measureText(textLabel).toDouble()).toInt()
-        viewfinder_grip_labelLandscapeBmp = Bitmap.createBitmap(
+        viewfinder_grip_labelLandscapeBmp = createBitmap(
                 textWidth,
                 textHeight,
                 Bitmap.Config.ARGB_8888)
@@ -297,6 +331,9 @@ class OverlayViewFinderRootView : RelativeLayout {
      */
     fun release() {
         releaseWindowPositionCorrector()
+
+        // Display.
+        displayManager.unregisterDisplayListener(displayListener)
 
         interactionEngine?.let {
             it.callback = null
@@ -368,13 +405,8 @@ class OverlayViewFinderRootView : RelativeLayout {
     }
 
     private fun calculateScreenConfiguration() {
-        // Get display size.
-        val rect = currentDisplayRect(windowManager)
-        displayWH.set(rect.width(), rect.height())
-        if (IS_DEBUG) logD(TAG, "displayWH = ${displayWH.w} x ${displayWH.h}")
-
         // Get display orientation.
-        orientation = if (displayWH.w > displayWH.h) {
+        orientation = if (displayRect.width() > displayRect.height()) {
             if (IS_DEBUG) logD(TAG, "orientation = LANDSCAPE")
             Configuration.ORIENTATION_LANDSCAPE
         } else {
@@ -389,12 +421,12 @@ class OverlayViewFinderRootView : RelativeLayout {
         // Define view finder size.
         when (orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
-                var checkW = (displayWH.w * configManager.evfSize.scaleRate).toInt()
+                var checkW = (displayRect.width() * configManager.evfSize.scaleRate).toInt()
                 var checkH = (checkW / configManager.evfAspect.ratioWH).toInt()
 
-                if (checkH > (displayWH.h - gripSize)) {
+                if (checkH > (displayRect.height() - gripSize)) {
                     // Fit overlay window height to display height.
-                    checkH = displayWH.h - gripSize
+                    checkH = displayRect.height() - gripSize
                     checkW = (checkH * configManager.evfAspect.ratioWH).toInt()
                 }
 
@@ -403,12 +435,12 @@ class OverlayViewFinderRootView : RelativeLayout {
             }
 
             Configuration.ORIENTATION_PORTRAIT -> {
-                var checkH = (displayWH.h * configManager.evfSize.scaleRate).toInt()
+                var checkH = (displayRect.height() * configManager.evfSize.scaleRate).toInt()
                 var checkW = (checkH / configManager.evfAspect.ratioWH).toInt()
 
-                if (checkW > (displayWH.w - gripSize)) {
+                if (checkW > (displayRect.width() - gripSize)) {
                     // Fit overlay window width to display width.
-                    checkW = displayWH.w - gripSize
+                    checkW = displayRect.width() - gripSize
                     checkH = (checkW * configManager.evfAspect.ratioWH).toInt()
                 }
 
@@ -423,6 +455,7 @@ class OverlayViewFinderRootView : RelativeLayout {
     }
 
     @SuppressLint("RtlHardcoded")
+    @Suppress("KotlinConstantConditions")
     private fun updateWindowParams() {
         if (IS_DEBUG) logD(TAG, "updateWindowParams() : E")
 
@@ -472,13 +505,13 @@ class OverlayViewFinderRootView : RelativeLayout {
                 when (configManager.evfAlign) {
                     ViewFinderAlign.TOP_OR_LEFT -> {
                         winX = windowLayoutParams.x
-                        winY = displayWH.h - viewfinderWH.h - gripSize - windowLayoutParams.y
+                        winY = displayRect.height() - viewfinderWH.h - gripSize - windowLayoutParams.y
                         winW = windowLayoutParams.width
                         winH = windowLayoutParams.height
                     }
                     ViewFinderAlign.BOTTOM_OR_RIGHT -> {
-                        winX = displayWH.w - viewfinderWH.w - windowLayoutParams.x
-                        winY = displayWH.h - viewfinderWH.h - gripSize - windowLayoutParams.y
+                        winX = displayRect.width() - viewfinderWH.w - windowLayoutParams.x
+                        winY = displayRect.height() - viewfinderWH.h - gripSize - windowLayoutParams.y
                         winW = windowLayoutParams.width
                         winH = windowLayoutParams.height
                     }
@@ -515,14 +548,14 @@ class OverlayViewFinderRootView : RelativeLayout {
                 // Cache.
                 when (configManager.evfAlign) {
                     ViewFinderAlign.TOP_OR_LEFT -> {
-                        winX = displayWH.w - viewfinderWH.w - gripSize - windowLayoutParams.x
+                        winX = displayRect.width() - viewfinderWH.w - gripSize - windowLayoutParams.x
                         winY = windowLayoutParams.y
                         winW = windowLayoutParams.width
                         winH = windowLayoutParams.height
                     }
                     ViewFinderAlign.BOTTOM_OR_RIGHT -> {
-                        winX = displayWH.w - viewfinderWH.w - gripSize - windowLayoutParams.x
-                        winY = displayWH.h - viewfinderWH.h - windowLayoutParams.y
+                        winX = displayRect.width() - viewfinderWH.w - gripSize - windowLayoutParams.x
+                        winY = displayRect.height() - viewfinderWH.h - windowLayoutParams.y
                         winW = windowLayoutParams.width
                         winH = windowLayoutParams.height
                     }
@@ -623,11 +656,11 @@ class OverlayViewFinderRootView : RelativeLayout {
             when (orientation) {
                 Configuration.ORIENTATION_LANDSCAPE -> {
                     params.width = viewfinderWH.w
-                    params.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                    params.height = LayoutParams.WRAP_CONTENT
                 }
 
                 Configuration.ORIENTATION_PORTRAIT -> {
-                    params.width = ViewGroup.LayoutParams.WRAP_CONTENT
+                    params.width = LayoutParams.WRAP_CONTENT
                     params.height = viewfinderWH.h
                 }
 
@@ -682,7 +715,7 @@ class OverlayViewFinderRootView : RelativeLayout {
                     R.dimen.viewfinder_grip_label_horizontal_padding)
             val verticalPadding = context.resources.getDimensionPixelSize(
                     R.dimen.viewfinder_grip_label_vertical_padding)
-            var visibility = View.VISIBLE
+            var visibility = VISIBLE
             when (orientation) {
                 Configuration.ORIENTATION_LANDSCAPE -> {
                     viewfinder_grip_label.setImageBitmap(viewfinder_grip_labelLandscapeBmp)
@@ -691,10 +724,10 @@ class OverlayViewFinderRootView : RelativeLayout {
                             verticalPadding,
                             horizontalPadding,
                             0)
-                    params.width = ViewGroup.LayoutParams.WRAP_CONTENT
+                    params.width = LayoutParams.WRAP_CONTENT
                     params.height = gripSize
                     if (viewfinderWH.w * GRIP_SIZE_RATIO < viewfinder_grip_labelLandscapeBmp.width) {
-                        visibility = View.INVISIBLE
+                        visibility = INVISIBLE
                     }
 
                     when (configManager.evfAlign) {
@@ -715,9 +748,9 @@ class OverlayViewFinderRootView : RelativeLayout {
                             0,
                             horizontalPadding)
                     params.width = gripSize
-                    params.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                    params.height = LayoutParams.WRAP_CONTENT
                     if (viewfinderWH.h * GRIP_SIZE_RATIO < viewfinder_grip_labelPortraitBmp.height) {
-                        visibility = View.INVISIBLE
+                        visibility = INVISIBLE
                     }
 
                     when (configManager.evfAlign) {
@@ -1120,18 +1153,9 @@ class OverlayViewFinderRootView : RelativeLayout {
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
-        if (IS_DEBUG) logD(TAG,
-                "onConfigurationChanged() : [Config=$newConfig]")
+        if (IS_DEBUG) logD(TAG,"onConfigurationChanged() : [Config=$newConfig]")
         super.onConfigurationChanged(newConfig)
-
-        controller.pause()
-        controller.release()
-
-        controller.ready()
-        controller.resume()
-
-        // TODO: Consider to open/close overlay window align to previous state.
-
+        // NOP.
     }
 
     /**
@@ -1160,7 +1184,7 @@ class OverlayViewFinderRootView : RelativeLayout {
 
         override fun onScanStarted() {
             updateIndicatorColor(customResContainer.colorScanOnGoing)
-            scan_indicator_container.visibility = View.VISIBLE
+            scan_indicator_container.visibility = VISIBLE
         }
 
         override fun onScanDone(isSuccess: Boolean) {
@@ -1170,11 +1194,11 @@ class OverlayViewFinderRootView : RelativeLayout {
                 customResContainer.colorScanFailure
             }
             updateIndicatorColor(color)
-            scan_indicator_container.visibility = View.VISIBLE
+            scan_indicator_container.visibility = VISIBLE
         }
 
         override fun onShutterDone() {
-            shutter_feedback.visibility = View.VISIBLE
+            shutter_feedback.visibility = VISIBLE
             App.ui.postDelayed(
                     recoverShutterFeedbackTask,
                     SHUTTER_FEEDBACK_DURATION_MILLIS)
@@ -1183,21 +1207,21 @@ class OverlayViewFinderRootView : RelativeLayout {
         private val recoverShutterFeedbackTask = RecoverShutterFeedbackTask()
         private inner class RecoverShutterFeedbackTask : Runnable {
             override fun run() {
-                shutter_feedback.visibility = View.INVISIBLE
+                shutter_feedback.visibility = INVISIBLE
             }
         }
 
         override fun onRecStarted() {
             updateIndicatorColor(customResContainer.colorRec)
-            scan_indicator_container.visibility = View.VISIBLE
+            scan_indicator_container.visibility = VISIBLE
         }
 
         override fun onRecStopped() {
-            scan_indicator_container.visibility = View.INVISIBLE
+            scan_indicator_container.visibility = INVISIBLE
         }
 
         override fun clear() {
-            scan_indicator_container.visibility = View.INVISIBLE
+            scan_indicator_container.visibility = INVISIBLE
         }
 
         private fun updateIndicatorColor(color: Int) {

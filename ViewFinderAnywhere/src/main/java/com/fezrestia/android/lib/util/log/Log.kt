@@ -1,7 +1,9 @@
 package com.fezrestia.android.lib.util.log
 
+import com.fezrestia.android.viewfinderanywhere.BuildConfig
+
 // Total log level.
-const val IS_DEBUG = false
+val IS_DEBUG = BuildConfig.DEBUG
 
 /**
  * Debug log.
