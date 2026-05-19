@@ -31,42 +31,12 @@ jobs:
           command: ./gradlew lintDebug
 
       - store_test_results:
-          path: .
+          path: ./ViewFinderAnywhere/build/test-results
 
       - store_artifacts:
-          path: ViewFinderAnywhere/build/reports
-          destination: reports_ViewFinderAnywhere
-
-      - store_artifacts:
-          path: ViewFinderAnywhere_UiPlugIn_Ingress/build/reports
-          destination: reports_UiPlugIn_Ingress
-
-      - store_artifacts:
-          path: ViewFinderAnywhere_UiPlugIn_RedFrame/build/reports
-          destination: reports_UiPlugIn_RedFrame
-
-      - store_artifacts:
-          path: ViewFinderAnywhere_UiPlugIn_TotalClear/build/reports
-          destination: reports_UiPlugIn_TotalClear
-
-      - store_artifacts:
-          path: ViewFinderAnywhere/build/outputs/apk/debug
-          destination: apk_ViewFinderAnywhere
-
-      - store_artifacts:
-          path: ViewFinderAnywhere_UiPlugIn_Ingress/build/outputs/apk/debug
-          destination: apk_Ingress
-
-      - store_artifacts:
-          path: ViewFinderAnywhere_UiPlugIn_RedFrame/build/outputs/apk/debug
-          destination: apk_RedFrame
-
-      - store_artifacts:
-          path: ViewFinderAnywhere_UiPlugIn_TotalClear/build/outputs/apk/debug
-          destination: apk_TotalClear
+          path: ./ViewFinderAnywhere/build/reports
 
 workflows:
   ci:
     jobs:
       - build_test_lint
-
