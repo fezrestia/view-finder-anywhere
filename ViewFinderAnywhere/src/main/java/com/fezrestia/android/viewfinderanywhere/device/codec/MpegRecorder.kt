@@ -2,6 +2,7 @@
 
 package com.fezrestia.android.viewfinderanywhere.device.codec
 
+import android.Manifest
 import android.content.Context
 import android.hardware.SensorManager
 import android.location.Location
@@ -17,6 +18,7 @@ import android.os.HandlerThread
 import android.util.Size
 import android.view.OrientationEventListener
 import android.view.Surface
+import androidx.annotation.RequiresPermission
 import com.fezrestia.android.lib.util.ensure
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
@@ -97,11 +99,7 @@ class MpegRecorder(
 
         audioFormat = MediaCodecPDR.getAudioRecordAudioFormat()
 
-        audioFrameSize = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            audioFormat.frameSizeInBytes
-        } else {
-            32 // 16 bits stereo
-        }
+        audioFrameSize = audioFormat.frameSizeInBytes
 
         audioBufferSizeInBytes = MediaCodecPDR.getAudioRecordMinBufferSize() * 2
 
@@ -139,6 +137,7 @@ class MpegRecorder(
      *
      * @param mpegUri
      */
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     fun setup(mpegUri: Uri) {
         if (IS_DEBUG) logD(TAG, "setup()")
 
@@ -301,7 +300,7 @@ class MpegRecorder(
                     startOutBufPresentationTimeUs = info.presentationTimeUs
                     info.presentationTimeUs = 0L
                 } else {
-                    info.presentationTimeUs = info.presentationTimeUs - startOutBufPresentationTimeUs
+                    info.presentationTimeUs -= startOutBufPresentationTimeUs
                 }
             }
             if (IS_DEBUG) logD(TAG, "Video Out Buf Revised PresentationTimeUs = ${info.presentationTimeUs}")
@@ -491,7 +490,7 @@ class MpegRecorder(
                     startOutBufPresentationTimeUs = info.presentationTimeUs
                     info.presentationTimeUs = 0
                 } else {
-                    info.presentationTimeUs = info.presentationTimeUs - startOutBufPresentationTimeUs
+                    info.presentationTimeUs -= startOutBufPresentationTimeUs
                 }
             }
             info.presentationTimeUs = getValidNextPresentationTimeUs(info.presentationTimeUs)
