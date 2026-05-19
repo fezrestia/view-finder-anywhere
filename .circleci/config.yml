@@ -14,6 +14,11 @@ jobs:
       - checkout
 
       - run:
+          name: Setup Env
+          command: |
+            yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses 
+
+      - run:
           name: Build
           command: ./gradlew assembleDebug
 
