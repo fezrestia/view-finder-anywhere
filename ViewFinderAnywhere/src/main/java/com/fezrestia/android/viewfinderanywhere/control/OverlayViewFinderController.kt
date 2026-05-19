@@ -1215,7 +1215,7 @@ class OverlayViewFinderController(private val context: Context) {
         val TAG = "CameraSurfaceTextureCallback"
         override fun onFrameAvailable(surfaceTexture: SurfaceTexture) {
             handler.post {
-                if (IS_DEBUG) logD(TAG, "onFrameAvailable() : E")
+//                if (IS_DEBUG) logD(TAG, "onFrameAvailable() : E")
 
                 if (surfaceTexture.isReleased) {
                     logE(TAG, "SurfaceTexture is already released.")
