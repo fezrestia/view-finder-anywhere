@@ -1,42 +1,42 @@
-version: 2.0
+version: 2.1
 
 jobs:
-  build:
-    working_directory: ~/build-test
-
+  build_test_lint:
     docker:
-      - image: circleci/android:api-30-ndk
+      - image: cimg/android:2026.03.1-ndk
+
+    working_directory: ~/project
 
     environment:
-      JVM_OPTS: -Xmx3200m
+      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs="-Xmx4g"
 
     steps:
       - checkout
 
-      - restore_cache:
-          key: jars-{{ checksum "build.gradle" }}-{{ checksum "ViewFinderAnywhere/build.gradle" }}
+      - run:
+          name: Setup Env
+          command: |
+            yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - run:
-          name: Download Dependencies
-          command: ./gradlew androidDependencies
-
-      - save_cache:
-          paths:
-            - ~/.gradle
-          key: jars-{{ checksum "build.gradle" }}-{{ checksum "ViewFinderAnywhere/build.gradle" }}
+          name: Build
+          command: ./gradlew assembleDebug
 
       - run:
-          name: Run Test
-          command: ./gradlew test
+          name: Test
+          command: ./gradlew testDebug
 
       - run:
-          name: Run Lint
-          command: ./gradlew :ViewFinderAnywhere:lint
-
-      - store_artifacts:
-          path: ViewFinderAnywhere/build/reports
-          destination: reports
+          name: Lint
+          command: ./gradlew lintDebug
 
       - store_test_results:
-          path: ViewFinderAnywhere/build/reports
+          path: ./ViewFinderAnywhere/build/test-results
 
+      - store_artifacts:
+          path: ./ViewFinderAnywhere/build/reports
+
+workflows:
+  ci:
+    jobs:
+      - build_test_lint
