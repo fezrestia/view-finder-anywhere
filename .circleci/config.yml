@@ -16,7 +16,7 @@ jobs:
       - run:
           name: Setup Env
           command: |
-            yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses 
+            yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - run:
           name: Build
@@ -31,13 +31,39 @@ jobs:
           command: ./gradlew lintDebug
 
       - store_test_results:
-          path: ViewFinderAnywhere/build/test-results
+          path: .
 
       - store_artifacts:
           path: ViewFinderAnywhere/build/reports
+        destination: reports_ViewFinderAnywhere
+
+      - store_artifacts:
+          path: ViewFinderAnywhere_UiPlugIn_Ingress/build/reports
+        destination: reports_UiPlugIn_Ingress
+
+      - store_artifacts:
+          path: ViewFinderAnywhere_UiPlugIn_RedFrame/build/reports
+        destination: reports_UiPlugIn_RedFrame
+
+      - store_artifacts:
+          path: ViewFinderAnywhere_UiPlugIn_TotalClear/build/reports
+        destination: reports_UiPlugIn_TotalClear
 
       - store_artifacts:
           path: ViewFinderAnywhere/build/outputs/apk/debug
+        destination: apk_ViewFinderAnywhere
+
+      - store_artifacts:
+          path: ViewFinderAnywhere_UiPlugIn_Ingress/build/outputs/apk/debug
+        destination: apk_Ingress
+
+      - store_artifacts:
+          path: ViewFinderAnywhere_UiPlugIn_RedFrame/build/outputs/apk/debug
+        destination: apk_RedFrame
+
+      - store_artifacts:
+          path: ViewFinderAnywhere_UiPlugIn_TotalClear/build/outputs/apk/debug
+        destination: apk_TotalClear
 
 workflows:
   ci:

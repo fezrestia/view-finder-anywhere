@@ -32,6 +32,11 @@ jobs:
 
       - name: Setup Env
         run: |
+          # Accept android sdk licenses.
+          set +o pipefail
+          yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses
+          set -o pipefail
+
           # add permission.
           chmod +x ./gradlew
 
