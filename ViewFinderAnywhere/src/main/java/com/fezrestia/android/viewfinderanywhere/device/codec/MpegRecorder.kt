@@ -2,6 +2,7 @@
 
 package com.fezrestia.android.viewfinderanywhere.device.codec
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.hardware.SensorManager
 import android.location.Location
@@ -97,11 +98,7 @@ class MpegRecorder(
 
         audioFormat = MediaCodecPDR.getAudioRecordAudioFormat()
 
-        audioFrameSize = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            audioFormat.frameSizeInBytes
-        } else {
-            32 // 16 bits stereo
-        }
+        audioFrameSize = audioFormat.frameSizeInBytes
 
         audioBufferSizeInBytes = MediaCodecPDR.getAudioRecordMinBufferSize() * 2
 
@@ -139,6 +136,7 @@ class MpegRecorder(
      *
      * @param mpegUri
      */
+    @SuppressLint("MissingPermission")
     fun setup(mpegUri: Uri) {
         if (IS_DEBUG) logD(TAG, "setup()")
 
@@ -301,7 +299,7 @@ class MpegRecorder(
                     startOutBufPresentationTimeUs = info.presentationTimeUs
                     info.presentationTimeUs = 0L
                 } else {
-                    info.presentationTimeUs = info.presentationTimeUs - startOutBufPresentationTimeUs
+                    info.presentationTimeUs -= startOutBufPresentationTimeUs
                 }
             }
             if (IS_DEBUG) logD(TAG, "Video Out Buf Revised PresentationTimeUs = ${info.presentationTimeUs}")
@@ -491,7 +489,7 @@ class MpegRecorder(
                     startOutBufPresentationTimeUs = info.presentationTimeUs
                     info.presentationTimeUs = 0
                 } else {
-                    info.presentationTimeUs = info.presentationTimeUs - startOutBufPresentationTimeUs
+                    info.presentationTimeUs -= startOutBufPresentationTimeUs
                 }
             }
             info.presentationTimeUs = getValidNextPresentationTimeUs(info.presentationTimeUs)
