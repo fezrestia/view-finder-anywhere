@@ -3,12 +3,9 @@
 package com.fezrestia.android.viewfinderanywhere.activity
 
 import android.Manifest
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.result.ActivityResultLauncher
@@ -36,6 +33,8 @@ import com.fezrestia.android.viewfinderanywhere.control.OnOffTrigger
 import com.fezrestia.android.viewfinderanywhere.plugin.ui.loadCustomizedUiResources
 import com.fezrestia.android.viewfinderanywhere.storage.MediaStoreUtil
 import com.google.firebase.analytics.FirebaseAnalytics
+import androidx.core.content.edit
+import androidx.core.net.toUri
 
 class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
     companion object {
@@ -60,7 +59,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
         private val onChangeListenerImpl = OnChangeListenerImpl()
 
         // UI Plug-IN container class.
-        private inner class UiPlugInPackage(
+        private class UiPlugInPackage(
                 val packageName: String,
                 val plugInTitle: String)
 
@@ -204,14 +203,18 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
 
                         if (!isEnabled) {
                             // Reset all storage settings.
-                            App.sp.edit().putStringSet(
+                            App.sp.edit {
+                                putStringSet(
                                     Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
-                                    null)
-                                    .apply()
-                            App.sp.edit().putStringSet(
+                                    null
+                                )
+                            }
+                            App.sp.edit {
+                                putStringSet(
                                     Constants.SP_KEY_STORAGE_SELECTOR_TARGET_DIRECTORY,
-                                    null)
-                                    .apply()
+                                    null
+                                )
+                            }
 
                             setEnabledStorageSelectorRelatedPreferences(false)
                         } else {
@@ -234,10 +237,12 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                             if (!selectableSet.contains(newDir)) {
                                 val newSelectableSet = selectableSet.toMutableSet()
                                 newSelectableSet.add(newDir)
-                                App.sp.edit().putStringSet(
+                                App.sp.edit {
+                                    putStringSet(
                                         Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
-                                        newSelectableSet)
-                                        .apply()
+                                        newSelectableSet
+                                    )
+                                }
                             }
                         }
                     }
@@ -253,10 +258,12 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                         }
 
                         // Store.
-                        App.sp.edit().putStringSet(
+                        App.sp.edit {
+                            putStringSet(
                                 Constants.SP_KEY_STORAGE_SELECTOR_SELECTABLE_DIRECTORY,
-                                validDirSet)
-                                .apply()
+                                validDirSet
+                            )
+                        }
                     }
 
                     else -> {
@@ -302,7 +309,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
                 try {
                     context = this.requireContext().createPackageContext(
                             info.packageName,
-                            Context.CONTEXT_RESTRICTED)
+                            CONTEXT_RESTRICTED)
                 } catch (e: PackageManager.NameNotFoundException) {
                     e.printStackTrace()
                     return@forEach
@@ -392,7 +399,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
         activityResultLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
-            if (result?.resultCode == Activity.RESULT_OK) {
+            if (result?.resultCode == RESULT_OK) {
                 if (!isSystemAlertWindowPermissionGranted) {
                     logE(TAG, "Overlay permission is not granted yet.")
                     finish()
@@ -439,23 +446,12 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
     private val isSystemAlertWindowPermissionGranted: Boolean
         get() = Settings.canDrawOverlays(this)
 
-    private val REQUIRED_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        arrayOf(
-                Manifest.permission.CAMERA,
-                Manifest.permission.RECORD_AUDIO,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.READ_MEDIA_VIDEO,
-        )
-    } else {
-        arrayOf(
+    private val REQUIRED_PERMISSIONS = arrayOf(
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION,
-        )
-    }
+    )
 
     private fun isPermissionGranted(permission: String): Boolean =
             checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
@@ -472,7 +468,7 @@ class ViewFinderAnywhereSettingActivity : AppCompatActivity() {
             // Start permission setting.
             val intent = Intent(
                     Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:$packageName"))
+                "package:$packageName".toUri())
             activityResultLauncher.launch(intent)
 
             return true

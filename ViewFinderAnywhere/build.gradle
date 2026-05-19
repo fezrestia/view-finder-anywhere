@@ -1,5 +1,4 @@
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 
 // Add for FireBase.
 apply plugin: 'com.google.gms.google-services'
@@ -13,9 +12,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 android {
     namespace 'com.fezrestia.android.viewfinderanywhere'
 
-    compileSdk = 36
-    compileSdkMinor 1
-    buildToolsVersion '36.1.0'
+    compileSdk 37
+    buildToolsVersion '37.0.0'
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere"
@@ -45,27 +43,21 @@ android {
         }
     }
 
-    // Define APK name and replace.
-    applicationVariants.configureEach { variant ->
-        variant.outputs.each { output ->
-            if (output.outputFileName.endsWith(".apk")) {
-                def name = output.outputFileName - ".apk"
-                def ver = variant.versionName
+    productFlavors {
+    }
 
-                switch (variant.name) {
-                    case "debug":
-                        // NOP.
-                        break
-
-                    case "release":
-                        output.outputFileName = "${name}_${ver}.apk"
-                        break
+    androidComponents {
+        onVariants(selector().withBuildType("release")) { variant ->
+            variant.outputs.forEach { output ->
+                def ver = output.versionName.orNull
+                if (ver != null) {
+                    def currentName = output.outputFileName.get()
+                    def name = currentName.substring(0, currentName.lastIndexOf('.'))
+                    name = name.replace("-release", "")
+                    output.outputFileName.set("${name}_${ver}.apk")
                 }
             }
         }
-    }
-
-    productFlavors {
     }
 
     externalNativeBuild {
@@ -75,7 +67,7 @@ android {
         }
     }
 
-    ndkVersion '29.0.14206865'
+    ndkVersion '30.0.14904198 rc1'
 
     lint {
         htmlOutput file("${project.getLayout().getBuildDirectory()}/reports/test-results-lint.html")
@@ -119,13 +111,13 @@ def incrementVersionCode() {
 
 dependencies {
     // FireBase.
-    implementation platform('com.google.firebase:firebase-bom:34.7.0')
-    implementation 'com.google.firebase:firebase-analytics'
-    implementation 'com.google.firebase:firebase-crashlytics'
+    implementation platform('com.google.firebase:firebase-bom:34.13.0')
+    implementation 'com.google.firebase:firebase-analytics:23.2.0'
+    implementation 'com.google.firebase:firebase-crashlytics:20.0.6'
 
     // Kotlin support.
     implementation 'androidx.preference:preference-ktx:1.2.1'
-    implementation 'org.jetbrains.kotlin:kotlin-reflect:2.3.0'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:2.3.21'
 
     // Google play services.
     implementation 'com.google.android.gms:play-services-location:21.3.0'

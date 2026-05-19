@@ -2,20 +2,22 @@ apply plugin: 'com.android.application'
 
 android {
     namespace 'com.fezrestia.android.viewfinderanywhere.uiplugin.redframe'
-    compileSdk 34
 
+    compileSdk 36
+    compileSdkMinor 1
+    buildToolsVersion '36.1.0'
 
     defaultConfig {
         applicationId "com.fezrestia.android.viewfinderanywhere.uiplugin.redframe"
-        minSdk 31
-        targetSdk 33
+        minSdk 34
+        targetSdk 36
         versionCode 102
         versionName '1.1.0'
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     buildTypes {
@@ -24,21 +26,15 @@ android {
        }
     }
 
-    // Define APK name and replace.
-    applicationVariants.all { variant ->
-        variant.outputs.each { output ->
-            if (output.outputFileName.endsWith(".apk")) {
-                def name = output.outputFileName - ".apk"
-                def ver = variant.versionName
-
-                switch (variant.name) {
-                    case "debug":
-                        // NOP.
-                        break
-
-                    case "release":
-                        output.outputFileName = "${name}_${ver}.apk"
-                        break
+    androidComponents {
+        onVariants(selector().withBuildType("release")) { variant ->
+            variant.outputs.forEach { output ->
+                def ver = output.versionName.orNull
+                if (ver != null) {
+                    def currentName = output.outputFileName.get()
+                    def name = currentName.substring(0, currentName.lastIndexOf('.'))
+                    name = name.replace("-release", "")
+                    output.outputFileName.set("${name}_${ver}.apk")
                 }
             }
         }
@@ -49,7 +45,6 @@ android {
     lint {
         disable 'OldTargetApi', 'UnusedResources', 'IconDuplicates', 'IconMissingDensityFolder'
     }
-
 }
 
 dependencies {

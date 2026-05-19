@@ -23,8 +23,8 @@ target_include_directories(
 
 find_library(lib-log        log)
 find_library(lib-android    android)
-find_library(lib-egl        egl)
-find_library(lib-glesv2     glesv2)
+find_library(lib-egl        EGL)
+find_library(lib-glesv2     GLESv2)
 
 target_link_libraries(
         viewfinderanywhere
