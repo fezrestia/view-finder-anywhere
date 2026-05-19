@@ -2,7 +2,7 @@
 
 package com.fezrestia.android.viewfinderanywhere.device.codec
 
-import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.hardware.SensorManager
 import android.location.Location
@@ -18,7 +18,6 @@ import android.os.HandlerThread
 import android.util.Size
 import android.view.OrientationEventListener
 import android.view.Surface
-import androidx.annotation.RequiresPermission
 import com.fezrestia.android.lib.util.ensure
 import com.fezrestia.android.lib.util.log.IS_DEBUG
 import com.fezrestia.android.lib.util.log.logD
@@ -137,7 +136,7 @@ class MpegRecorder(
      *
      * @param mpegUri
      */
-    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+    @SuppressLint("MissingPermission")
     fun setup(mpegUri: Uri) {
         if (IS_DEBUG) logD(TAG, "setup()")
 

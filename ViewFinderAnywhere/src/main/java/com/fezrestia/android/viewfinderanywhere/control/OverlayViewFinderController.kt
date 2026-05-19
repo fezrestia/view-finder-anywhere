@@ -274,7 +274,7 @@ class OverlayViewFinderController(private val context: Context) {
         fun onRecStopped()
     }
 
-    abstract inner class State :
+    abstract class State :
             StateInternalInterface,
             LifeCycleInterface,
             FromViewInterface,
